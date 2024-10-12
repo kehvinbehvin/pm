@@ -19,6 +19,25 @@ func newVertex(id string) *Vertex {
   }
 }
 
+func (d Dag) hasBackEdge(to *Vertex) {
+  
+}
+
+func dfs(from *Vertex, to *Vertex) bool {
+  fmt.Println(from.id, to.id)
+  if (from.id == to.id) {
+    return true
+  }
+
+  for _ , value := range to.children {
+      if dfs(from, value) {
+         return true
+      }
+  } 
+  
+  return false
+}
+
 func (d Dag) addEdge(from *Vertex, to *Vertex) {
   parent, hasParent := d.vertices[from.id]
   child, hasChild := d.vertices[to.id]
@@ -40,8 +59,15 @@ func (d Dag) addEdge(from *Vertex, to *Vertex) {
     return
   }
 
+  hasCycle := dfs(from, to);
+  if hasCycle {
+     fmt.Println("Cannot add edge as it will create a cycle");
+     return
+  }
+
   parent.children[to.id] = to
   child.parents[from.id] = from
+  return
 }
 
 func (v *Vertex) String() string {
@@ -82,12 +108,14 @@ func main() {
 
   vertex1 := newVertex("Test 1")
   vertex2 := newVertex("Test 2")
-  vertex3 := newVertex("Test 2")
+  vertex3 := newVertex("Test 3")
 
   pmDag.addVertex(vertex1);
   pmDag.addVertex(vertex2);
   pmDag.addVertex(vertex3);
   pmDag.addEdge(vertex1, vertex2)
+  pmDag.addEdge(vertex2, vertex3)
+  pmDag.addEdge(vertex3, vertex1)
 
   for _, value := range pmDag.vertices {
     fmt.Println(value);
