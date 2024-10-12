@@ -7,25 +7,27 @@ import (
 
 func main() {
   // cmd.Execute()
-  pmDag := newDag(); 
+  pmDag := newDag()
+  vertex1 := newVertex("Hi")
+  pmDag.addVertex(vertex1)
 
-  vertex1 := newVertex("Test 1")
-  vertex2 := newVertex("Test 2")
-  vertex3 := newVertex("Test 3")
+  search := newTrie()
 
-  pmDag.addVertex(vertex1);
-  pmDag.addVertex(vertex2);
-  pmDag.addVertex(vertex3);
-  pmDag.addEdge(vertex1, vertex2)
-  pmDag.addEdge(vertex2, vertex3)
-  pmDag.addEdge(vertex3, vertex3)
+  word1 := "hello"
+  word2 := "world"
+  word3 := "help"
+  word4 := "worlly"
+  word5 := "worlda"
 
-  for _, value := range pmDag.vertices {
-    fmt.Println(value);
-  }
+  search.addWord(word1)
+  search.addWord(word2)
+  search.addWord(word3)
+  search.addWord(word4)
+  search.addWord(word5)
 
-  pmDag.removeEdge(vertex1, vertex3)
-  for _, value := range pmDag.vertices {
-    fmt.Println(value);
+  search.removeWord("world")
+  suggestions := search.loadWordsFromPrefix("wo")
+  for _ , value := range suggestions {
+    fmt.Println(value)
   }
 }
