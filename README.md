@@ -10,12 +10,10 @@ like in a git-style.
 
 ### File Structure
 - .pm 
-  - config
-  - epics
-  - stories
-  - tasks
-  - objects
-  - markdown
+  - config (txt)
+  - blobs (addressable content)
+  - prefix (binary)
+  - dag (binary)
 
 ### Storage method
 - Bytes or Compressed (after a certain size)
@@ -30,9 +28,10 @@ like in a git-style.
 - Trie prefix structure 
   - prefix as key, content hash as value
 
-### Storing the data structures 
+### Implementing the data structures 
 - https://intranet.icar.cnr.it/wp-content/uploads/2018/12/RT-ICAR-PA-2018-06.pdf
 - Build DAG/Trie in memory, perform binary serialisation to store it on disk
+- Use mmmap to fetch Dag/trie
 
 ### Edit
 - Use name to look up content
