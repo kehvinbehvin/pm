@@ -19,6 +19,18 @@ func newVertex(id string) *Vertex {
   }
 }
 
+func (v *Vertex) String() string {
+    var childrenIDs, parentsIDs []string
+    for childID := range v.children {
+        childrenIDs = append(childrenIDs, childID)
+    }
+    for parentID := range v.parents {
+        parentsIDs = append(parentsIDs, parentID)
+    }
+
+    return fmt.Sprintf("Vertex(id: %s, children: %v, parents: %v)", v.id, childrenIDs, parentsIDs)
+}
+
 func dfs(from *Vertex, to *Vertex) bool {
   if (from.id == to.id) {
     return true
@@ -33,24 +45,34 @@ func dfs(from *Vertex, to *Vertex) bool {
   return false
 }
 
+type Dag struct {
+  vertices map[string]*Vertex
+}
+
+func newDag() *Dag {
+  return &Dag{
+    vertices: make(map[string]*Vertex),
+  }
+}
+
 func (d Dag) addEdge(from *Vertex, to *Vertex) {
   parent, hasParent := d.vertices[from.id]
   child, hasChild := d.vertices[to.id]
 
   if !hasParent || !hasChild {
-    fmt.Printf("From or to Vertex does not exist")  
-    return 
+    fmt.Println("From or to Vertex does not exist")
+    return
   }
 
   _ , hasChildEdge := parent.children[to.id]
   if hasChildEdge {
-    fmt.Printf("Child Edge already exist")
+    fmt.Println("Child Edge already exist")
     return
   }
 
   _ , hasParentEdge := child.parents[from.id]
   if hasParentEdge {
-    fmt.Printf("Parent Edge already exist")
+    fmt.Println("Parent Edge already exist")
     return
   }
 
@@ -62,38 +84,6 @@ func (d Dag) addEdge(from *Vertex, to *Vertex) {
 
   parent.children[to.id] = to
   child.parents[from.id] = from
-}
-
-func (v *Vertex) String() string {
-    var childrenIDs, parentsIDs []string
-    for childID := range v.children {
-        childrenIDs = append(childrenIDs, childID)
-    }
-    for parentID := range v.parents {
-        parentsIDs = append(parentsIDs, parentID)
-    }
-
-    return fmt.Sprintf("Vertex(id: %s, children: %v, parents: %v)", v.id, childrenIDs, parentsIDs)
-}
-
-type Dag struct {
-  vertices map[string]*Vertex
-}
-
-func newDag() *Dag {
-  return &Dag{
-    vertices: make(map[string]*Vertex),
-  }
-}
-
-func (d Dag) addVertex(in *Vertex) {
-  _ , exists := d.vertices[in.id]
-  if exists {
-    fmt.Println("Vertex already exists")
-    return
-  }
-
-  d.vertices[in.id] = in
 }
 
 func (d Dag) removeEdge(from *Vertex, to *Vertex) {
@@ -111,6 +101,16 @@ func (d Dag) removeEdge(from *Vertex, to *Vertex) {
 
   delete(from.children, to.id)
   delete(to.parents, from.id)
+}
+
+func (d Dag) addVertex(in *Vertex) {
+  _ , exists := d.vertices[in.id]
+  if exists {
+    fmt.Println("Vertex already exists")
+    return
+  }
+
+  d.vertices[in.id] = in
 }
 
 func (d Dag) removeVertex(out *Vertex) {
