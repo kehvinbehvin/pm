@@ -19,10 +19,6 @@ func newVertex(id string) *Vertex {
   }
 }
 
-func (d Dag) hasBackEdge(to *Vertex) {
-  
-}
-
 func dfs(from *Vertex, to *Vertex) bool {
   if (from.id == to.id) {
     return true
@@ -100,6 +96,23 @@ func (d Dag) addVertex(in *Vertex) {
   d.vertices[in.id] = in
 }
 
+func (d Dag) removeEdge(from *Vertex, to *Vertex) {
+  _, hasToEdge := from.children[to.id]
+  if !hasToEdge {
+    fmt.Println("Vertex does not exist")
+    return
+  }
+
+  _, hasFromEdge := to.parents[from.id]
+  if !hasFromEdge {
+    fmt.Println("Vertex does not exist")
+    return
+  }
+
+  delete(from.children, to.id)
+  delete(to.parents, from.id)
+}
+
 func (d Dag) removeVertex(out *Vertex) {
   _ , exists := d.vertices[out.id]
   if !exists {
@@ -108,22 +121,11 @@ func (d Dag) removeVertex(out *Vertex) {
   }
 
   for _ , value := range out.parents {
-    _ , exists := value.children[out.id]
-    if !exists {
-      fmt.Println("Deleting non existent vertex")
-      return
-    }
-
-    delete(value.children, out.id)
+    d.removeEdge(value, out)
   }
 
   for _ , value := range out.children {
-     _ , exists := value.parents[out.id]
-    if !exists {
-      fmt.Println("Deleting non existent vertex")
-    }
-
-    delete(value.parents, out.id)
+    d.removeEdge(out, value)
   }
 
   delete(d.vertices, out.id)  
@@ -144,6 +146,11 @@ func main() {
   pmDag.addEdge(vertex2, vertex3)
   pmDag.addEdge(vertex3, vertex3)
 
+  for _, value := range pmDag.vertices {
+    fmt.Println(value);
+  }
+
+  pmDag.removeEdge(vertex1, vertex3)
   for _, value := range pmDag.vertices {
     fmt.Println(value);
   }
