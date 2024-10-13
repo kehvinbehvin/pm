@@ -11,7 +11,7 @@ func TestAddWord(t *testing.T) {
     trie.addWord("cat")
 
     node := trie.walkWord("cat")
-    if node == nil || !node.isEnd {
+    if node == nil || !node.IsEnd {
         t.Errorf("Expected to find the word 'cat' in the Trie, but it was not found")
     }
 }
@@ -23,12 +23,12 @@ func TestAddMultipleWords(t *testing.T) {
     trie.addWord("car")
 
     nodeCat := trie.walkWord("cat")
-    if nodeCat == nil || !nodeCat.isEnd {
+    if nodeCat == nil || !nodeCat.IsEnd {
         t.Errorf("Expected to find the word 'cat' in the Trie, but it was not found")
     }
 
     nodeCar := trie.walkWord("car")
-    if nodeCar == nil || !nodeCar.isEnd {
+    if nodeCar == nil || !nodeCar.IsEnd {
         t.Errorf("Expected to find the word 'car' in the Trie, but it was not found")
     }
 }
@@ -40,7 +40,7 @@ func TestAddDuplicateWord(t *testing.T) {
     trie.addWord("dog") // Duplicate addition
 
     node := trie.walkWord("dog")
-    if node == nil || !node.isEnd {
+    if node == nil || !node.IsEnd {
         t.Errorf("Expected to find the word 'dog' in the Trie, but it was not found")
     }
 }
@@ -52,7 +52,7 @@ func TestRemoveWord(t *testing.T) {
     trie.removeWord("cat")
 
     node := trie.walkWord("cat")
-    if node != nil && node.isEnd {
+    if node != nil && node.IsEnd {
         t.Errorf("Expected 'cat' to be removed from the Trie, but it still exists")
     }
 }
@@ -64,7 +64,7 @@ func TestRemoveNonExistentWord(t *testing.T) {
     trie.removeWord("dog") // Try removing a non-existent word
 
     node := trie.walkWord("cat")
-    if node == nil || !node.isEnd {
+    if node == nil || !node.IsEnd {
         t.Errorf("Expected the word 'cat' to still exist, but it was removed")
     }
 }
@@ -77,12 +77,12 @@ func TestRemovePrefixWord(t *testing.T) {
     trie.removeWord("cat") // "car" should still exist
 
     nodeCar := trie.walkWord("car")
-    if nodeCar == nil || !nodeCar.isEnd {
+    if nodeCar == nil || !nodeCar.IsEnd {
         t.Errorf("Expected the word 'car' to still exist, but it was removed")
     }
 
     nodeCat := trie.walkWord("cat")
-    if nodeCat != nil && nodeCat.isEnd {
+    if nodeCat != nil && nodeCat.IsEnd {
         t.Errorf("Expected 'cat' to be removed from the Trie, but it still exists")
     }
 }
@@ -120,7 +120,7 @@ func TestWalkWord(t *testing.T) {
     trie.addWord("bat")
 
     node := trie.walkWord("bat")
-    if node == nil || !node.isEnd {
+    if node == nil || !node.IsEnd {
         t.Errorf("Expected to walk to the word 'bat', but it was not found")
     }
 }
@@ -136,20 +136,20 @@ func TestWalkNonExistentWord(t *testing.T) {
     }
 }
 
-// Test if the node is barren (no children, not an end of word)
+// Test if the node is barren (no Children, not an end of word)
 func TestIsBarren(t *testing.T) {
     trie := NewTrie()
-    node := &TrieNode{children: make(map[rune]*TrieNode), isEnd: false}
+    node := &TrieNode{Children: make(map[rune]*TrieNode), IsEnd: false}
 
     if !trie.isBarren(node) {
         t.Errorf("Expected node to be barren, but it was not")
     }
 }
 
-// Test if a node is not barren (has children or is the end of a word)
+// Test if a node is not barren (has Children or is the end of a word)
 func TestIsNotBarren(t *testing.T) {
     trie := NewTrie()
-    node := &TrieNode{children: make(map[rune]*TrieNode), isEnd: true}
+    node := &TrieNode{Children: make(map[rune]*TrieNode), IsEnd: true}
 
     if trie.isBarren(node) {
         t.Errorf("Expected node to not be barren, but it was barren")

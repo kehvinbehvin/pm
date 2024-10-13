@@ -3,46 +3,46 @@ package main
 import "fmt"
 
 type TrieNode struct {
-  character rune
-  isEnd bool
-  children map[rune]*TrieNode
-  parents []*TrieNode
+  Character rune
+  IsEnd bool
+  Children map[rune]*TrieNode
+  Parents []*TrieNode
 }
 
 type Trie struct {
-  root *TrieNode
+  Root *TrieNode
 }
 
-func newTrie() *Trie {
+func NewTrie() *Trie {
   return &Trie{
-    root: &TrieNode{
-      character: 0,
-      isEnd: false,
-      children: make(map[rune]*TrieNode),
-      parents: []*TrieNode{},
+    Root: &TrieNode{
+      Character: 0,
+      IsEnd: false,
+      Children: make(map[rune]*TrieNode),
+      Parents: []*TrieNode{},
     },
   }
 }
 
 func (t *Trie) addWord(word string) {
-  currentNode := t.root
+  currentNode := t.Root
 
   for _ , charac := range word {
-    if _ , exist := currentNode.children[charac]; !exist {
-      currentNode.children[charac] = &TrieNode{
-        character: charac,
-        isEnd: false,
-        children: make(map[rune]*TrieNode),
+    if _ , exist := currentNode.Children[charac]; !exist {
+      currentNode.Children[charac] = &TrieNode{
+        Character: charac,
+        IsEnd: false,
+        Children: make(map[rune]*TrieNode),
       }
 
-      childNode := currentNode.children[charac]
-      _ = append(childNode.parents, currentNode)
+      childNode := currentNode.Children[charac]
+      _ = append(childNode.Parents, currentNode)
     }
 
-    currentNode = currentNode.children[charac]
+    currentNode = currentNode.Children[charac]
   }
   
-  currentNode.isEnd = true
+  currentNode.IsEnd = true
 }
 
 func (t *Trie) removeWord(word string) {
@@ -52,43 +52,43 @@ func (t *Trie) removeWord(word string) {
     return
   }
 
-  if baseTrie.isEnd {
-    baseTrie.isEnd = false
+  if baseTrie.IsEnd {
+    baseTrie.IsEnd = false
   } else {
     fmt.Println("Word does not exist")
     return
   }
 
-  if len(baseTrie.children) != 0 {
+  if len(baseTrie.Children) != 0 {
     return
   }
 
-  for _, parent := range baseTrie.parents {
+  for _, parent := range baseTrie.Parents {
     t.removeParents(parent, baseTrie)
   }
 }
 
 func (t *Trie) removeParents(parent *TrieNode, child *TrieNode) {
-  _, childExist := parent.children[child.character]
+  _, childExist := parent.Children[child.Character]
   if childExist {
-    delete(parent.children, child.character)
+    delete(parent.Children, child.Character)
   }
 
-  if (parent.isEnd) {
+  if (parent.IsEnd) {
     return
   }
 
-  if len(parent.children) > 0 {
+  if len(parent.Children) > 0 {
     return
   }
 
-  for _, grandParent := range parent.parents {
+  for _, grandParent := range parent.Parents {
     t.removeParents(grandParent, parent)
   }
 }
 
 func (t *Trie) isBarren(node *TrieNode) bool {
-  return (len(node.children) == 0) && !node.isEnd
+  return (len(node.Children) == 0) && !node.IsEnd
 }
 
 // TODO: Remove the duplicated code
@@ -101,15 +101,15 @@ func (t *Trie) loadWordsFromPrefix(prefix string) []string {
     return words
   }
 
-  if baseTrie.isEnd {
+  if baseTrie.IsEnd {
     words = append(words, prefix)
   }
 
-  if len(baseTrie.children) == 0 {
+  if len(baseTrie.Children) == 0 {
     return words
   }
 
-  for _, child := range baseTrie.children {
+  for _, child := range baseTrie.Children {
     buildWordsFromChildren(prefix, child, &words);
   }
 
@@ -117,28 +117,28 @@ func (t *Trie) loadWordsFromPrefix(prefix string) []string {
 }
 
 func buildWordsFromChildren(base string, node *TrieNode, words *[]string) {
-  newBase := base + string(node.character)
-  if node.isEnd {
+  newBase := base + string(node.Character)
+  if node.IsEnd {
     *words = append(*words, newBase)
   }
 
-  if len(node.children) == 0 {
+  if len(node.Children) == 0 {
     return
   }
   
-  for _ , child := range node.children {
+  for _ , child := range node.Children {
     buildWordsFromChildren(newBase, child, words)
   }
 }
 
 func (t *Trie) walkWord(word string) *TrieNode {
-  currentNode := t.root
+  currentNode := t.Root
   for _, charac := range word {
-    if _ , characExist := currentNode.children[charac]; !characExist {
+    if _ , characExist := currentNode.Children[charac]; !characExist {
       return nil
     }
 
-    currentNode = currentNode.children[charac]
+    currentNode = currentNode.Children[charac]
   }
 
   return currentNode
