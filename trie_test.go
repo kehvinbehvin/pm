@@ -3,6 +3,7 @@ package main
 import (
 	"reflect"
 	"testing"
+	"os"
 )
 
 // Test adding a word to the Trie
@@ -153,5 +154,53 @@ func TestIsNotBarren(t *testing.T) {
 
 	if trie.isBarren(node) {
 		t.Errorf("Expected node to not be barren, but it was barren")
+	}
+}
+
+// Test saving a Trie to disk
+func TestSaveTrie(t *testing.T) {
+	trie := NewTrie()
+	trie.addWord("cat")
+	trie.addWord("dog")
+
+	// Save the Trie to disk
+	Save(trie, "test_trie.gob")
+
+	// Check if the file was created
+	if _, err := os.Stat("./.pm/trie/test_trie.gob"); os.IsNotExist(err) {
+		t.Errorf("Expected the file 'test_trie.gob' to exist, but it does not")
+	}
+}
+
+// Test loading a Trie from disk
+func TestLoadTrie(t *testing.T) {
+	trie := NewTrie()
+	trie.addWord("cat")
+	trie.addWord("dog")
+
+	// Save the Trie first
+	Save(trie, "test_trie.gob")
+
+	// Load the Trie from the file
+	loadedTrie := Load("test_trie.gob")
+	if loadedTrie == nil {
+		t.Errorf("Failed to load the Trie from the file")
+	}
+
+	// Check that the loaded Trie contains the words
+	if !loadedTrie.walkWord("cat").IsEnd {
+		t.Errorf("Expected the word 'cat' to be in the loaded Trie, but it was not found")
+	}
+
+	if !loadedTrie.walkWord("dog").IsEnd {
+		t.Errorf("Expected the word 'dog' to be in the loaded Trie, but it was not found")
+	}
+}
+
+// Clean up test files after running tests
+func TestCleanupFiles(t *testing.T) {
+	err := os.Remove("./.pm/trie/test_trie.gob")
+	if err != nil {
+		t.Errorf("Error while cleaning up test file: %v", err)
 	}
 }
