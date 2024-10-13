@@ -20,7 +20,7 @@ func TestCreateVertex(t *testing.T) {
 		t.Errorf("Expected vertex ID to be 'A', but got '%s'", v.ID)
 	}
 	if len(v.Children) != 0 {
-		t.Errorf("Expected vertex to have no children or parents")
+		t.Errorf("Expected vertex to have no children")
 	}
 }
 

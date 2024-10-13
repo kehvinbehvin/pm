@@ -9,14 +9,12 @@ import (
 type Vertex struct {
 	ID       string
 	Children map[string]*Vertex
-	parents  map[string]*Vertex
 }
 
 func newVertex(id string) *Vertex {
 	return &Vertex{
 		ID:       id,
 		Children: make(map[string]*Vertex),
-		parents:  make(map[string]*Vertex),
 	}
 }
 
@@ -102,10 +100,6 @@ func (d Dag) removeVertex(out *Vertex) {
 	if !exists {
 		fmt.Println("Deleting non existent vertex")
 		return
-	}
-
-	for _, value := range out.parents {
-		d.removeEdge(value, out)
 	}
 
 	for _, value := range out.Children {
