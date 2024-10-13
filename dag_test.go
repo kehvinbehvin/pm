@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"os"
 )
 
 // Test creating a new DAG
@@ -15,10 +16,10 @@ func TestCreateDag(t *testing.T) {
 // Test creating a new Vertex
 func TestCreateVertex(t *testing.T) {
 	v := newVertex("A")
-	if v.id != "A" {
-		t.Errorf("Expected vertex ID to be 'A', but got '%s'", v.id)
+	if v.ID != "A" {
+		t.Errorf("Expected vertex ID to be 'A', but got '%s'", v.ID)
 	}
-	if len(v.children) != 0 || len(v.parents) != 0 {
+	if len(v.Children) != 0 {
 		t.Errorf("Expected vertex to have no children or parents")
 	}
 }
@@ -29,7 +30,7 @@ func TestAddVertex(t *testing.T) {
 	v := newVertex("A")
 	dag.addVertex(v)
 
-	if _, exists := dag.vertices["A"]; !exists {
+	if _, exists := dag.Vertices["A"]; !exists {
 		t.Errorf("Expected vertex 'A' to be added to the DAG")
 	}
 }
@@ -41,8 +42,8 @@ func TestAddSameVertexTwice(t *testing.T) {
 	dag.addVertex(v)
 	dag.addVertex(v) // Attempting to add the same vertex
 
-	if len(dag.vertices) != 1 {
-		t.Errorf("Expected only one vertex in the DAG, but found %d", len(dag.vertices))
+	if len(dag.Vertices) != 1 {
+		t.Errorf("Expected only one vertex in the DAG, but found %d", len(dag.Vertices))
 	}
 }
 
@@ -54,7 +55,7 @@ func TestRemoveVertex(t *testing.T) {
 
 	dag.removeVertex(v)
 
-	if _, exists := dag.vertices["A"]; exists {
+	if _, exists := dag.Vertices["A"]; exists {
 		t.Errorf("Expected vertex 'A' to be removed from the DAG")
 	}
 }
@@ -65,8 +66,8 @@ func TestRemoveNonExistentVertex(t *testing.T) {
 	v := newVertex("A")
 	dag.removeVertex(v)
 
-	if len(dag.vertices) != 0 {
-		t.Errorf("Expected DAG to have no vertices, but found %d", len(dag.vertices))
+	if len(dag.Vertices) != 0 {
+		t.Errorf("Expected DAG to have no vertices, but found %d", len(dag.Vertices))
 	}
 }
 
@@ -81,12 +82,8 @@ func TestAddEdge(t *testing.T) {
 
 	dag.addEdge(v1, v2)
 
-	if _, exists := v1.children[v2.id]; !exists {
+	if _, exists := v1.Children[v2.ID]; !exists {
 		t.Errorf("Expected vertex 'B' to be a child of vertex 'A'")
-	}
-
-	if _, exists := v2.parents[v1.id]; !exists {
-		t.Errorf("Expected vertex 'A' to be a parent of vertex 'B'")
 	}
 }
 
@@ -104,7 +101,7 @@ func TestAddEdgeWithCycle(t *testing.T) {
 	// Try to add an edge from v2 to v1, which would create a cycle
 	dag.addEdge(v2, v1)
 
-	if _, exists := v2.children[v1.id]; exists {
+	if _, exists := v2.Children[v1.ID]; exists {
 		t.Errorf("Expected DAG to prevent cycle when adding an edge from 'B' to 'A'")
 	}
 }
@@ -120,7 +117,7 @@ func TestAddEdgeForNonExistentVertex(t *testing.T) {
 	// Try to add an edge where vertex B doesn't exist in the DAG
 	dag.addEdge(v1, v2)
 
-	if _, exists := v1.children[v2.id]; exists {
+	if _, exists := v1.Children[v2.ID]; exists {
 		t.Errorf("Expected no edge to be added because vertex 'B' does not exist")
 	}
 }
@@ -137,12 +134,8 @@ func TestRemoveEdge(t *testing.T) {
 
 	dag.removeEdge(v1, v2)
 
-	if _, exists := v1.children[v2.id]; exists {
+	if _, exists := v1.Children[v2.ID]; exists {
 		t.Errorf("Expected edge between 'A' and 'B' to be removed")
-	}
-
-	if _, exists := v2.parents[v1.id]; exists {
-		t.Errorf("Expected edge between 'B' and 'A' to be removed")
 	}
 }
 
@@ -158,7 +151,7 @@ func TestRemoveNonExistentEdge(t *testing.T) {
 	// Try to remove an edge that does not exist
 	dag.removeEdge(v1, v2)
 
-	if len(v1.children) != 0 || len(v2.parents) != 0 {
+	if len(v1.Children) != 0 {
 		t.Errorf("Expected no edges to exist between 'A' and 'B'")
 	}
 }
@@ -200,5 +193,76 @@ func TestDfsNoPath(t *testing.T) {
 
 	if found {
 		t.Errorf("Expected DFS not to find a path from 'A' to 'C'")
+	}
+}
+
+// Test saving a DAG to disk
+func TestSaveDag(t *testing.T) {
+	dag := newDag()
+	v1 := newVertex("A")
+	v2 := newVertex("B")
+
+	dag.addVertex(v1)
+	dag.addVertex(v2)
+	dag.addEdge(v1, v2)
+
+	// Save the DAG to disk
+	SaveDag(dag, "test_dag.gob")
+
+	// Check if the file was created
+	if _, err := os.Stat("./.pm/dag/test_dag.gob"); os.IsNotExist(err) {
+		t.Errorf("Expected the file 'test_dag.gob' to exist, but it does not")
+	}
+
+	err := os.Remove("./.pm/dag/test_dag.gob")
+	if err != nil {
+		t.Errorf("Error while cleaning up test file: %v", err)
+	}
+}
+
+// Test loading a DAG from disk
+func TestLoadDag(t *testing.T) {
+	dag := newDag()
+	v1 := newVertex("A")
+	v2 := newVertex("B")
+	v3 := newVertex("C")
+
+	dag.addVertex(v1)
+	dag.addVertex(v2)
+	dag.addVertex(v3)
+	dag.addEdge(v1, v2)
+	dag.addEdge(v2, v3)
+
+	// Save the DAG first
+	SaveDag(dag, "test_dag.gob")
+
+	// Load the DAG from the file
+	loadedDag := LoadDag("test_dag.gob")
+	if loadedDag == nil {
+		t.Errorf("Failed to load the DAG from the file")
+	}
+
+	// Check that the loaded DAG contains the vertices and edges
+	if _, exists := loadedDag.Vertices["A"]; !exists {
+		t.Errorf("Expected vertex 'A' to exist in the loaded DAG, but it was not found")
+	}
+	if _, exists := loadedDag.Vertices["B"]; !exists {
+		t.Errorf("Expected vertex 'B' to exist in the loaded DAG, but it was not found")
+	}
+	if _, exists := loadedDag.Vertices["C"]; !exists {
+		t.Errorf("Expected vertex 'C' to exist in the loaded DAG, but it was not found")
+	}
+
+	// Check that the loaded DAG contains the edges
+	if _, exists := loadedDag.Vertices["A"].Children["B"]; !exists {
+		t.Errorf("Expected vertex 'B' to be a child of vertex 'A' in the loaded DAG")
+	}
+	if _, exists := loadedDag.Vertices["B"].Children["C"]; !exists {
+		t.Errorf("Expected vertex 'C' to be a child of vertex 'B' in the loaded DAG")
+	}
+
+	err := os.Remove("./.pm/dag/test_dag.gob")
+	if err != nil {
+		t.Errorf("Error while cleaning up test file: %v", err)
 	}
 }

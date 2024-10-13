@@ -1,39 +1,40 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"encoding/gob"
+	"os"
+)
 
 type Vertex struct {
-	id       string
-	children map[string]*Vertex
+	ID       string
+	Children map[string]*Vertex
 	parents  map[string]*Vertex
 }
 
 func newVertex(id string) *Vertex {
 	return &Vertex{
-		id:       id,
-		children: make(map[string]*Vertex),
+		ID:       id,
+		Children: make(map[string]*Vertex),
 		parents:  make(map[string]*Vertex),
 	}
 }
 
 func (v *Vertex) String() string {
-	var childrenIDs, parentsIDs []string
-	for childID := range v.children {
+	var childrenIDs []string
+	for childID := range v.Children {
 		childrenIDs = append(childrenIDs, childID)
 	}
-	for parentID := range v.parents {
-		parentsIDs = append(parentsIDs, parentID)
-	}
 
-	return fmt.Sprintf("Vertex(id: %s, children: %v, parents: %v)", v.id, childrenIDs, parentsIDs)
+	return fmt.Sprintf("Vertex(id: %s, children: %v)", v.ID, childrenIDs)
 }
 
 func dfs(from *Vertex, to *Vertex) bool {
-	if from.id == to.id {
+	if from.ID == to.ID {
 		return true
 	}
 
-	for _, value := range to.children {
+	for _, value := range to.Children {
 		if dfs(from, value) {
 			return true
 		}
@@ -43,33 +44,27 @@ func dfs(from *Vertex, to *Vertex) bool {
 }
 
 type Dag struct {
-	vertices map[string]*Vertex
+	Vertices map[string]*Vertex
 }
 
 func newDag() *Dag {
 	return &Dag{
-		vertices: make(map[string]*Vertex),
+		Vertices: make(map[string]*Vertex),
 	}
 }
 
 func (d Dag) addEdge(from *Vertex, to *Vertex) {
-	parent, hasParent := d.vertices[from.id]
-	child, hasChild := d.vertices[to.id]
+	parent, hasParent := d.Vertices[from.ID]
+	_ , hasChild := d.Vertices[to.ID]
 
 	if !hasParent || !hasChild {
 		fmt.Println("From or to Vertex does not exist")
 		return
 	}
 
-	_, hasChildEdge := parent.children[to.id]
+	_, hasChildEdge := parent.Children[to.ID]
 	if hasChildEdge {
 		fmt.Println("Child Edge already exist")
-		return
-	}
-
-	_, hasParentEdge := child.parents[from.id]
-	if hasParentEdge {
-		fmt.Println("Parent Edge already exist")
 		return
 	}
 
@@ -79,39 +74,31 @@ func (d Dag) addEdge(from *Vertex, to *Vertex) {
 		return
 	}
 
-	parent.children[to.id] = to
-	child.parents[from.id] = from
+	from.Children[to.ID] = to
 }
 
 func (d Dag) removeEdge(from *Vertex, to *Vertex) {
-	_, hasToEdge := from.children[to.id]
+	_, hasToEdge := from.Children[to.ID]
 	if !hasToEdge {
 		fmt.Println("Vertex does not exist")
 		return
 	}
 
-	_, hasFromEdge := to.parents[from.id]
-	if !hasFromEdge {
-		fmt.Println("Vertex does not exist")
-		return
-	}
-
-	delete(from.children, to.id)
-	delete(to.parents, from.id)
+	delete(from.Children, to.ID)
 }
 
 func (d Dag) addVertex(in *Vertex) {
-	_, exists := d.vertices[in.id]
+	_, exists := d.Vertices[in.ID]
 	if exists {
 		fmt.Println("Vertex already exists")
 		return
 	}
 
-	d.vertices[in.id] = in
+	d.Vertices[in.ID] = in
 }
 
 func (d Dag) removeVertex(out *Vertex) {
-	_, exists := d.vertices[out.id]
+	_, exists := d.Vertices[out.ID]
 	if !exists {
 		fmt.Println("Deleting non existent vertex")
 		return
@@ -121,9 +108,48 @@ func (d Dag) removeVertex(out *Vertex) {
 		d.removeEdge(value, out)
 	}
 
-	for _, value := range out.children {
+	for _, value := range out.Children {
 		d.removeEdge(out, value)
 	}
 
-	delete(d.vertices, out.id)
+	delete(d.Vertices, out.ID)
+}
+
+func SaveDag(dagToSave *Dag, fileName string) {
+  file, err := os.Create("./.pm/dag/" + fileName);
+  if err != nil {
+    fmt.Printf(err.Error())
+    fmt.Println("Error creating file")
+    return
+  }
+  defer file.Close()
+
+  encoder := gob.NewEncoder(file)
+  encodingErr := encoder.Encode(dagToSave)
+  if encodingErr != nil {
+	fmt.Printf(encodingErr.Error())
+    fmt.Println("Error encoding dag")
+    return
+  }
+}
+
+func LoadDag(fileName string) *Dag {
+  file, fileErr := os.Open("./.pm/dag/" + fileName)
+
+  if fileErr != nil {
+    fmt.Println("Error opening binary file")
+    return nil
+  }
+  defer file.Close()
+
+  decoder := gob.NewDecoder(file)
+
+  var loadedDag *Dag
+  decodingErr := decoder.Decode(&loadedDag)
+  if decodingErr != nil {
+    fmt.Println("Error decoding dag")
+    return nil
+  }
+
+  return loadedDag
 }
