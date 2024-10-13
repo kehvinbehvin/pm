@@ -1,92 +1,92 @@
 package cmd
 
 import (
-    "fmt"
-    "crypto/sha1"
-    "os"
-    "io"
-    "path/filepath"
-    "bytes"
-    "compress/zlib"
+	"bytes"
+	"compress/zlib"
+	"crypto/sha1"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
 )
 
 var addCmd = &cobra.Command{
-    Use:   "add",
-    Short: "Initialize a new .pm project",
-    Run: func(cmd *cobra.Command, args []string) {
-        createEpic("Loyalty", "hello");
-    },
+	Use:   "add",
+	Short: "Initialize a new .pm project",
+	Run: func(cmd *cobra.Command, args []string) {
+		createEpic("Loyalty", "hello")
+	},
 }
 
 func init() {
-    rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(addCmd)
 }
 
 func createEpic(name string, content string) {
-    storeFileName(name);
+	storeFileName(name)
 
-    hash := sha1.Sum([]byte(content))
-    hashStr := fmt.Sprintf("%x", hash[:])
-    blobDir := ".pm/blobs/"
-    subDir := blobDir + hashStr[:2]
-    err := os.MkdirAll(subDir, os.ModePerm)
-    if err != nil {
-    	fmt.Println("error 1")
-    }
+	hash := sha1.Sum([]byte(content))
+	hashStr := fmt.Sprintf("%x", hash[:])
+	blobDir := ".pm/blobs/"
+	subDir := blobDir + hashStr[:2]
+	err := os.MkdirAll(subDir, os.ModePerm)
+	if err != nil {
+		fmt.Println("error 1")
+	}
 
-    blobPath := filepath.Join(subDir, hashStr)
+	blobPath := filepath.Join(subDir, hashStr)
 
-    compressContent, err := compressContent(content);
-    if err != nil {
-      fmt.Println("error 2")
-    }
-    err = os.WriteFile(blobPath, compressContent, 0644)
-    if err != nil {
-    	fmt.Println("error 3")
-    }
+	compressContent, err := compressContent(content)
+	if err != nil {
+		fmt.Println("error 2")
+	}
+	err = os.WriteFile(blobPath, compressContent, 0644)
+	if err != nil {
+		fmt.Println("error 3")
+	}
 
-    decompressed, err := decompressContent(compressContent)
-    if err != nil {
-    	fmt.Println("Error decompressing string:", err)
-    	return
-    }
-    fmt.Println("Decompressed string:", decompressed)
+	decompressed, err := decompressContent(compressContent)
+	if err != nil {
+		fmt.Println("Error decompressing string:", err)
+		return
+	}
+	fmt.Println("Decompressed string:", decompressed)
 }
 
 func compressContent(content string) ([]byte, error) {
-    var b bytes.Buffer
+	var b bytes.Buffer
 
-    w := zlib.NewWriter(&b)
-    _, err := w.Write([]byte(content))
-  	if err != nil {
-  		return nil, err
-  	}
+	w := zlib.NewWriter(&b)
+	_, err := w.Write([]byte(content))
+	if err != nil {
+		return nil, err
+	}
 
-  	err = w.Close()
-    if err != nil {
-   		return nil, err
-    }
+	err = w.Close()
+	if err != nil {
+		return nil, err
+	}
 
-    return b.Bytes(), nil
+	return b.Bytes(), nil
 }
 
 func decompressContent(content []byte) (string, error) {
-    b := bytes.NewReader(content)
-  	r, err := zlib.NewReader(b)
-  	if err != nil {
-  		return "", err
-  	}
-  	defer r.Close()
+	b := bytes.NewReader(content)
+	r, err := zlib.NewReader(b)
+	if err != nil {
+		return "", err
+	}
+	defer r.Close()
 
-  	var out bytes.Buffer
-  	_, err = io.Copy(&out, r)
-  	if err != nil {
-  		return "", err
-  	}
+	var out bytes.Buffer
+	_, err = io.Copy(&out, r)
+	if err != nil {
+		return "", err
+	}
 
-  	return out.String(), nil
+	return out.String(), nil
 }
 
 func storeFileName(filename string) error {

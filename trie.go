@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+  "fmt"
+  "os"
+  "encoding/gob"
+)
 
 type TrieNode struct {
   Character rune
@@ -142,4 +146,42 @@ func (t *Trie) walkWord(word string) *TrieNode {
   }
 
   return currentNode
+}
+
+func Save(trieToSave *Trie, fileName string) {
+  file, err := os.Create("./.pm/trie/" + fileName);
+  if err != nil {
+    fmt.Printf(err.Error())
+    fmt.Println("Error creating file")
+    return
+  }
+  defer file.Close()
+
+  encoder := gob.NewEncoder(file)
+  encodingErr := encoder.Encode(trieToSave)
+  if encodingErr != nil {
+    fmt.Println("Error encoding trie")
+    return
+  }
+}
+
+func Load(fileName string) *Trie {
+  file, fileErr := os.Open("./.pm/trie/" + fileName)
+    
+  if fileErr != nil {
+    fmt.Println("Error opening binary file")
+    return nil
+  }
+  defer file.Close()
+
+  decoder := gob.NewDecoder(file)
+
+  var loadedTrie Trie
+  decodingErr := decoder.Decode(&loadedTrie)
+  if decodingErr != nil {
+    fmt.Println("Error decoding trie")
+    return nil
+  }
+
+  return &loadedTrie
 }
