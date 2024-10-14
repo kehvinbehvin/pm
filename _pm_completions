@@ -1,0 +1,37 @@
+#compdef pm
+ 35
+ 34 _pm() {
+ 33       local state
+ 32
+ 31   _arguments \
+ 30     '*: :_default' \
+ 29     '-e+: :->e_option' \
+ 28     '-s+: :->s_option' \
+ 27     '-t+: :->t_option'
+ 26
+ 25   case $state in
+ 24     e_option)
+ 23       # Dynamically fetch the list of options from the Go binary
+ 22       local -a dynamic_options
+ 21       # Capture the output of the Go binary and store it in an array
+ 20       dynamic_options=("${(@f)$(pm epics "$words[CURRENT]")}")
+ 19
+ 18       # Use compadd to add these dynamic options to the completion
+ 17       compadd -M 'r:|=*' -- "${dynamic_options[@]}"
+ 16       ;;
+ 15     s_option)
+ 14       # Dynamically fetch the list of options for -s
+ 13       local -a dynamic_options_s
+ 12       dynamic_options_s=("${(@f)$(pm story "$words[CURRENT]")}")
+ 11       compadd -M 'r:|=*' -- "${dynamic_options_s[@]}"
+ 10       ;;
+  9     t_option)
+  8       # Dynamically fetch the list of options for -t
+  7       local -a dynamic_options_t
+  6       dynamic_options_t=("${(@f)$(pm task "$words[CURRENT]")}")
+  5       compadd -M 'r:|=*' -- "${dynamic_options_t[@]}"
+  4       ;;
+  3   esac
+  2 }
+  1
+37  compdef _pm pm
