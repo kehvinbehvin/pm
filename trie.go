@@ -1,9 +1,10 @@
 package main
 
 import (
-  "fmt"
-  "os"
-  "encoding/gob"
+	"encoding/gob"
+	"errors"
+	"fmt"
+	"os"
 )
 
 type TrieNode struct {
@@ -28,8 +29,12 @@ func NewTrie() *Trie {
   }
 }
 
-func (t *Trie) addWord(word string) {
+func (t *Trie) addWord(word string) (error) {
   currentNode := t.Root
+
+  if (len(word) == 0) {
+    return errors.New("Empty word not allowed")
+  }
 
   for _ , charac := range word {
     if _ , exist := currentNode.Children[charac]; !exist {
@@ -47,6 +52,8 @@ func (t *Trie) addWord(word string) {
   }
   
   currentNode.IsEnd = true
+
+  return nil
 }
 
 func (t *Trie) removeWord(word string) {
@@ -169,6 +176,7 @@ func Load(fileName string) *Trie {
   file, fileErr := os.Open("./.pm/trie/" + fileName)
     
   if fileErr != nil {
+    fmt.Printf(fileErr.Error());
     fmt.Println("Error opening binary file")
     return nil
   }

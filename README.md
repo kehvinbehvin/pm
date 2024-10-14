@@ -64,3 +64,11 @@ like in a git-style.
 - pm can push changes to remote via ssh
 - pm can deal with conflicts
 
+## Adding shell completion
+- Zsh
+  - Add 'autoload -U compinit; compinit' to zshrc
+  - add completion file in $fpath
+  - Add 'source <path to completion function>'
+    - source /Users/kevin/.oh-my-zsh/completions/_pm
+  - source zshrc
+

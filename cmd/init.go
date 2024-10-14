@@ -14,7 +14,6 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			fmt.Println("pm failed")
 		}
-		fmt.Println("pm created")
 	},
 }
 
