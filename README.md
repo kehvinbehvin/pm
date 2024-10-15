@@ -72,3 +72,6 @@ like in a git-style.
     - source /Users/kevin/.oh-my-zsh/completions/_pm
   - source zshrc
 
+## Building
+- go build .
+- sudo mv ./pm /usr/local/bin/pm
