@@ -7,19 +7,58 @@ import (
   "github.com/spf13/cobra"
 )
 
-  var rootCmd = &cobra.Command{
-    Use:   "pm",
-    Short: "pm is a very fast static site generator",
-    Long: `A Fast and Flexible Static Site Generator built with
-                  love by spf13 and friends in Go.
-                  Complete documentation is available at https://gohugo.io/documentation/`,
-    Run: func(cmd *cobra.Command, args []string) {
-      fmt.Println("Root Command")
-    },
-  }
+var rootCmd = &cobra.Command{
+  Use:   "pm",
+  Short: "pm is your best friend",
+  Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("Root Command")
+  },
+}
 
 func init() {
   var eValues, sValues, tValues []string
+
+  var initCmd = &cobra.Command{
+    	Use:   "init",
+    	Short: "Initialize a new .pm project",
+    	Run: func(cmd *cobra.Command, args []string) {
+        err := os.Mkdir("./.pm", os.ModePerm)
+        if err != nil && !os.IsExist(err) {
+          fmt.Printf("Error creating pm directory: %v\n", err)
+        }
+
+        err = os.Mkdir("./.pm/blobs", os.ModePerm)
+        if err != nil && !os.IsExist(err) {
+          fmt.Printf("Error creating blobs directory: %v\n", err)
+        }
+
+        err = os.Mkdir("./.pm/trie", os.ModePerm)
+        if err != nil && !os.IsExist(err) {
+          fmt.Printf("Error creating trie directory: %v\n", err)
+        }
+
+        err = os.Mkdir("./.pm/trie/epic", os.ModePerm)
+        if err != nil && !os.IsExist(err) {
+          fmt.Printf("Error creating trie directory: %v\n", err)
+        }
+
+        err = os.Mkdir("./.pm/trie/story", os.ModePerm)
+        if err != nil && !os.IsExist(err) {
+          fmt.Printf("Error creating trie directory: %v\n", err)
+        }
+
+        err = os.Mkdir("./.pm/trie/task", os.ModePerm)
+        if err != nil && !os.IsExist(err) {
+          fmt.Printf("Error creating trie directory: %v\n", err)
+        }
+
+
+        err = os.Mkdir("./.pm/dag", os.ModePerm)
+        if err != nil && !os.IsExist(err) {
+          fmt.Printf("Error creating dag directory: %v\n", err)
+        }
+    	},
+    }
 
   var addCmd = &cobra.Command{
   	Use:   "add",
@@ -39,7 +78,7 @@ func init() {
 
   var epicCmd = &cobra.Command{
   	Use:   "epics",
-  	Short: "Initialize a new .pm project",
+  	Short: "Epic suggestions",
   	Run: func(cmd *cobra.Command, args []string) {
   	   	toComplete := args[0];
   	   	epicTrie := Load("epic");
@@ -50,7 +89,7 @@ func init() {
 
   var storyCmd = &cobra.Command{
   	Use:   "story",
-  	Short: "Initialize a new .pm project",
+  	Short: "Story suggestions",
   	Run: func(cmd *cobra.Command, args []string) {
   	   	toComplete := args[0];
   	   	storyTrie := Load("story");
@@ -61,7 +100,7 @@ func init() {
 
   var taskCmd = &cobra.Command{
   	Use:   "task",
-  	Short: "Initialize a new .pm project",
+  	Short: "Task suggestions",
   	Run: func(cmd *cobra.Command, args []string) {
   	   	toComplete := args[0];
   	   	taskTrie := Load("task");
@@ -70,6 +109,7 @@ func init() {
   	},
   }
 
+  rootCmd.AddCommand(initCmd)
   rootCmd.AddCommand(addCmd)
   rootCmd.AddCommand(epicCmd)
   rootCmd.AddCommand(storyCmd)
