@@ -343,11 +343,3 @@ func TestSaveAndLoadTrie(t *testing.T) {
 		t.Errorf("Expected the hash for 'dog' in the loaded Trie to be %x, but got %x", hashDog, loadedTrie.walkWord("dog").Value)
 	}
 }
-
-// Clean up test files after running tests
-func TestCleanupFiles(t *testing.T) {
-	err := os.Remove("./.pm/trie/test_trie.gob")
-	if err != nil {
-		t.Errorf("Error while cleaning up test file: %v", err)
-	}
-}
