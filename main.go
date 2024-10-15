@@ -2,16 +2,16 @@ package main
 
 func main() {
   epicTrie := NewTrie()
-  epicTrie.addWord("epicA")
-  epicTrie.addWord("epicB")
+  epicTrie.addFile("epicA", "This is the description of epic A")
+  epicTrie.addFile("epicB", "This is the description of epic B")
 
   storyTrie := NewTrie()
-  storyTrie.addWord("Research A")
-  storyTrie.addWord("Implement B")
+  storyTrie.addFile("Research A", "This is the description of story A")
+  storyTrie.addFile("Implement B", "This is the description of story A")
 
   taskTrie := NewTrie()
-  taskTrie.addWord("Update function B")
-  taskTrie.addWord("Remove variable A")
+  taskTrie.addFile("Update function B", "This is the description of task A")
+  taskTrie.addFile("Remove variable A", "This is the description of task A")
 
   Save(epicTrie, "epic")
   Save(storyTrie, "story")

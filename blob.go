@@ -11,12 +11,15 @@ import (
 )
 
 func commit(name string, content string, index *Trie) error {
-  blobErr := createBlob(content);
+  hash := sha1.Sum([]byte(content))
+	hashStr := fmt.Sprintf("%x", hash[:])
+
+  blobErr := createBlob(hashStr);
   if blobErr != nil {
     return blobErr;
   }
 
-  indexErr := indexName(name, index);
+  indexErr := indexName(name, hashStr, index);
   if indexErr != nil {
     return indexErr;
   }
@@ -25,17 +28,15 @@ func commit(name string, content string, index *Trie) error {
 }
 
 func createBlob(content string) (error) {
-	hash := sha1.Sum([]byte(content))
-	hashStr := fmt.Sprintf("%x", hash[:])
 	blobDir := ".pm/blobs/"
-	subDir := blobDir + hashStr[:2]
+	subDir := blobDir + content[:2]
 	err := os.MkdirAll(subDir, os.ModePerm)
 	if err != nil {
 		fmt.Println("Error creating blob file")
 		return err
 	}
 
-	blobPath := filepath.Join(subDir, hashStr)
+	blobPath := filepath.Join(subDir, content)
 
 	compressContent, err := compressContent(content)
 	if err != nil {
@@ -86,8 +87,8 @@ func decompressContent(content []byte) (string, error) {
 	return out.String(), nil
 }
 
-func indexName(fileName string, index *Trie) error {
-	indexErr := index.addWord(fileName)
+func indexName(fileName string, hashContent string, index *Trie) error {
+	indexErr := index.addFile(fileName, hashContent)
 	if indexErr != nil {
 		return indexErr
 	}

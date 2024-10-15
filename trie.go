@@ -12,6 +12,7 @@ type TrieNode struct {
   IsEnd bool
   Children map[rune]*TrieNode
   Parents []*TrieNode
+  Value string
 }
 
 type Trie struct {
@@ -25,18 +26,19 @@ func NewTrie() *Trie {
       IsEnd: false,
       Children: make(map[rune]*TrieNode),
       Parents: []*TrieNode{},
+      Value: "",
     },
   }
 }
 
-func (t *Trie) addWord(word string) (error) {
+func (t *Trie) addFile(fileName string, fileLocation string) (error) {
   currentNode := t.Root
 
-  if (len(word) == 0) {
-    return errors.New("Empty word not allowed")
+  if (len(fileName) == 0) {
+    return errors.New("Empty fileName not allowed")
   }
 
-  for _ , charac := range word {
+  for _ , charac := range fileName {
     if _ , exist := currentNode.Children[charac]; !exist {
       currentNode.Children[charac] = &TrieNode{
         Character: charac,
@@ -52,6 +54,7 @@ func (t *Trie) addWord(word string) (error) {
   }
   
   currentNode.IsEnd = true
+  currentNode.Value = fileLocation
 
   return nil
 }
@@ -153,6 +156,16 @@ func (t *Trie) walkWord(word string) *TrieNode {
   }
 
   return currentNode
+}
+
+func (t *Trie) retrieveValue(word string) (string, error) {
+  wordNode := t.walkWord(word);
+  if wordNode != nil {
+    return wordNode.Value, nil
+  }
+
+  err := errors.New("Cannot retrieve value");
+  return "", err
 }
 
 func Save(trieToSave *Trie, fileName string) {
