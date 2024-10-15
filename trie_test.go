@@ -6,6 +6,7 @@ import (
 	"os"
 	"crypto/sha1"
 	"fmt"
+	"sort"
 )
 
 // Test adding a file to the Trie
@@ -173,7 +174,9 @@ func TestLoadWordsFromPrefix(t *testing.T) {
 	trie.addFile("cart", hashCart)
 
 	words := trie.loadWordsFromPrefix("ca")
-	expected := []string{"cat", "car", "cart"}
+	expected := []string{"car", "cart", "cat"}
+	sort.Strings(expected)
+  sort.Strings(words)
 
 	if !reflect.DeepEqual(words, expected) {
 		t.Errorf("Expected words %v, but got %v", expected, words)
