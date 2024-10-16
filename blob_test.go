@@ -11,7 +11,7 @@ import (
 // Test committing a file and creating a blob
 func TestCommit(t *testing.T) {
 	// Setup
-	trie := NewTrie()
+	trie := NewTrie("test")
 	content := "This is a test content"
 	filename := "testfile.txt"
 
@@ -98,7 +98,7 @@ func TestCompressAndDecompress(t *testing.T) {
 // Test deleting a blob and removing its index from the Trie
 func TestDeleteBlob(t *testing.T) {
 	// Setup
-	trie := NewTrie()
+	trie := NewTrie("test")
 	content := "This is another test content"
 	filename := "deletefile.txt"
 
@@ -135,7 +135,7 @@ func TestDeleteBlob(t *testing.T) {
 // Test retrieving content from blob
 func TestRetrieveContent(t *testing.T) {
 	// Setup
-	trie := NewTrie()
+	trie := NewTrie("test")
 	content := "This is the content to be retrieved"
 	filename := "retrievefile.txt"
 

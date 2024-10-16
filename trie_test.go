@@ -11,7 +11,7 @@ import (
 
 // Test adding a file to the Trie
 func TestAddFile(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	content := "file content for cat"
 	hash := sha1.Sum([]byte(content)) // Generate the SHA-1 hash
 	hashStr := fmt.Sprintf("%x", hash[:])
@@ -29,7 +29,7 @@ func TestAddFile(t *testing.T) {
 
 // Test adding multiple files to the Trie
 func TestAddMultipleFiles(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentCat := "file content for cat"
 	contentCar := "file content for car"
 
@@ -62,7 +62,7 @@ func TestAddMultipleFiles(t *testing.T) {
 
 // Test retrieving a file's hash from the Trie
 func TestRetrieveFile(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	content := "file content for dog"
 	hash := sha1.Sum([]byte(content)) // Generate the SHA-1 hash
 	hashHex := fmt.Sprintf("%x", hash[:])
@@ -81,7 +81,7 @@ func TestRetrieveFile(t *testing.T) {
 
 // Test adding a duplicate file to the Trie
 func TestAddDuplicateFile(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	content := "file content for dog"
 	hash := sha1.Sum([]byte(content)) // Generate the SHA-1 hash
 	hashHex := fmt.Sprintf("%x", hash[:])
@@ -101,7 +101,7 @@ func TestAddDuplicateFile(t *testing.T) {
 
 // Test removing a file from the Trie
 func TestRemoveFile(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	content := "file content for cat"
 	hash := sha1.Sum([]byte(content)) // Generate the SHA-1 hash
 	hashHex := fmt.Sprintf("%x", hash[:])
@@ -117,7 +117,7 @@ func TestRemoveFile(t *testing.T) {
 
 // Test removing a word that doesn't exist
 func TestRemoveNonExistentWord(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
   content := "file content for cat"
   hash := sha1.Sum([]byte(content)) // Generate the SHA-1 hash
   hashHex := fmt.Sprintf("%x", hash[:])
@@ -132,7 +132,7 @@ func TestRemoveNonExistentWord(t *testing.T) {
 
 // Test removing a word that is a prefix of another word
 func TestRemovePrefixWord(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentCat := "file content for cat"
   contentCar := "file content for car"
 
@@ -158,7 +158,7 @@ func TestRemovePrefixWord(t *testing.T) {
 
 // Test retrieving words with a common prefix
 func TestLoadWordsFromPrefix(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentCat := "file content for cat"
   contentCar := "file content for car"
   contentCart := "file content for cart"
@@ -185,7 +185,7 @@ func TestLoadWordsFromPrefix(t *testing.T) {
 
 // Test retrieving words with a non-existent prefix
 func TestLoadWordsFromNonExistentPrefix(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentCat := "file content for cat"
   contentCar := "file content for car"
   contentCart := "file content for cart"
@@ -208,7 +208,7 @@ func TestLoadWordsFromNonExistentPrefix(t *testing.T) {
 
 // Test walking through a word in the Trie
 func TestWalkWord(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentBat := "file content for bat"
 	bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
   hashBat := fmt.Sprintf("%x", bat[:])
@@ -222,7 +222,7 @@ func TestWalkWord(t *testing.T) {
 
 // Test walking a non-existent word in the Trie
 func TestWalkNonExistentWord(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentBat := "file content for bat"
   	bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
     hashBat := fmt.Sprintf("%x", bat[:])
@@ -236,7 +236,7 @@ func TestWalkNonExistentWord(t *testing.T) {
 
 // Test if the node is barren (no Children, not an end of word)
 func TestIsBarren(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	node := &TrieNode{Children: make(map[rune]*TrieNode), IsEnd: false}
 
 	if !trie.isBarren(node) {
@@ -246,7 +246,7 @@ func TestIsBarren(t *testing.T) {
 
 // Test if a node is not barren (has Children or is the end of a word)
 func TestIsNotBarren(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	node := &TrieNode{Children: make(map[rune]*TrieNode), IsEnd: true}
 
 	if trie.isBarren(node) {
@@ -256,7 +256,7 @@ func TestIsNotBarren(t *testing.T) {
 
 // Test saving a Trie to disk
 func TestSaveTrie(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentBat := "file content for bat"
   bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
   hashBat := fmt.Sprintf("%x", bat[:])
@@ -267,17 +267,17 @@ func TestSaveTrie(t *testing.T) {
   trie.addFile("dog", hashDog)
 
 	// Save the Trie to disk
-	Save(trie, "test_trie.gob")
+	trie.Save()
 
 	// Check if the file was created
-	if _, err := os.Stat("./.pm/trie/test_trie.gob"); os.IsNotExist(err) {
-		t.Errorf("Expected the file 'test_trie.gob' to exist, but it does not")
+	if _, err := os.Stat("./.pm/trie/test"); os.IsNotExist(err) {
+		t.Errorf("Expected the file 'test' to exist, but it does not")
 	}
 }
 
 // Test loading a Trie from disk
 func TestLoadTrie(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentBat := "file content for bat"
   bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
   hashBat := fmt.Sprintf("%x", bat[:])
@@ -288,10 +288,10 @@ func TestLoadTrie(t *testing.T) {
   trie.addFile("dog", hashDog)
 
 	// Save the Trie first
-	Save(trie, "test_trie.gob")
+	trie.Save()
 
 	// Load the Trie from the file
-	loadedTrie := Load("test_trie.gob")
+	loadedTrie := Load("test")
 	if loadedTrie == nil {
 		t.Errorf("Failed to load the Trie from the file")
 	}
@@ -308,7 +308,7 @@ func TestLoadTrie(t *testing.T) {
 
 // Test saving a Trie to disk and loading it
 func TestSaveAndLoadTrie(t *testing.T) {
-	trie := NewTrie()
+	trie := NewTrie("test")
 	contentCat := "file content for cat"
 	contentDog := "file content for dog"
 
@@ -321,15 +321,15 @@ func TestSaveAndLoadTrie(t *testing.T) {
 	trie.addFile("dog", hashDog)
 
 	// Save the Trie to disk
-	Save(trie, "test_trie.gob")
+	trie.Save()
 
 	// Check if the file was created
-	if _, err := os.Stat("./.pm/trie/test_trie.gob"); os.IsNotExist(err) {
-		t.Errorf("Expected the file 'test_trie.gob' to exist, but it does not")
+	if _, err := os.Stat("./.pm/trie/test"); os.IsNotExist(err) {
+		t.Errorf("Expected the file 'test' to exist, but it does not")
 	}
 
 	// Load the Trie from the file
-	loadedTrie := Load("test_trie.gob")
+	loadedTrie := Load("test")
 	if loadedTrie == nil {
 		t.Errorf("Failed to load the Trie from the file")
 	}

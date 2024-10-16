@@ -49,8 +49,8 @@ func init() {
       if epicErr != nil {
         fmt.Printf("Error creating epic trie: %v\n", epicErr)
       }
-      epicTrie := NewTrie();
-      Save(epicTrie, "epic")
+      epicTrie := NewTrie("epic");
+      epicTrie.Save();
 
       defer epicFile.Close()
 
@@ -58,8 +58,8 @@ func init() {
       if storyErr != nil {
         fmt.Printf("Error creating story trie: %v\n", storyErr)
       }
-      storyTrie := NewTrie();
-      Save(storyTrie, "story")
+      storyTrie := NewTrie("story");
+      storyTrie.Save();
 
       defer storyFile.Close()
 
@@ -67,8 +67,8 @@ func init() {
       if taskErr != nil {
         fmt.Printf("Error creating task trie: %v\n", taskErr)
       }
-      taskTrie := NewTrie();
-      Save(taskTrie, "task")
+      taskTrie := NewTrie("task");
+      taskTrie.Save()
 
       defer taskFile.Close()
 

@@ -174,7 +174,7 @@ func (t *Trie) retrieveValue(word string) (string, error) {
   return "", err
 }
 
-func (t *Trie) Save(trieToSave *Trie) {
+func (t *Trie) Save() {
   file, err := os.Create("./.pm/trie/" + t.Id);
   if err != nil {
     fmt.Printf(err.Error())
@@ -184,15 +184,15 @@ func (t *Trie) Save(trieToSave *Trie) {
   defer file.Close()
 
   encoder := gob.NewEncoder(file)
-  encodingErr := encoder.Encode(trieToSave)
+  encodingErr := encoder.Encode(t)
   if encodingErr != nil {
     fmt.Println("Error encoding trie")
     return
   }
 }
 
-func (t *Trie) Load() *Trie {
-  path := "./.pm/trie/" + t.Id
+func Load(fileName string) *Trie {
+  path := "./.pm/trie/" + fileName
   file, fileErr := os.Open(path) 
   if fileErr != nil {
     return nil
@@ -205,8 +205,8 @@ func (t *Trie) Load() *Trie {
   }
 
   if info.Size() == 0 {
-    newTrie := NewTrie()
-    Save(newTrie, fileName);
+    newTrie := NewTrie(fileName)
+    newTrie.Save();
     return newTrie
   }
 
