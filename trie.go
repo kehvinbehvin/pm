@@ -16,11 +16,13 @@ type TrieNode struct {
 }
 
 type Trie struct {
+  Id string
   Root *TrieNode
 }
 
-func NewTrie() *Trie {
+func NewTrie(id string) *Trie {
   return &Trie{
+    Id: id,
     Root: &TrieNode{
       Character: 0,
       IsEnd: false,
@@ -172,8 +174,8 @@ func (t *Trie) retrieveValue(word string) (string, error) {
   return "", err
 }
 
-func Save(trieToSave *Trie, fileName string) {
-  file, err := os.Create("./.pm/trie/" + fileName);
+func (t *Trie) Save(trieToSave *Trie) {
+  file, err := os.Create("./.pm/trie/" + t.Id);
   if err != nil {
     fmt.Printf(err.Error())
     fmt.Println("Error creating file")
@@ -189,8 +191,8 @@ func Save(trieToSave *Trie, fileName string) {
   }
 }
 
-func Load(fileName string) *Trie {
-  path := "./.pm/trie/" + fileName
+func (t *Trie) Load() *Trie {
+  path := "./.pm/trie/" + t.Id
   file, fileErr := os.Open(path) 
   if fileErr != nil {
     return nil
