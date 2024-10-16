@@ -19,60 +19,74 @@ func init() {
   var eValues, sValues, tValues []string
 
   var initCmd = &cobra.Command{
-    	Use:   "init",
-    	Short: "Initialize a new .pm project",
-    	Run: func(cmd *cobra.Command, args []string) {
-        err := os.Mkdir("./.pm", os.ModePerm)
-        if err != nil && !os.IsExist(err) {
-          fmt.Printf("Error creating pm directory: %v\n", err)
+    Use:   "init",
+    Short: "Initialize a new .pm project",
+    Run: func(cmd *cobra.Command, args []string) {
+      info, err := os.Stat("./.pm")
+      if !os.IsNotExist(err) {
+        if info.IsDir() {
+          fmt.Printf("Directory already is managed by pm")
+          return;
         }
+      }
 
-        err = os.Mkdir("./.pm/blobs", os.ModePerm)
-        if err != nil && !os.IsExist(err) {
-          fmt.Printf("Error creating blobs directory: %v\n", err)
-        }
+      err = os.Mkdir("./.pm", os.ModePerm)
+      if err != nil && !os.IsExist(err) {
+        fmt.Printf("Error creating pm directory: %v\n", err)
+      }
 
-        err = os.Mkdir("./.pm/trie", os.ModePerm)
-        if err != nil && !os.IsExist(err) {
-          fmt.Printf("Error creating trie directory: %v\n", err)
-        }
+      err = os.Mkdir("./.pm/blobs", os.ModePerm)
+      if err != nil && !os.IsExist(err) {
+        fmt.Printf("Error creating blobs directory: %v\n", err)
+      }
 
-        err = os.Mkdir("./.pm/trie/epic", os.ModePerm)
-        if err != nil && !os.IsExist(err) {
-          fmt.Printf("Error creating trie directory: %v\n", err)
-        }
+      err = os.Mkdir("./.pm/trie", os.ModePerm)
+      if err != nil && !os.IsExist(err) {
+        fmt.Printf("Error creating trie directory: %v\n", err)
+      }
 
-        err = os.Mkdir("./.pm/trie/story", os.ModePerm)
-        if err != nil && !os.IsExist(err) {
-          fmt.Printf("Error creating trie directory: %v\n", err)
-        }
+      epicFile, epicErr := os.Create("./.pm/trie/epic");
+      if epicErr != nil {
+        fmt.Printf("Error creating epic trie: %v\n", epicErr)
+      }
+      epicTrie := NewTrie();
+      Save(epicTrie, "epic")
 
-        err = os.Mkdir("./.pm/trie/task", os.ModePerm)
-        if err != nil && !os.IsExist(err) {
-          fmt.Printf("Error creating trie directory: %v\n", err)
-        }
+      defer epicFile.Close()
 
+      storyFile, storyErr := os.Create("./.pm/trie/story");
+      if storyErr != nil {
+        fmt.Printf("Error creating story trie: %v\n", storyErr)
+      }
+      storyTrie := NewTrie();
+      Save(storyTrie, "story")
 
-        err = os.Mkdir("./.pm/dag", os.ModePerm)
-        if err != nil && !os.IsExist(err) {
-          fmt.Printf("Error creating dag directory: %v\n", err)
-        }
-    	},
-    }
+      defer storyFile.Close()
+
+      taskFile, taskErr := os.Create("./.pm/trie/task");
+      if taskErr != nil {
+        fmt.Printf("Error creating task trie: %v\n", taskErr)
+      }
+      taskTrie := NewTrie();
+      Save(taskTrie, "task")
+
+      defer taskFile.Close()
+
+      err = os.Mkdir("./.pm/dag", os.ModePerm)
+      if err != nil && !os.IsExist(err) {
+        fmt.Printf("Error creating dag directory: %v\n", err)
+      }
+    },
+  }
 
   var addCmd = &cobra.Command{
   	Use:   "add",
   	Short: "Initialize a new .pm project",
   	Run: func(cmd *cobra.Command, args []string) {
-  	   	epicFlag, _ := cmd.Flags().GetString("epic")
-  	   	storyFlag, _ := cmd.Flags().GetString("story")
-  	   	taskFlag, _ := cmd.Flags().GetString("task")
-  	   	fmt.Println(epicFlag);
-  	   	fmt.Println(storyFlag);
-  	   	fmt.Println(taskFlag);
-  	   	for _, value := range eValues {
-  	   	  fmt.Println(value);
-  	   	}
+  	    epicTrie := Load("epic");
+  	    for _, value := range eValues {
+  	          commit(value, "", epicTrie);
+        }
   	},
   }
 
@@ -82,8 +96,10 @@ func init() {
   	Run: func(cmd *cobra.Command, args []string) {
   	   	toComplete := args[0];
   	   	epicTrie := Load("epic");
-  	   	suggestions := epicTrie.loadWordsFromPrefix(toComplete);
-  	   	fmt.Println(strings.Join(suggestions, "\n"))
+                if epicTrie != nil {
+                  suggestions := epicTrie.loadWordsFromPrefix(toComplete);
+  	   	  fmt.Println(strings.Join(suggestions, "\n"))
+                }
   	},
   }
 
@@ -93,8 +109,10 @@ func init() {
   	Run: func(cmd *cobra.Command, args []string) {
   	   	toComplete := args[0];
   	   	storyTrie := Load("story");
-  	   	suggestions := storyTrie.loadWordsFromPrefix(toComplete);
-  	   	fmt.Println(strings.Join(suggestions, "\n"))
+                if storyTrie != nil {
+                  suggestions := storyTrie.loadWordsFromPrefix(toComplete);
+  	   	  fmt.Println(strings.Join(suggestions, "\n"))
+                }
   	},
   }
 
@@ -104,8 +122,10 @@ func init() {
   	Run: func(cmd *cobra.Command, args []string) {
   	   	toComplete := args[0];
   	   	taskTrie := Load("task");
-  	   	suggestions := taskTrie.loadWordsFromPrefix(toComplete);
-  	   	fmt.Println(strings.Join(suggestions, "\n"))
+                if taskTrie != nil {
+  	   	  suggestions := taskTrie.loadWordsFromPrefix(toComplete);
+  	   	  fmt.Println(strings.Join(suggestions, "\n"))
+                }
   	},
   }
 

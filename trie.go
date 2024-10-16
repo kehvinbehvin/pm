@@ -147,6 +147,10 @@ func buildWordsFromChildren(base string, node *TrieNode, words *[]string) {
 
 func (t *Trie) walkWord(word string) *TrieNode {
   currentNode := t.Root
+  if currentNode == nil {
+    return nil
+  }
+
   for _, charac := range word {
     if _ , characExist := currentNode.Children[charac]; !characExist {
       return nil
@@ -186,14 +190,23 @@ func Save(trieToSave *Trie, fileName string) {
 }
 
 func Load(fileName string) *Trie {
-  file, fileErr := os.Open("./.pm/trie/" + fileName)
-    
+  path := "./.pm/trie/" + fileName
+  file, fileErr := os.Open(path) 
   if fileErr != nil {
-    fmt.Printf(fileErr.Error());
-    fmt.Println("Error opening binary file")
     return nil
   }
   defer file.Close()
+
+  info, err := os.Stat(path)
+  if err != nil {
+    return nil
+  }
+
+  if info.Size() == 0 {
+    newTrie := NewTrie()
+    Save(newTrie, fileName);
+    return newTrie
+  }
 
   decoder := gob.NewDecoder(file)
 

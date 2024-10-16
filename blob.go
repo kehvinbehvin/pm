@@ -13,7 +13,7 @@ import (
 const compressionThreshold = 1024 // 1 KB threshold for compression
 
 func commit(name string, content string, index *Trie) error {
-  defer Save(index, "test")
+  defer Save(index, "epic")
   hash := sha1.Sum([]byte(content))
 	hashStr := fmt.Sprintf("%x", hash[:])
 
