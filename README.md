@@ -73,10 +73,18 @@ like in a git-style.
     - source zshrc
 
 ## History
-- Blobs will not have a remove feature so it can always be referenced
-- Tries will be snapshot on each operation (add/remove)
-- Delta structure for tries will store the change in trie using operations as bytes and the filename as the path
+- Blobs
+  - Blobs will not have a remove feature so it can always be referenced
+
+- Tries delta will be snapshot on each operation (add/remove)
 - Upon checking out snapshot in history, trie can be built forward or backwards
+  Trie Delta 
+  - Delta structure for tries will store the change in trie using operations as bytes and the filename as the path
+
+- Dag delta will be snapshot on every operation
+- Dag Delta
+  - if the change is an edge, the delta would be the ID of parent vertex and the ID of the child vertex + the operation in bytes
+  - if the change is a vertex, the delta would be the binary of the vertex + the operation in bytes
 
 
 ## Building
