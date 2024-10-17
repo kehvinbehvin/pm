@@ -12,6 +12,24 @@ import (
 
 const compressionThreshold = 1024 // 1 KB threshold for compression
 
+func updateBlobContent(name string, content string, index *Trie) error {
+  defer index.Save()
+  hash := sha1.Sum([]byte(content))
+  hashStr := fmt.Sprintf("%x", hash[:])
+
+  blobErr := createBlob(content);
+  if blobErr != nil {
+    return blobErr;
+  }
+
+  indexErr := reIndex(name, hashStr, index);
+  if indexErr != nil {
+    return indexErr;
+  }
+
+  return nil
+}
+
 func commit(name string, content string, index *Trie) error {
   defer index.Save()
   hash := sha1.Sum([]byte(content))
@@ -103,6 +121,15 @@ func indexName(fileName string, hashContent string, index *Trie) error {
 	}
 
 	return nil
+}
+
+func reIndex(fileName string, hashContent string, index *Trie) error {
+  indexErr := index.updateValue(fileName, hashContent)
+  if indexErr != nil {
+    return indexErr
+  }
+
+  return nil
 }
 
 // Delete a blob and remove its index in the Trie

@@ -5,6 +5,7 @@ import (
   "os"
   "strings"
   "text/tabwriter"
+  "os/exec"
 
   "github.com/spf13/cobra"
 )
@@ -80,6 +81,13 @@ func init() {
       }
       pmDag := newDag("pmDag");
       pmDag.SaveDag();
+
+      tmpFile, tmpErr := os.Create("./.pm/tmp");
+      if tmpErr != nil {
+        fmt.Printf("Error creating tmp file: %v\n", tmpErr)
+      }
+
+      defer tmpFile.Close()
     },
   }
 
@@ -194,6 +202,87 @@ func init() {
   	},
   }
 
+  var editCmd = &cobra.Command{
+  	Use:   "edit",
+  	Short: "Open the ./tmp file in the user's preferred editor",
+  	Run: func(cmd *cobra.Command, args []string) {
+  	  epics := len(eValues);
+      stories := len(sValues);
+      tasks := len(tValues);
+
+      total := epics + stories + tasks
+      if total > 1 {
+        fmt.Println("Only allow to 1 file at a time")
+        return
+      }
+
+  		// Define the path to the file
+  		filePath := "./.pm/tmp"
+
+  		// Get the user's preferred editor from the $EDITOR environment variable
+  		editor := os.Getenv("EDITOR")
+  		if editor == "" {
+  			// Fallback to a default editor if $EDITOR is not set
+  			editor = "vim"
+  		}
+
+  		// Open the file in the editor
+  		err := openEditor(editor, filePath)
+  		if err != nil {
+  			return
+  		}
+
+  		// Read the file contents after the user has saved and exited
+  		fileContent, err := os.Open(filePath)
+      if err != nil {
+        return
+      }
+      defer fileContent.Close()
+
+  		// Print the file content (or you can process it as needed)
+  		content, err := os.ReadFile(filePath)
+  		if err != nil {
+  		  return
+  		}
+
+  		if epics > 0 {
+  		  epicTrie := Load("epic");
+  		  defer epicTrie.Save()
+
+  		  updateErr := updateBlobContent(eValues[0], string(content), epicTrie);
+  		  if updateErr != nil {
+  		    fmt.Println("Update file error")
+  		    return
+  		  }
+  		} else if stories > 0 {
+  		  storyTrie := Load("story");
+        defer storyTrie.Save()
+
+        updateErr := updateBlobContent(sValues[0], string(content), storyTrie);
+        if updateErr != nil {
+          fmt.Println("Update file error")
+          return
+        }
+  		} else if tasks > 0 {
+  		  taskTrie := Load("task");
+        defer taskTrie.Save()
+
+        updateErr := updateBlobContent(tValues[0], string(content), taskTrie);
+        if updateErr != nil {
+          fmt.Println("Update file error")
+          return
+        }
+  		}
+
+  		err = emptyFile(filePath)
+      if err != nil {
+        fmt.Println("Cannot empty file")
+        return
+      }
+  		return
+  	},
+  }
+
   var epicCmd = &cobra.Command{
   	Use:   "epics",
   	Short: "Epic suggestions",
@@ -239,6 +328,7 @@ func init() {
   rootCmd.AddCommand(storyCmd)
   rootCmd.AddCommand(taskCmd)
   rootCmd.AddCommand(viewCmd)
+  rootCmd.AddCommand(editCmd)
 
   // Add flags to the add command for epic, task, and story
   addCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
@@ -248,6 +338,10 @@ func init() {
   viewCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
   viewCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add an story")
   viewCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
+
+  editCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
+  editCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add an story")
+  editCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
 
   rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
@@ -279,4 +373,31 @@ func walkDAG(writer *tabwriter.Writer, nodeType string, epic *Vertex) {
 
 	// Flush the writer to ensure everything is printed
 	writer.Flush()
+}
+
+func openEditor(editor string, filePath string) error {
+	// Create an exec command to open the file in the editor
+	cmd := exec.Command(editor, filePath)
+
+	// Set the command to use the same standard input, output, and error streams as the Go process
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Run the command and wait for it to finish
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("failed to open file in editor: %v", err)
+	}
+
+	return nil
+}
+
+func emptyFile(filePath string) error {
+	// Truncate the file to zero length
+	err := os.Truncate(filePath, 0)
+	if err != nil {
+		return fmt.Errorf("failed to truncate the file: %v", err)
+	}
+	return nil
 }

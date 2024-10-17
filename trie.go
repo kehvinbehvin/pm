@@ -174,6 +174,17 @@ func (t *Trie) retrieveValue(word string) (string, error) {
   return "", err
 }
 
+func (t *Trie) updateValue(word string, fileLocation string) error {
+  wordNode := t.walkWord(word);
+  if wordNode != nil {
+    wordNode.Value = fileLocation
+    return nil
+  }
+
+  err := errors.New("Cannot update fileLocation");
+  return err
+}
+
 func (t *Trie) Save() {
   file, err := os.Create("./.pm/trie/" + t.Id);
   if err != nil {
