@@ -76,6 +76,8 @@ func init() {
       if err != nil && !os.IsExist(err) {
         fmt.Printf("Error creating dag directory: %v\n", err)
       }
+      pmDag := newDag("pmDag");
+      pmDag.SaveDag();
     },
   }
 
@@ -83,9 +85,80 @@ func init() {
   	Use:   "add",
   	Short: "Initialize a new .pm project",
   	Run: func(cmd *cobra.Command, args []string) {
+  	    epics := len(eValues);
+  	    stories := len(sValues);
+  	    tasks := len(tValues);
+
+  	    fmt.Println(eValues);
+  	    fmt.Println(sValues);
+  	    fmt.Println(tValues);
+
+        pmDag := LoadDag("pmDag");
+        defer pmDag.SaveDag()
+
+  	    if tasks > 0 {
+  	      if epics > 1 || stories > 1 {
+  	        // Not allowed, invalid relationship.
+  	        fmt.Println("A task can only belong to 1 story and epic")
+  	        return;
+  	      }
+
+  	      if epics == 1 && stories == 1 {
+            // 1 Epic and 1 Story per multiple task entry
+            epicValue := eValues[0];
+            epicVertex := newVertex(epicValue);
+            pmDag.addVertex(epicVertex);
+            
+            storyValue := sValues[0]
+            storyVertex := newVertex(storyValue);
+            pmDag.addVertex(storyVertex);
+
+            pmDag.addEdge(epicVertex, storyVertex);
+            for _, value := range tValues {
+                taskVertex := newVertex(value);
+                pmDag.addVertex(taskVertex);
+                pmDag.addEdge(storyVertex, taskVertex);
+            }
+  	      }
+  	    } else if stories > 0 {
+          if epics > 1 {
+            // Not allowed, invalid relationship
+  	        fmt.Println("A story can only belong to 1 epic")
+            return
+          }
+
+          if epics == 1 {
+            // 1 Epic per multiple story entry
+            epicValue := eValues[0];
+            epicVertex := newVertex(epicValue);
+
+            for _, value := range sValues {
+                storyVertex := newVertex(value);
+                pmDag.addVertex(storyVertex);
+                pmDag.addEdge(epicVertex, storyVertex);
+            }
+          }
+  	    } else {
+          // No stories or tasks, just epics. No relationships
+          for _, value := range eValues {
+               vertex := newVertex(value);
+               pmDag.addVertex(vertex);
+           }
+  	    }
+
   	    epicTrie := Load("epic");
   	    for _, value := range eValues {
   	          commit(value, "", epicTrie);
+        }
+
+        storyTrie := Load("story");
+        for _, value := range sValues {
+              commit(value, "", storyTrie);
+        }
+
+        taskTrie := Load("task");
+        for _, value := range tValues {
+              commit(value, "", taskTrie);
         }
   	},
   }

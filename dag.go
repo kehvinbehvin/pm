@@ -42,11 +42,13 @@ func dfs(from *Vertex, to *Vertex) bool {
 }
 
 type Dag struct {
+	Id string
 	Vertices map[string]*Vertex
 }
 
-func newDag() *Dag {
+func newDag(fileName string) *Dag {
 	return &Dag{
+		Id: fileName,
 		Vertices: make(map[string]*Vertex),
 	}
 }
@@ -109,8 +111,8 @@ func (d Dag) removeVertex(out *Vertex) {
 	delete(d.Vertices, out.ID)
 }
 
-func SaveDag(dagToSave *Dag, fileName string) {
-  file, err := os.Create("./.pm/dag/" + fileName);
+func (d *Dag) SaveDag() {
+  file, err := os.Create("./.pm/dag/" + d.Id);
   if err != nil {
     fmt.Printf(err.Error())
     fmt.Println("Error creating file")
@@ -119,7 +121,7 @@ func SaveDag(dagToSave *Dag, fileName string) {
   defer file.Close()
 
   encoder := gob.NewEncoder(file)
-  encodingErr := encoder.Encode(dagToSave)
+  encodingErr := encoder.Encode(d)
   if encodingErr != nil {
 	fmt.Printf(encodingErr.Error())
     fmt.Println("Error encoding dag")

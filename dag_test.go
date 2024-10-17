@@ -7,7 +7,7 @@ import (
 
 // Test creating a new DAG
 func TestCreateDag(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	if dag == nil {
 		t.Errorf("Expected DAG to be created, but got nil")
 	}
@@ -26,7 +26,7 @@ func TestCreateVertex(t *testing.T) {
 
 // Test adding a vertex to the DAG
 func TestAddVertex(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v := newVertex("A")
 	dag.addVertex(v)
 
@@ -37,7 +37,7 @@ func TestAddVertex(t *testing.T) {
 
 // Test trying to add the same vertex twice
 func TestAddSameVertexTwice(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v := newVertex("A")
 	dag.addVertex(v)
 	dag.addVertex(v) // Attempting to add the same vertex
@@ -49,7 +49,7 @@ func TestAddSameVertexTwice(t *testing.T) {
 
 // Test removing a vertex from the DAG
 func TestRemoveVertex(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v := newVertex("A")
 	dag.addVertex(v)
 
@@ -62,7 +62,7 @@ func TestRemoveVertex(t *testing.T) {
 
 // Test removing a non-existent vertex
 func TestRemoveNonExistentVertex(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v := newVertex("A")
 	dag.removeVertex(v)
 
@@ -73,7 +73,7 @@ func TestRemoveNonExistentVertex(t *testing.T) {
 
 // Test adding an edge between two vertices
 func TestAddEdge(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 
@@ -89,7 +89,7 @@ func TestAddEdge(t *testing.T) {
 
 // Test adding an edge that would create a cycle
 func TestAddEdgeWithCycle(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 
@@ -108,7 +108,7 @@ func TestAddEdgeWithCycle(t *testing.T) {
 
 // Test adding an edge for non-existent vertices
 func TestAddEdgeForNonExistentVertex(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 
@@ -124,7 +124,7 @@ func TestAddEdgeForNonExistentVertex(t *testing.T) {
 
 // Test removing an edge between two vertices
 func TestRemoveEdge(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 
@@ -141,7 +141,7 @@ func TestRemoveEdge(t *testing.T) {
 
 // Test removing a non-existent edge
 func TestRemoveNonExistentEdge(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 
@@ -158,7 +158,7 @@ func TestRemoveNonExistentEdge(t *testing.T) {
 
 // Test DFS to check if a path exists between two vertices
 func TestDfs(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 	v3 := newVertex("C")
@@ -179,7 +179,7 @@ func TestDfs(t *testing.T) {
 
 // Test DFS where no path exists
 func TestDfsNoPath(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 	v3 := newVertex("C")
@@ -198,7 +198,7 @@ func TestDfsNoPath(t *testing.T) {
 
 // Test saving a DAG to disk
 func TestSaveDag(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 
@@ -207,22 +207,17 @@ func TestSaveDag(t *testing.T) {
 	dag.addEdge(v1, v2)
 
 	// Save the DAG to disk
-	SaveDag(dag, "test_dag.gob")
+	dag.SaveDag()
 
 	// Check if the file was created
-	if _, err := os.Stat("./.pm/dag/test_dag.gob"); os.IsNotExist(err) {
-		t.Errorf("Expected the file 'test_dag.gob' to exist, but it does not")
-	}
-
-	err := os.Remove("./.pm/dag/test_dag.gob")
-	if err != nil {
-		t.Errorf("Error while cleaning up test file: %v", err)
+	if _, err := os.Stat("./.pm/dag/testDag"); os.IsNotExist(err) {
+		t.Errorf("Expected the file 'testDag' to exist, but it does not")
 	}
 }
 
 // Test loading a DAG from disk
 func TestLoadDag(t *testing.T) {
-	dag := newDag()
+	dag := newDag("testDag")
 	v1 := newVertex("A")
 	v2 := newVertex("B")
 	v3 := newVertex("C")
@@ -234,10 +229,10 @@ func TestLoadDag(t *testing.T) {
 	dag.addEdge(v2, v3)
 
 	// Save the DAG first
-	SaveDag(dag, "test_dag.gob")
+	dag.SaveDag()
 
 	// Load the DAG from the file
-	loadedDag := LoadDag("test_dag.gob")
+	loadedDag := LoadDag("testDag")
 	if loadedDag == nil {
 		t.Errorf("Failed to load the DAG from the file")
 	}
@@ -259,10 +254,5 @@ func TestLoadDag(t *testing.T) {
 	}
 	if _, exists := loadedDag.Vertices["B"].Children["C"]; !exists {
 		t.Errorf("Expected vertex 'C' to be a child of vertex 'B' in the loaded DAG")
-	}
-
-	err := os.Remove("./.pm/dag/test_dag.gob")
-	if err != nil {
-		t.Errorf("Error while cleaning up test file: %v", err)
 	}
 }

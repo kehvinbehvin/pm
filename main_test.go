@@ -32,31 +32,13 @@ func setup() {
 func teardown() {
 	fmt.Println("Tearing down resources...")
 
-	// Path to your blobs directory
-  blobsDir := ".pm/blobs"
-
-  // Remove the entire directory and its contents
-  err := os.RemoveAll(blobsDir)
-  if err != nil {
-    fmt.Printf("failed to remove blobs directory: %v", err)
-  }
-
   // Path to your trie directory
-  trieDir := ".pm/trie"
+  pmDir := ".pm"
 
   // Remove the entire directory and its contents
-  err = os.RemoveAll(trieDir)
+  err := os.RemoveAll(pmDir)
   if err != nil {
-    fmt.Printf("failed to remove trie directory: %v", err)
-  }
-
-  // Path to your trie directory
-  dagDir := ".pm/dag"
-
-  // Remove the entire directory and its contents
-  err = os.RemoveAll(dagDir)
-  if err != nil {
-    fmt.Printf("failed to remove dag directory: %v", err)
+    fmt.Printf("failed to remove .pm directory: %v", err)
   }
 }
 
