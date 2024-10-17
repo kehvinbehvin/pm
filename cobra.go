@@ -4,6 +4,8 @@ import (
   "fmt"
   "os"
   "strings"
+  "text/tabwriter"
+
   "github.com/spf13/cobra"
 )
 
@@ -163,6 +165,35 @@ func init() {
   	},
   }
 
+  // Create a new command for viewing epics
+  var viewCmd = &cobra.Command{
+  	Use:   "view",
+  	Short: "View epics, stories or tasks.",
+  	Run: func(cmd *cobra.Command, args []string) {
+  	  epics := len(eValues);
+      stories := len(sValues);
+      tasks := len(tValues);
+      pmDag := LoadDag("pmDag");
+
+  	  total := epics + stories + tasks
+  	  if total > 1 {
+  	    fmt.Println("Only allow to list 1 of a kind at a time")
+  	    return
+  	  }
+
+  		if epics > 0 {
+  		  nodeType := "epic"
+
+        // Simulate getting epic, stories, and tasks data
+        epic := pmDag.retrieveVertex(eValues[0])
+
+      	// Display the data in table format
+      	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+      	walkDAG(writer, nodeType, epic)
+  		}
+  	},
+  }
+
   var epicCmd = &cobra.Command{
   	Use:   "epics",
   	Short: "Epic suggestions",
@@ -207,11 +238,16 @@ func init() {
   rootCmd.AddCommand(epicCmd)
   rootCmd.AddCommand(storyCmd)
   rootCmd.AddCommand(taskCmd)
+  rootCmd.AddCommand(viewCmd)
 
   // Add flags to the add command for epic, task, and story
   addCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
   addCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add a story")
   addCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
+
+  viewCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
+  viewCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add an story")
+  viewCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
 
   rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
@@ -221,4 +257,26 @@ func Execute() {
     fmt.Fprintln(os.Stderr, err)
     os.Exit(1)
   }
+}
+
+func walkDAG(writer *tabwriter.Writer, nodeType string, epic *Vertex) {
+	// Base indentation for each level (epic, story, task)
+	indent := "\t"
+
+	fmt.Fprintf(writer, "%sEpic: %s\n", "", epic.ID)
+
+	// Iterate over the stories (children of the epic)
+	for _, story := range epic.Children {
+		// Print the story (level 1)
+		fmt.Fprintf(writer, "%sStory: %s\n", indent, story.ID)
+
+		// Iterate over the tasks (children of the story)
+		for _, task := range story.Children {
+			// Print the task (level 2)
+			fmt.Fprintf(writer, "%s%sTask: %s\n", indent, indent, task.ID)
+		}
+	}
+
+	// Flush the writer to ensure everything is printed
+	writer.Flush()
 }

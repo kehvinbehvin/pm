@@ -111,6 +111,16 @@ func (d Dag) removeVertex(out *Vertex) {
 	delete(d.Vertices, out.ID)
 }
 
+func (d Dag) retrieveVertex(vertexID string) *Vertex {
+	vertex, exists := d.Vertices[vertexID]
+	if !exists {
+		fmt.Println("Non existent vertex")
+		return nil
+	}
+
+	return vertex
+}
+
 func (d *Dag) SaveDag() {
   file, err := os.Create("./.pm/dag/" + d.Id);
   if err != nil {
