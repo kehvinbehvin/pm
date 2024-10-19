@@ -153,7 +153,7 @@ func init() {
 
 	var linkCmd = &cobra.Command{
 		Use:   "link",
-		Short: "Initialize a new .pm project",
+		Short: "Link epics, stories and tasks",
 		Run: func(cmd *cobra.Command, args []string) {
 			epics := len(eValues)
 			stories := len(sValues)
