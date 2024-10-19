@@ -281,35 +281,59 @@ func init() {
 
 			var node *Vertex
 			var nodeType string
-
+			var header string
+			var description []byte 
+			var err error
+			var childNodeType string
+			
 			if epics > 0 {
 				// Simulate getting epic, stories, and tasks data
 				node = pmDag.retrieveVertex(eValues[0])
-				nodeType = "Stories"
+				header = eValues[0]
+				nodeType = "Epic"
+				childNodeType = "Stories"
+
+				epicTrie := Load("epic")
+				description, err = retrieveContent(header, epicTrie)
+				if err != nil {
+					return
+				}
+
 			} else if stories > 0 {
 				node = pmDag.retrieveVertex(sValues[0])
-				nodeType = "Tasks"
+				header = sValues[0]
+				nodeType = "Story"
+				childNodeType = "Tasks"
+
+				storyTrie := Load("story")
+				description, err = retrieveContent(header, storyTrie)
+				if err != nil {
+					return
+				}
 			} else if tasks > 0 {
 				node = pmDag.retrieveVertex(tValues[0])
-				nodeType = "SubTasks"
+				header = tValues[0]
+				nodeType = "Task"
+
+				taskTrie := Load("task")
+				description, err = retrieveContent(header, taskTrie)
+				if err != nil {
+					return
+				}
 			} else {
 				fmt.Println("Not sure what you want to display")	
 				return
 			}
 			
-			if (len(node.Children) == 0) {
-				fmt.Println("Nothing to list")
-				return
-			}
-
 			nodeKeys := make([]string, len(node.Children))
 			i := 0
 			for k := range node.Children {
 				nodeKeys[i] = k
 				i++
 			}
-			
-			buildList(nodeKeys, nodeType)
+
+			buildSection(description, nodeType + ": " + header)
+			buildList(nodeKeys, "Related " + childNodeType)
 
 		},
 	}
@@ -494,12 +518,25 @@ func walkDAG(writer *tabwriter.Writer, nodeType string, epic *Vertex) {
 	// fmt.Println(epicTree);
 }
 
+func buildSection(description []byte, listHeader string) {
+	t := table.New().
+		Border(lipgloss.NormalBorder()).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("99"))).
+		Headers(listHeader)
+
+	t.Row(string(description))
+	fmt.Println(t)
+}
+
 func buildList(rows []string, listHeader string) {
-	fmt.Println(rows);
 	rowIds := [][]string{}
 	for _, value := range rows {
 		row := []string{value}
 		rowIds = append(rowIds, row)
+	}
+
+	if len(rowIds) == 0 {
+		return
 	}
 
 	t := table.New().
@@ -507,6 +544,7 @@ func buildList(rows []string, listHeader string) {
 		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("99"))).
 		Headers(listHeader).
 		Rows(rowIds...)
+
 	fmt.Println(t)
 }
 
