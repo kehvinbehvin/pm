@@ -174,6 +174,18 @@ func (t *Trie) retrieveValue(word string) (string, error) {
 	return "", err
 }
 
+func (t *Trie) loadAllWords() ([]string, error){
+	baseTrie := t.Root;
+	var words []string
+	prefix := ""
+
+	for _, child := range baseTrie.Children {
+		buildWordsFromChildren(prefix, child, &words)
+	}
+	
+	return words, nil
+}
+
 func (t *Trie) updateValue(word string, fileLocation string) error {
 	wordNode := t.walkWord(word)
 	if wordNode != nil {

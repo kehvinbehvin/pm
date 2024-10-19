@@ -208,6 +208,61 @@ func init() {
 		},
 	}
 
+	var listCmd = &cobra.Command{
+		Use: "list",
+		Short: "List all nodes of a type",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("Please choose what to display");
+		},
+
+	}
+
+	var listEpicsCmd = &cobra.Command{
+		Use: "epic",
+		Short: "List all epics",
+		Run: func(cmd *cobra.Command, args []string) {
+			epicTrie := Load("epic")
+			allEpics, err := epicTrie.loadAllWords();
+			if err != nil {
+				return
+			}
+
+			buildList(allEpics, "Epics");
+		},
+	}
+
+	var listStoriesCmd = &cobra.Command{
+		Use: "story",
+		Short: "List all story",
+		Run: func(cmd *cobra.Command, args []string) {
+			storyTrie := Load("story")
+			allEpics, err := storyTrie.loadAllWords();
+			if err != nil {
+				return
+			}
+
+			buildList(allEpics, "Story");
+		},
+	}
+
+	var listTasksCmd = &cobra.Command{
+		Use: "task",
+		Short: "List all task",
+		Run: func(cmd *cobra.Command, args []string) {
+			taskTrie := Load("task")
+			allTasks, err := taskTrie.loadAllWords();
+			if err != nil {
+				return
+			}
+
+			buildList(allTasks, "Tasks");
+		},
+	}
+
+
+
+
+
 	// Create a new command for viewing epics
 	var viewCmd = &cobra.Command{
 		Use:   "view",
@@ -387,6 +442,11 @@ func init() {
 	rootCmd.AddCommand(taskCmd)
 	rootCmd.AddCommand(viewCmd)
 	rootCmd.AddCommand(editCmd)
+	rootCmd.AddCommand(listCmd)
+	
+	listCmd.AddCommand(listEpicsCmd)
+	listCmd.AddCommand(listStoriesCmd)
+	listCmd.AddCommand(listTasksCmd)
 
 	// Add flags to the add command for epic, task, and story
 	linkCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
