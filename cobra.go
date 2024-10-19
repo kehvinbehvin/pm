@@ -94,7 +94,7 @@ func init() {
 	}
 
 	var addCmd = &cobra.Command{
-		Use: "add",
+		Use:   "add",
 		Short: "Add epics, stories or tasks",
 		Run: func(cmd *cobra.Command, args []string) {
 			epics := len(eValues)
@@ -103,8 +103,8 @@ func init() {
 
 			pmDag := LoadDag("pmDag")
 			defer pmDag.SaveDag()
-			
-			var nodesToSave []*Vertex;
+
+			var nodesToSave []*Vertex
 
 			if epics > 0 {
 				for _, value := range eValues {
@@ -131,7 +131,7 @@ func init() {
 			}
 
 			for _, vs := range nodesToSave {
-				pmDag.addVertex(vs);
+				pmDag.addVertex(vs)
 			}
 
 			epicTrie := Load("epic")
@@ -209,59 +209,54 @@ func init() {
 	}
 
 	var listCmd = &cobra.Command{
-		Use: "list",
+		Use:   "list",
 		Short: "List all nodes of a type",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Please choose what to display");
+			fmt.Println("Please choose what to display")
 		},
-
 	}
 
 	var listEpicsCmd = &cobra.Command{
-		Use: "epic",
+		Use:   "epic",
 		Short: "List all epics",
 		Run: func(cmd *cobra.Command, args []string) {
 			epicTrie := Load("epic")
-			allEpics, err := epicTrie.loadAllWords();
+			allEpics, err := epicTrie.loadAllWords()
 			if err != nil {
 				return
 			}
 
-			buildList(allEpics, "Epics");
+			buildList(allEpics, "Epics")
 		},
 	}
 
 	var listStoriesCmd = &cobra.Command{
-		Use: "story",
+		Use:   "story",
 		Short: "List all story",
 		Run: func(cmd *cobra.Command, args []string) {
 			storyTrie := Load("story")
-			allEpics, err := storyTrie.loadAllWords();
+			allEpics, err := storyTrie.loadAllWords()
 			if err != nil {
 				return
 			}
 
-			buildList(allEpics, "Story");
+			buildList(allEpics, "Story")
 		},
 	}
 
 	var listTasksCmd = &cobra.Command{
-		Use: "task",
+		Use:   "task",
 		Short: "List all task",
 		Run: func(cmd *cobra.Command, args []string) {
 			taskTrie := Load("task")
-			allTasks, err := taskTrie.loadAllWords();
+			allTasks, err := taskTrie.loadAllWords()
 			if err != nil {
 				return
 			}
 
-			buildList(allTasks, "Tasks");
+			buildList(allTasks, "Tasks")
 		},
 	}
-
-
-
-
 
 	// Create a new command for viewing epics
 	var viewCmd = &cobra.Command{
@@ -282,10 +277,10 @@ func init() {
 			var node *Vertex
 			var nodeType string
 			var header string
-			var description []byte 
+			var description []byte
 			var err error
 			var childNodeType string
-			
+
 			if epics > 0 {
 				// Simulate getting epic, stories, and tasks data
 				node = pmDag.retrieveVertex(eValues[0])
@@ -321,10 +316,10 @@ func init() {
 					return
 				}
 			} else {
-				fmt.Println("Not sure what you want to display")	
+				fmt.Println("Not sure what you want to display")
 				return
 			}
-			
+
 			nodeKeys := make([]string, len(node.Children))
 			i := 0
 			for k := range node.Children {
@@ -332,8 +327,8 @@ func init() {
 				i++
 			}
 
-			buildSection(description, nodeType + ": " + header)
-			buildList(nodeKeys, "Related " + childNodeType)
+			buildSection(description, nodeType+": "+header)
+			buildList(nodeKeys, "Related "+childNodeType)
 
 		},
 	}
@@ -419,6 +414,46 @@ func init() {
 		},
 	}
 
+	var attachCmd = &cobra.Command{
+		Use:   "attach",
+		Short: "Create symlink to master directory",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 1 {
+				info, err := os.Stat("./.pm")
+				if !os.IsNotExist(err) {
+					if info.IsDir() {
+						fmt.Printf("Directory already is managed by pm")
+						return
+					}
+				}
+				sourceDir := args[0]
+				fmt.Println(sourceDir)
+				err = os.Symlink(sourceDir, "./.pm")
+				if err != nil {
+					fmt.Println("Error creating symlink:", err)
+					return
+				}
+			}
+		},
+	}
+		var detachCmd = &cobra.Command{
+		Use:   "detach",
+		Short: "Remove symlink to master directory",
+		Run: func(cmd *cobra.Command, args []string) {
+			_ , err := os.Stat("./.pm")
+				if os.IsNotExist(err) {
+					fmt.Println("pm does not exist");
+					return
+				}
+				err = os.Remove("./.pm")
+				if err != nil {
+					fmt.Println("Error removing symlink:", err)
+					return
+				}
+		},
+	}
+
+
 	var epicCmd = &cobra.Command{
 		Use:   "epics",
 		Short: "Epic suggestions",
@@ -459,6 +494,8 @@ func init() {
 	}
 
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(attachCmd)
+	rootCmd.AddCommand(detachCmd)
 	rootCmd.AddCommand(linkCmd)
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(epicCmd)
@@ -467,7 +504,7 @@ func init() {
 	rootCmd.AddCommand(viewCmd)
 	rootCmd.AddCommand(editCmd)
 	rootCmd.AddCommand(listCmd)
-	
+
 	listCmd.AddCommand(listEpicsCmd)
 	listCmd.AddCommand(listStoriesCmd)
 	listCmd.AddCommand(listTasksCmd)

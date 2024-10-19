@@ -174,15 +174,15 @@ func (t *Trie) retrieveValue(word string) (string, error) {
 	return "", err
 }
 
-func (t *Trie) loadAllWords() ([]string, error){
-	baseTrie := t.Root;
+func (t *Trie) loadAllWords() ([]string, error) {
+	baseTrie := t.Root
 	var words []string
 	prefix := ""
 
 	for _, child := range baseTrie.Children {
 		buildWordsFromChildren(prefix, child, &words)
 	}
-	
+
 	return words, nil
 }
 
