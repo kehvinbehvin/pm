@@ -114,7 +114,7 @@ func (d *Dag) removeVertex(out *Vertex) {
 func (d *Dag) retrieveVertex(vertexID string) *Vertex {
 	vertex, exists := d.Vertices[vertexID]
 	if !exists {
-		fmt.Println("Non existent vertex")
+		fmt.Println("Non existent vertex", vertexID)
 		return nil
 	}
 

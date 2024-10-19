@@ -7,6 +7,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/spf13/cobra"
 )
 
@@ -92,68 +94,44 @@ func init() {
 	}
 
 	var addCmd = &cobra.Command{
-		Use:   "add",
-		Short: "Initialize a new .pm project",
+		Use: "add",
+		Short: "Add epics, stories or tasks",
 		Run: func(cmd *cobra.Command, args []string) {
 			epics := len(eValues)
 			stories := len(sValues)
 			tasks := len(tValues)
 
-			fmt.Println(eValues)
-			fmt.Println(sValues)
-			fmt.Println(tValues)
-
 			pmDag := LoadDag("pmDag")
 			defer pmDag.SaveDag()
+			
+			var nodesToSave []*Vertex;
+
+			if epics > 0 {
+				for _, value := range eValues {
+					epic := newVertex(value)
+					nodesToSave = append(nodesToSave, epic)
+				}
+
+			}
+
+			if stories > 0 {
+				for _, value := range sValues {
+					story := newVertex(value)
+					nodesToSave = append(nodesToSave, story)
+				}
+
+			}
 
 			if tasks > 0 {
-				if epics > 1 || stories > 1 {
-					// Not allowed, invalid relationship.
-					fmt.Println("A task can only belong to 1 story and epic")
-					return
+				for _, value := range tValues {
+					task := newVertex(value)
+					nodesToSave = append(nodesToSave, task)
 				}
 
-				if epics == 1 && stories == 1 {
-					// 1 Epic and 1 Story per multiple task entry
-					epicValue := eValues[0]
-					epicVertex := newVertex(epicValue)
-					pmDag.addVertex(epicVertex)
+			}
 
-					storyValue := sValues[0]
-					storyVertex := newVertex(storyValue)
-					pmDag.addVertex(storyVertex)
-
-					pmDag.addEdge(epicVertex, storyVertex)
-					for _, value := range tValues {
-						taskVertex := newVertex(value)
-						pmDag.addVertex(taskVertex)
-						pmDag.addEdge(storyVertex, taskVertex)
-					}
-				}
-			} else if stories > 0 {
-				if epics > 1 {
-					// Not allowed, invalid relationship
-					fmt.Println("A story can only belong to 1 epic")
-					return
-				}
-
-				if epics == 1 {
-					// 1 Epic per multiple story entry
-					epicValue := eValues[0]
-					epicVertex := newVertex(epicValue)
-
-					for _, value := range sValues {
-						storyVertex := newVertex(value)
-						pmDag.addVertex(storyVertex)
-						pmDag.addEdge(epicVertex, storyVertex)
-					}
-				}
-			} else {
-				// No stories or tasks, just epics. No relationships
-				for _, value := range eValues {
-					vertex := newVertex(value)
-					pmDag.addVertex(vertex)
-				}
+			for _, vs := range nodesToSave {
+				pmDag.addVertex(vs);
 			}
 
 			epicTrie := Load("epic")
@@ -173,6 +151,63 @@ func init() {
 		},
 	}
 
+	var linkCmd = &cobra.Command{
+		Use:   "link",
+		Short: "Initialize a new .pm project",
+		Run: func(cmd *cobra.Command, args []string) {
+			epics := len(eValues)
+			stories := len(sValues)
+			tasks := len(tValues)
+
+			pmDag := LoadDag("pmDag")
+			defer pmDag.SaveDag()
+
+			if tasks > 0 {
+				if epics > 1 || stories > 1 {
+					// Not allowed, invalid relationship.
+					fmt.Println("A task can only belong to 1 story and epic")
+					return
+				}
+
+				if epics == 1 && stories == 1 {
+					// 1 Epic and 1 Story per multiple task entry
+					epicValue := eValues[0]
+					epicVertex := pmDag.retrieveVertex(epicValue)
+
+					storyValue := sValues[0]
+					storyVertex := pmDag.retrieveVertex(storyValue)
+
+					pmDag.addEdge(epicVertex, storyVertex)
+					for _, value := range tValues {
+						taskVertex := pmDag.retrieveVertex(value)
+						pmDag.addEdge(storyVertex, taskVertex)
+					}
+				}
+			} else if stories > 0 {
+				if epics > 1 {
+					// Not allowed, invalid relationship
+					fmt.Println("A story can only belong to 1 epic")
+					return
+				}
+
+				if epics == 1 {
+					// 1 Epic per multiple story entry
+					epicValue := eValues[0]
+					epicVertex := pmDag.retrieveVertex(epicValue)
+
+					for _, value := range sValues {
+						storyVertex := pmDag.retrieveVertex(value)
+						pmDag.addEdge(epicVertex, storyVertex)
+					}
+				}
+			} else {
+				fmt.Println("Cannot create dependencies between epics")
+				return
+			}
+
+		},
+	}
+
 	// Create a new command for viewing epics
 	var viewCmd = &cobra.Command{
 		Use:   "view",
@@ -189,16 +224,38 @@ func init() {
 				return
 			}
 
+			var node *Vertex
+			var nodeType string
+
 			if epics > 0 {
-				nodeType := "epic"
-
 				// Simulate getting epic, stories, and tasks data
-				epic := pmDag.retrieveVertex(eValues[0])
-
-				// Display the data in table format
-				writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-				walkDAG(writer, nodeType, epic)
+				node = pmDag.retrieveVertex(eValues[0])
+				nodeType = "Stories"
+			} else if stories > 0 {
+				node = pmDag.retrieveVertex(sValues[0])
+				nodeType = "Tasks"
+			} else if tasks > 0 {
+				node = pmDag.retrieveVertex(tValues[0])
+				nodeType = "SubTasks"
+			} else {
+				fmt.Println("Not sure what you want to display")	
+				return
 			}
+			
+			if (len(node.Children) == 0) {
+				fmt.Println("Nothing to list")
+				return
+			}
+
+			nodeKeys := make([]string, len(node.Children))
+			i := 0
+			for k := range node.Children {
+				nodeKeys[i] = k
+				i++
+			}
+			
+			buildList(nodeKeys, nodeType)
+
 		},
 	}
 
@@ -323,6 +380,7 @@ func init() {
 	}
 
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(linkCmd)
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(epicCmd)
 	rootCmd.AddCommand(storyCmd)
@@ -331,6 +389,10 @@ func init() {
 	rootCmd.AddCommand(editCmd)
 
 	// Add flags to the add command for epic, task, and story
+	linkCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
+	linkCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add a story")
+	linkCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
+
 	addCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
 	addCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add a story")
 	addCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
@@ -354,25 +416,38 @@ func Execute() {
 }
 
 func walkDAG(writer *tabwriter.Writer, nodeType string, epic *Vertex) {
-	// Base indentation for each level (epic, story, task)
-	indent := "\t"
+	// epicTree := tree.Root(epic.ID);
+	//
+	// // Iterate over the stories (children of the epic)
+	// for _, story := range epic.Children {
+	// 	storyTree := tree.Root(story.ID)
+	//
+	// 	// Iterate over the tasks (children of the story)
+	// 	for _, task := range story.Children {
+	// 		// Print the task (level 2)
+	// 		storyTree.Child(task.ID)
+	//
+	// 	}
+	// 	epicTree.Child(storyTree)
+	// }
+	//
+	// fmt.Println(epicTree);
+}
 
-	fmt.Fprintf(writer, "%sEpic: %s\n", "", epic.ID)
-
-	// Iterate over the stories (children of the epic)
-	for _, story := range epic.Children {
-		// Print the story (level 1)
-		fmt.Fprintf(writer, "%sStory: %s\n", indent, story.ID)
-
-		// Iterate over the tasks (children of the story)
-		for _, task := range story.Children {
-			// Print the task (level 2)
-			fmt.Fprintf(writer, "%s%sTask: %s\n", indent, indent, task.ID)
-		}
+func buildList(rows []string, listHeader string) {
+	fmt.Println(rows);
+	rowIds := [][]string{}
+	for _, value := range rows {
+		row := []string{value}
+		rowIds = append(rowIds, row)
 	}
 
-	// Flush the writer to ensure everything is printed
-	writer.Flush()
+	t := table.New().
+		Border(lipgloss.NormalBorder()).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("99"))).
+		Headers(listHeader).
+		Rows(rowIds...)
+	fmt.Println(t)
 }
 
 func openEditor(editor string, filePath string) error {
