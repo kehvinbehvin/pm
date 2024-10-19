@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"encoding/gob"
+	"fmt"
 	"os"
 )
 
@@ -42,20 +42,20 @@ func dfs(from *Vertex, to *Vertex) bool {
 }
 
 type Dag struct {
-	Id string
+	Id       string
 	Vertices map[string]*Vertex
 }
 
 func newDag(fileName string) *Dag {
 	return &Dag{
-		Id: fileName,
+		Id:       fileName,
 		Vertices: make(map[string]*Vertex),
 	}
 }
 
-func (d Dag) addEdge(from *Vertex, to *Vertex) {
+func (d *Dag) addEdge(from *Vertex, to *Vertex) {
 	parent, hasParent := d.Vertices[from.ID]
-	_ , hasChild := d.Vertices[to.ID]
+	_, hasChild := d.Vertices[to.ID]
 
 	if !hasParent || !hasChild {
 		fmt.Println("From or to Vertex does not exist")
@@ -77,7 +77,7 @@ func (d Dag) addEdge(from *Vertex, to *Vertex) {
 	from.Children[to.ID] = to
 }
 
-func (d Dag) removeEdge(from *Vertex, to *Vertex) {
+func (d *Dag) removeEdge(from *Vertex, to *Vertex) {
 	_, hasToEdge := from.Children[to.ID]
 	if !hasToEdge {
 		fmt.Println("Vertex does not exist")
@@ -87,7 +87,7 @@ func (d Dag) removeEdge(from *Vertex, to *Vertex) {
 	delete(from.Children, to.ID)
 }
 
-func (d Dag) addVertex(in *Vertex) {
+func (d *Dag) addVertex(in *Vertex) {
 	_, exists := d.Vertices[in.ID]
 	if exists {
 		fmt.Println("Vertex already exists")
@@ -97,7 +97,7 @@ func (d Dag) addVertex(in *Vertex) {
 	d.Vertices[in.ID] = in
 }
 
-func (d Dag) removeVertex(out *Vertex) {
+func (d *Dag) removeVertex(out *Vertex) {
 	_, exists := d.Vertices[out.ID]
 	if !exists {
 		fmt.Println("Deleting non existent vertex")
@@ -111,7 +111,7 @@ func (d Dag) removeVertex(out *Vertex) {
 	delete(d.Vertices, out.ID)
 }
 
-func (d Dag) retrieveVertex(vertexID string) *Vertex {
+func (d *Dag) retrieveVertex(vertexID string) *Vertex {
 	vertex, exists := d.Vertices[vertexID]
 	if !exists {
 		fmt.Println("Non existent vertex")
@@ -122,40 +122,40 @@ func (d Dag) retrieveVertex(vertexID string) *Vertex {
 }
 
 func (d *Dag) SaveDag() {
-  file, err := os.Create("./.pm/dag/" + d.Id);
-  if err != nil {
-    fmt.Printf(err.Error())
-    fmt.Println("Error creating file")
-    return
-  }
-  defer file.Close()
+	file, err := os.Create("./.pm/dag/" + d.Id)
+	if err != nil {
+		fmt.Printf(err.Error())
+		fmt.Println("Error creating file")
+		return
+	}
+	defer file.Close()
 
-  encoder := gob.NewEncoder(file)
-  encodingErr := encoder.Encode(d)
-  if encodingErr != nil {
-	fmt.Printf(encodingErr.Error())
-    fmt.Println("Error encoding dag")
-    return
-  }
+	encoder := gob.NewEncoder(file)
+	encodingErr := encoder.Encode(d)
+	if encodingErr != nil {
+		fmt.Printf(encodingErr.Error())
+		fmt.Println("Error encoding dag")
+		return
+	}
 }
 
 func LoadDag(fileName string) *Dag {
-  file, fileErr := os.Open("./.pm/dag/" + fileName)
+	file, fileErr := os.Open("./.pm/dag/" + fileName)
 
-  if fileErr != nil {
-    fmt.Println("Error opening binary file")
-    return nil
-  }
-  defer file.Close()
+	if fileErr != nil {
+		fmt.Println("Error opening binary file")
+		return nil
+	}
+	defer file.Close()
 
-  decoder := gob.NewDecoder(file)
+	decoder := gob.NewDecoder(file)
 
-  var loadedDag *Dag
-  decodingErr := decoder.Decode(&loadedDag)
-  if decodingErr != nil {
-    fmt.Println("Error decoding dag")
-    return nil
-  }
+	var loadedDag *Dag
+	decodingErr := decoder.Decode(&loadedDag)
+	if decodingErr != nil {
+		fmt.Println("Error decoding dag")
+		return nil
+	}
 
-  return loadedDag
+	return loadedDag
 }

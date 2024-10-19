@@ -1,12 +1,12 @@
 package main
 
 import (
-	"reflect"
-	"testing"
-	"os"
 	"crypto/sha1"
 	"fmt"
+	"os"
+	"reflect"
 	"sort"
+	"testing"
 )
 
 // Test adding a file to the Trie
@@ -78,7 +78,6 @@ func TestRetrieveFile(t *testing.T) {
 	}
 }
 
-
 // Test adding a duplicate file to the Trie
 func TestAddDuplicateFile(t *testing.T) {
 	trie := NewTrie("test")
@@ -118,9 +117,9 @@ func TestRemoveFile(t *testing.T) {
 // Test removing a word that doesn't exist
 func TestRemoveNonExistentWord(t *testing.T) {
 	trie := NewTrie("test")
-  content := "file content for cat"
-  hash := sha1.Sum([]byte(content)) // Generate the SHA-1 hash
-  hashHex := fmt.Sprintf("%x", hash[:])
+	content := "file content for cat"
+	hash := sha1.Sum([]byte(content)) // Generate the SHA-1 hash
+	hashHex := fmt.Sprintf("%x", hash[:])
 	trie.addFile("cat", hashHex)
 	trie.removeWord("dog") // Try removing a non-existent word
 
@@ -134,12 +133,12 @@ func TestRemoveNonExistentWord(t *testing.T) {
 func TestRemovePrefixWord(t *testing.T) {
 	trie := NewTrie("test")
 	contentCat := "file content for cat"
-  contentCar := "file content for car"
+	contentCar := "file content for car"
 
-  cat := sha1.Sum([]byte(contentCat)) // Generate SHA-1 hash for cat
-  hashCat := fmt.Sprintf("%x", cat[:])
-  car := sha1.Sum([]byte(contentCar)) // Generate SHA-1 hash for car
-  hashCar := fmt.Sprintf("%x", car[:])
+	cat := sha1.Sum([]byte(contentCat)) // Generate SHA-1 hash for cat
+	hashCat := fmt.Sprintf("%x", cat[:])
+	car := sha1.Sum([]byte(contentCar)) // Generate SHA-1 hash for car
+	hashCar := fmt.Sprintf("%x", car[:])
 
 	trie.addFile("cat", hashCat)
 	trie.addFile("car", hashCar)
@@ -160,15 +159,15 @@ func TestRemovePrefixWord(t *testing.T) {
 func TestLoadWordsFromPrefix(t *testing.T) {
 	trie := NewTrie("test")
 	contentCat := "file content for cat"
-  contentCar := "file content for car"
-  contentCart := "file content for cart"
+	contentCar := "file content for car"
+	contentCart := "file content for cart"
 
-  cat := sha1.Sum([]byte(contentCat)) // Generate SHA-1 hash for cat
-  hashCat := fmt.Sprintf("%x", cat[:])
-  car := sha1.Sum([]byte(contentCar)) // Generate SHA-1 hash for car
-  hashCar := fmt.Sprintf("%x", car[:])
-  cart := sha1.Sum([]byte(contentCart)) // Generate SHA-1 hash for car
-  hashCart := fmt.Sprintf("%x", cart[:])
+	cat := sha1.Sum([]byte(contentCat)) // Generate SHA-1 hash for cat
+	hashCat := fmt.Sprintf("%x", cat[:])
+	car := sha1.Sum([]byte(contentCar)) // Generate SHA-1 hash for car
+	hashCar := fmt.Sprintf("%x", car[:])
+	cart := sha1.Sum([]byte(contentCart)) // Generate SHA-1 hash for car
+	hashCart := fmt.Sprintf("%x", cart[:])
 	trie.addFile("cat", hashCat)
 	trie.addFile("car", hashCar)
 	trie.addFile("cart", hashCart)
@@ -176,7 +175,7 @@ func TestLoadWordsFromPrefix(t *testing.T) {
 	words := trie.loadWordsFromPrefix("ca")
 	expected := []string{"car", "cart", "cat"}
 	sort.Strings(expected)
-  sort.Strings(words)
+	sort.Strings(words)
 
 	if !reflect.DeepEqual(words, expected) {
 		t.Errorf("Expected words %v, but got %v", expected, words)
@@ -187,15 +186,15 @@ func TestLoadWordsFromPrefix(t *testing.T) {
 func TestLoadWordsFromNonExistentPrefix(t *testing.T) {
 	trie := NewTrie("test")
 	contentCat := "file content for cat"
-  contentCar := "file content for car"
-  contentCart := "file content for cart"
+	contentCar := "file content for car"
+	contentCart := "file content for cart"
 
-  cat := sha1.Sum([]byte(contentCat)) // Generate SHA-1 hash for cat
-  hashCat := fmt.Sprintf("%x", cat[:])
-  car := sha1.Sum([]byte(contentCar)) // Generate SHA-1 hash for car
-  hashCar := fmt.Sprintf("%x", car[:])
-  cart := sha1.Sum([]byte(contentCart)) // Generate SHA-1 hash for car
-  hashCart := fmt.Sprintf("%x", cart[:])
+	cat := sha1.Sum([]byte(contentCat)) // Generate SHA-1 hash for cat
+	hashCat := fmt.Sprintf("%x", cat[:])
+	car := sha1.Sum([]byte(contentCar)) // Generate SHA-1 hash for car
+	hashCar := fmt.Sprintf("%x", car[:])
+	cart := sha1.Sum([]byte(contentCart)) // Generate SHA-1 hash for car
+	hashCart := fmt.Sprintf("%x", cart[:])
 	trie.addFile("cat", hashCat)
 	trie.addFile("car", hashCar)
 	trie.addFile("cart", hashCart)
@@ -211,7 +210,7 @@ func TestWalkWord(t *testing.T) {
 	trie := NewTrie("test")
 	contentBat := "file content for bat"
 	bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
-  hashBat := fmt.Sprintf("%x", bat[:])
+	hashBat := fmt.Sprintf("%x", bat[:])
 	trie.addFile("bat", hashBat)
 
 	node := trie.walkWord("bat")
@@ -224,9 +223,9 @@ func TestWalkWord(t *testing.T) {
 func TestWalkNonExistentWord(t *testing.T) {
 	trie := NewTrie("test")
 	contentBat := "file content for bat"
-  	bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
-    hashBat := fmt.Sprintf("%x", bat[:])
-  	trie.addFile("bat", hashBat)
+	bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
+	hashBat := fmt.Sprintf("%x", bat[:])
+	trie.addFile("bat", hashBat)
 
 	node := trie.walkWord("cat")
 	if node != nil {
@@ -258,13 +257,13 @@ func TestIsNotBarren(t *testing.T) {
 func TestSaveTrie(t *testing.T) {
 	trie := NewTrie("test")
 	contentBat := "file content for bat"
-  bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
-  hashBat := fmt.Sprintf("%x", bat[:])
-  contentDog := "file content for dog"
-  dog := sha1.Sum([]byte(contentDog)) // Generate SHA-1 hash for car
-  hashDog := fmt.Sprintf("%x", dog[:])
-  trie.addFile("bat", hashBat)
-  trie.addFile("dog", hashDog)
+	bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
+	hashBat := fmt.Sprintf("%x", bat[:])
+	contentDog := "file content for dog"
+	dog := sha1.Sum([]byte(contentDog)) // Generate SHA-1 hash for car
+	hashDog := fmt.Sprintf("%x", dog[:])
+	trie.addFile("bat", hashBat)
+	trie.addFile("dog", hashDog)
 
 	// Save the Trie to disk
 	trie.Save()
@@ -279,13 +278,13 @@ func TestSaveTrie(t *testing.T) {
 func TestLoadTrie(t *testing.T) {
 	trie := NewTrie("test")
 	contentBat := "file content for bat"
-  bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
-  hashBat := fmt.Sprintf("%x", bat[:])
-  contentDog := "file content for dog"
-  dog := sha1.Sum([]byte(contentDog)) // Generate SHA-1 hash for car
-  hashDog := fmt.Sprintf("%x", dog[:])
-  trie.addFile("bat", hashBat)
-  trie.addFile("dog", hashDog)
+	bat := sha1.Sum([]byte(contentBat)) // Generate SHA-1 hash for car
+	hashBat := fmt.Sprintf("%x", bat[:])
+	contentDog := "file content for dog"
+	dog := sha1.Sum([]byte(contentDog)) // Generate SHA-1 hash for car
+	hashDog := fmt.Sprintf("%x", dog[:])
+	trie.addFile("bat", hashBat)
+	trie.addFile("dog", hashDog)
 
 	// Save the Trie first
 	trie.Save()
@@ -315,7 +314,7 @@ func TestSaveAndLoadTrie(t *testing.T) {
 	cat := sha1.Sum([]byte(contentCat)) // Generate SHA-1 hash for cat
 	hashCat := fmt.Sprintf("%x", cat[:])
 	dog := sha1.Sum([]byte(contentDog)) // Generate SHA-1 hash for dog
-  hashDog := fmt.Sprintf("%x", dog[:])
+	hashDog := fmt.Sprintf("%x", dog[:])
 
 	trie.addFile("cat", hashCat)
 	trie.addFile("dog", hashDog)

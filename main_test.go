@@ -1,10 +1,9 @@
 package main
 
-
 import (
-  "os"
-  "fmt"
-  "testing"
+	"fmt"
+	"os"
+	"testing"
 )
 
 // Setup function to create resources before running tests
@@ -18,28 +17,28 @@ func setup() {
 	}
 
 	err = os.Mkdir("./.pm/trie", os.ModePerm)
-  if err != nil && !os.IsExist(err) {
-    fmt.Printf("Error creating test directory: %v\n", err)
-  }
+	if err != nil && !os.IsExist(err) {
+		fmt.Printf("Error creating test directory: %v\n", err)
+	}
 
-  err = os.Mkdir("./.pm/dag", os.ModePerm)
-  if err != nil && !os.IsExist(err) {
-    fmt.Printf("Error creating test directory: %v\n", err)
-  }
+	err = os.Mkdir("./.pm/dag", os.ModePerm)
+	if err != nil && !os.IsExist(err) {
+		fmt.Printf("Error creating test directory: %v\n", err)
+	}
 }
 
 // Teardown function to clean up after tests
 func teardown() {
 	fmt.Println("Tearing down resources...")
 
-  // Path to your trie directory
-  pmDir := ".pm"
+	// Path to your trie directory
+	pmDir := ".pm"
 
-  // Remove the entire directory and its contents
-  err := os.RemoveAll(pmDir)
-  if err != nil {
-    fmt.Printf("failed to remove .pm directory: %v", err)
-  }
+	// Remove the entire directory and its contents
+	err := os.RemoveAll(pmDir)
+	if err != nil {
+		fmt.Printf("failed to remove .pm directory: %v", err)
+	}
 }
 
 // TestMain is the entry point for running tests

@@ -1,4 +1,4 @@
-package main;
+package main
 
 import (
 	"bytes"
@@ -13,43 +13,43 @@ import (
 const compressionThreshold = 1024 // 1 KB threshold for compression
 
 func updateBlobContent(name string, content string, index *Trie) error {
-  defer index.Save()
-  hash := sha1.Sum([]byte(content))
-  hashStr := fmt.Sprintf("%x", hash[:])
+	defer index.Save()
+	hash := sha1.Sum([]byte(content))
+	hashStr := fmt.Sprintf("%x", hash[:])
 
-  blobErr := createBlob(content);
-  if blobErr != nil {
-    return blobErr;
-  }
+	blobErr := createBlob(content)
+	if blobErr != nil {
+		return blobErr
+	}
 
-  indexErr := reIndex(name, hashStr, index);
-  if indexErr != nil {
-    return indexErr;
-  }
+	indexErr := reIndex(name, hashStr, index)
+	if indexErr != nil {
+		return indexErr
+	}
 
-  return nil
+	return nil
 }
 
 func commit(name string, content string, index *Trie) error {
-  defer index.Save()
-  hash := sha1.Sum([]byte(content))
+	defer index.Save()
+	hash := sha1.Sum([]byte(content))
 	hashStr := fmt.Sprintf("%x", hash[:])
 
-  blobErr := createBlob(content);
-  if blobErr != nil {
-    return blobErr;
-  }
+	blobErr := createBlob(content)
+	if blobErr != nil {
+		return blobErr
+	}
 
-  indexErr := indexName(name, hashStr, index);
-  if indexErr != nil {
-    return indexErr;
-  }
+	indexErr := indexName(name, hashStr, index)
+	if indexErr != nil {
+		return indexErr
+	}
 
-  return nil
+	return nil
 }
 
-func createBlob(content string) (error) {
-  hash := sha1.Sum([]byte(content))
+func createBlob(content string) error {
+	hash := sha1.Sum([]byte(content))
 	hashStr := fmt.Sprintf("%x", hash[:])
 	blobDir := ".pm/blobs/"
 	subDir := blobDir + hashStr[:2]
@@ -124,12 +124,12 @@ func indexName(fileName string, hashContent string, index *Trie) error {
 }
 
 func reIndex(fileName string, hashContent string, index *Trie) error {
-  indexErr := index.updateValue(fileName, hashContent)
-  if indexErr != nil {
-    return indexErr
-  }
+	indexErr := index.updateValue(fileName, hashContent)
+	if indexErr != nil {
+		return indexErr
+	}
 
-  return nil
+	return nil
 }
 
 // Delete a blob and remove its index in the Trie
@@ -149,11 +149,11 @@ func deleteBlob(fileName string, index *Trie) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete blob: %v", err)
 	}
-	err = removeIfEmpty(blobDir);
+	err = removeIfEmpty(blobDir)
 
 	if err != nil {
-    return fmt.Errorf("failed to delete blob dir: %v", err)
-  }
+		return fmt.Errorf("failed to delete blob dir: %v", err)
+	}
 
 	// Remove the file name from the Trie index
 	index.removeWord(fileName)
@@ -189,25 +189,25 @@ func removeIfEmpty(dirPath string) error {
 }
 
 func retrieveContent(fileName string, index *Trie) ([]byte, error) {
-  hash, err := index.retrieveValue(fileName)
-  if err != nil {
-    fmt.Errorf("failed to retrieve hash for file '%s': %v", fileName, err)
-    return []byte(""), err
-  }
+	hash, err := index.retrieveValue(fileName)
+	if err != nil {
+		fmt.Errorf("failed to retrieve hash for file '%s': %v", fileName, err)
+		return []byte(""), err
+	}
 
-  // Construct the blob path using the hash
-  blobPath := filepath.Join(".pm/blobs", hash[:2], hash)
+	// Construct the blob path using the hash
+	blobPath := filepath.Join(".pm/blobs", hash[:2], hash)
 
-  fileContent, err := os.Open(blobPath)
-  if err != nil {
-    return []byte(""), fmt.Errorf("failed to open blob file: %v", err)
-  }
-  defer fileContent.Close()
+	fileContent, err := os.Open(blobPath)
+	if err != nil {
+		return []byte(""), fmt.Errorf("failed to open blob file: %v", err)
+	}
+	defer fileContent.Close()
 
-  content, err := io.ReadAll(fileContent)
-  if err != nil {
-    return []byte(""), fmt.Errorf("failed to read blob file: %v", err)
-  }
+	content, err := io.ReadAll(fileContent)
+	if err != nil {
+		return []byte(""), fmt.Errorf("failed to read blob file: %v", err)
+	}
 
-  return content, nil
+	return content, nil
 }

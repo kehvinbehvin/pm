@@ -126,9 +126,9 @@ func TestDeleteBlob(t *testing.T) {
 	// Check if the file was removed from the Trie
 	node := trie.walkWord(filename)
 	if node != nil {
-	  if node.IsEnd {
-	     t.Errorf("Expected file %s to be removed from the Trie, but it still exists", filename)
-	  }
+		if node.IsEnd {
+			t.Errorf("Expected file %s to be removed from the Trie, but it still exists", filename)
+		}
 	}
 }
 
