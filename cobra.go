@@ -90,6 +90,15 @@ func init() {
 			}
 
 			defer tmpFile.Close()
+
+			deltaFile, deltaErr := os.Create("./.pm/delta")
+			if deltaErr != nil {
+				fmt.Printf("Error creating delta file: %v\n", deltaErr)
+			}
+			deltaTree := NewDeltaTree()
+			deltaTree.SaveDelta()
+
+			defer deltaFile.Close()
 		},
 	}
 
@@ -103,6 +112,9 @@ func init() {
 
 			pmDag := LoadDag("pmDag")
 			defer pmDag.SaveDag()
+
+			deltaTree := LoadDelta()
+			defer deltaTree.SaveDelta()
 
 			var nodesToSave []*Vertex
 
@@ -131,7 +143,12 @@ func init() {
 			}
 
 			for _, vs := range nodesToSave {
-				pmDag.addVertex(vs)
+				addErr := pmDag.addVertex(vs)
+				if addErr != nil {
+				    fmt.Println(addErr.Error())
+				} else {
+				  deltaTree.addVertexEvent(vs)
+				}
 			}
 
 			epicTrie := Load("epic")
@@ -162,6 +179,9 @@ func init() {
 			pmDag := LoadDag("pmDag")
 			defer pmDag.SaveDag()
 
+			deltaTree := LoadDelta()
+			defer deltaTree.SaveDelta()
+
 			if tasks > 0 {
 				if epics > 1 || stories > 1 {
 					// Not allowed, invalid relationship.
@@ -177,10 +197,22 @@ func init() {
 					storyValue := sValues[0]
 					storyVertex := pmDag.retrieveVertex(storyValue)
 
-					pmDag.addEdge(epicVertex, storyVertex)
+					edgeErr := pmDag.addEdge(epicVertex, storyVertex)
+					if edgeErr != nil {
+					  fmt.Println(edgeErr.Error())
+					} else {
+					  deltaTree.addEdgeEvent(epicVertex, storyVertex)
+					}
+
 					for _, value := range tValues {
 						taskVertex := pmDag.retrieveVertex(value)
-						pmDag.addEdge(storyVertex, taskVertex)
+						edgeErr := pmDag.addEdge(storyVertex, taskVertex)
+
+						if edgeErr != nil {
+              fmt.Println(edgeErr.Error())
+            } else {
+              deltaTree.addEdgeEvent(storyVertex, taskVertex)
+            }
 					}
 				}
 			} else if stories > 0 {
@@ -197,7 +229,13 @@ func init() {
 
 					for _, value := range sValues {
 						storyVertex := pmDag.retrieveVertex(value)
-						pmDag.addEdge(epicVertex, storyVertex)
+						edgeErr := pmDag.addEdge(epicVertex, storyVertex)
+
+						if edgeErr != nil {
+              fmt.Println(edgeErr.Error())
+            } else {
+              deltaTree.addEdgeEvent(epicVertex, storyVertex)
+            }
 					}
 				}
 			} else {
@@ -436,23 +474,22 @@ func init() {
 			}
 		},
 	}
-		var detachCmd = &cobra.Command{
+	var detachCmd = &cobra.Command{
 		Use:   "detach",
 		Short: "Remove symlink to master directory",
 		Run: func(cmd *cobra.Command, args []string) {
-			_ , err := os.Stat("./.pm")
-				if os.IsNotExist(err) {
-					fmt.Println("pm does not exist");
-					return
-				}
-				err = os.Remove("./.pm")
-				if err != nil {
-					fmt.Println("Error removing symlink:", err)
-					return
-				}
+			_, err := os.Stat("./.pm")
+			if os.IsNotExist(err) {
+				fmt.Println("pm does not exist")
+				return
+			}
+			err = os.Remove("./.pm")
+			if err != nil {
+				fmt.Println("Error removing symlink:", err)
+				return
+			}
 		},
 	}
-
 
 	var epicCmd = &cobra.Command{
 		Use:   "epics",
@@ -493,6 +530,17 @@ func init() {
 		},
 	}
 
+	var testCmd = &cobra.Command{
+		Use:   "test",
+		Short: "Test",
+		Run: func(cmd *cobra.Command, args []string) {
+			deltaTree := LoadDelta()
+			defer deltaTree.SaveDelta()
+
+			fmt.Println(deltaTree)
+		},
+	}
+
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(attachCmd)
 	rootCmd.AddCommand(detachCmd)
@@ -504,6 +552,8 @@ func init() {
 	rootCmd.AddCommand(viewCmd)
 	rootCmd.AddCommand(editCmd)
 	rootCmd.AddCommand(listCmd)
+
+	rootCmd.AddCommand(testCmd)
 
 	listCmd.AddCommand(listEpicsCmd)
 	listCmd.AddCommand(listStoriesCmd)
