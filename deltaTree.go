@@ -10,15 +10,15 @@ import (
 )
 
 type DeltaTree struct {
-	Tree          map[string]*Delta
-	Pointer  string
-	ParentDelta   string
+	Tree        map[string]*Delta
+	Pointer     string
+	ParentDelta string
 }
 
 func NewDeltaTree() *DeltaTree {
 	return &DeltaTree{
-		Tree:          make(map[string]*Delta),
-		Pointer:  "",
+		Tree:    make(map[string]*Delta),
+		Pointer: "",
 	}
 }
 

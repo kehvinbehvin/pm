@@ -99,6 +99,11 @@ func init() {
 			deltaTree.SaveDelta()
 
 			defer deltaFile.Close()
+
+			err = os.Mkdir("./.pm/remote", os.ModePerm)
+			if err != nil && !os.IsExist(err) {
+				fmt.Printf("Error creating remote directory: %v\n", err)
+			}
 		},
 	}
 
@@ -530,6 +535,22 @@ func init() {
 		},
 	}
 
+	var pullCmd = &cobra.Command{
+		Use:   "pull",
+		Short: "Pull delta",
+		Run: func(cmd *cobra.Command, args []string) {
+			retrieveFile()
+		},
+	}
+
+	var pushCmd = &cobra.Command{
+		Use:   "push",
+		Short: "Push delta",
+		Run: func(cmd *cobra.Command, args []string) {
+			putFile()
+		},
+	}
+
 	var testCmd = &cobra.Command{
 		Use:   "test",
 		Short: "Test",
@@ -552,6 +573,8 @@ func init() {
 	rootCmd.AddCommand(viewCmd)
 	rootCmd.AddCommand(editCmd)
 	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(pullCmd)
+	rootCmd.AddCommand(pushCmd)
 
 	rootCmd.AddCommand(testCmd)
 
