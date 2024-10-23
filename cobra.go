@@ -145,9 +145,9 @@ func init() {
 			for _, vs := range nodesToSave {
 				addErr := pmDag.addVertex(vs)
 				if addErr != nil {
-				    fmt.Println(addErr.Error())
+					fmt.Println(addErr.Error())
 				} else {
-				  deltaTree.addVertexEvent(vs)
+					deltaTree.addVertexEvent(vs)
 				}
 			}
 
@@ -199,9 +199,9 @@ func init() {
 
 					edgeErr := pmDag.addEdge(epicVertex, storyVertex)
 					if edgeErr != nil {
-					  fmt.Println(edgeErr.Error())
+						fmt.Println(edgeErr.Error())
 					} else {
-					  deltaTree.addEdgeEvent(epicVertex, storyVertex)
+						deltaTree.addEdgeEvent(epicVertex, storyVertex)
 					}
 
 					for _, value := range tValues {
@@ -209,10 +209,10 @@ func init() {
 						edgeErr := pmDag.addEdge(storyVertex, taskVertex)
 
 						if edgeErr != nil {
-              fmt.Println(edgeErr.Error())
-            } else {
-              deltaTree.addEdgeEvent(storyVertex, taskVertex)
-            }
+							fmt.Println(edgeErr.Error())
+						} else {
+							deltaTree.addEdgeEvent(storyVertex, taskVertex)
+						}
 					}
 				}
 			} else if stories > 0 {
@@ -232,10 +232,10 @@ func init() {
 						edgeErr := pmDag.addEdge(epicVertex, storyVertex)
 
 						if edgeErr != nil {
-              fmt.Println(edgeErr.Error())
-            } else {
-              deltaTree.addEdgeEvent(epicVertex, storyVertex)
-            }
+							fmt.Println(edgeErr.Error())
+						} else {
+							deltaTree.addEdgeEvent(epicVertex, storyVertex)
+						}
 					}
 				}
 			} else {
