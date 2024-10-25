@@ -559,6 +559,8 @@ func init() {
 			defer deltaTree.SaveDelta()
 
 			fmt.Println(deltaTree)
+			remoteTree := LoadRemoteDelta()
+			fmt.Println(remoteTree)
 		},
 	}
 

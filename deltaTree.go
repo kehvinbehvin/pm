@@ -10,19 +10,19 @@ import (
 )
 
 type DeltaTree struct {
-	Tree        map[string]*Delta
-	Pointer     string
-	ParentDelta string
+	Tree    map[int]*Delta
+	Pointer int
 }
 
 func NewDeltaTree() *DeltaTree {
 	return &DeltaTree{
-		Tree:    make(map[string]*Delta),
-		Pointer: "",
+		Tree:    make(map[int]*Delta),
+		Pointer: 0,
 	}
 }
 
-func (dt *DeltaTree) Checkout(nodeHash string) error {
+// Not in use now
+func (dt *DeltaTree) Checkout(nodeHash int) error {
 	_, ok := dt.Tree[nodeHash]
 	if !ok {
 		return errors.New("No hash found")
@@ -32,25 +32,24 @@ func (dt *DeltaTree) Checkout(nodeHash string) error {
 }
 
 func (dt *DeltaTree) Push(delta Delta) error {
-	deltaId := delta.GetId()
+	deltaId := delta.GetSeq()
 	_, ok := dt.Tree[deltaId]
 	if ok {
 		return errors.New("Existing delta found")
 	}
 
-	dt.Tree[deltaId] = &delta
-	dt.Pointer = deltaId
-
+	dt.Pointer = delta.GetSeq()
+	dt.Tree[dt.Pointer] = &delta
 	return nil
 }
 
 func (dt *DeltaTree) String() string {
 	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("DeltaTree (Pointer: %s)\n", dt.Pointer))
+	builder.WriteString(fmt.Sprintf("DeltaTree (Pointer: %d)\n", dt.Pointer))
 	builder.WriteString("Deltas:\n")
 
 	for id, delta := range dt.Tree {
-		builder.WriteString(fmt.Sprintf("ID: %s, Delta: %s\n", id, *delta))
+		builder.WriteString(fmt.Sprintf("ID: %d, Delta: %s\n", id, *delta))
 	}
 
 	return builder.String()
@@ -66,7 +65,20 @@ func (dt *DeltaTree) addEdgeEvent(parent *Vertex, child *Vertex) error {
 	opHash := sha1.Sum([]byte{addEdge})
 	opStr := fmt.Sprintf("%x", opHash[:])
 
-	prevHash := dt.Pointer
+	var prevHash string
+
+	deltaParentSeq := dt.Pointer
+	if deltaParentSeq == 0 {
+		prevHash = ""
+	} else {
+		deltaParentPtr, ok := dt.Tree[deltaParentSeq]
+		if !ok {
+			return errors.New("Parent seq not found")
+		}
+
+		deltaParent := *deltaParentPtr
+		prevHash = deltaParent.GetId()
+	}
 
 	uuid := parentStr + childStr + opStr + prevHash
 	uuidHash := sha1.Sum([]byte(uuid))
@@ -77,7 +89,8 @@ func (dt *DeltaTree) addEdgeEvent(parent *Vertex, child *Vertex) error {
 		Operation:   addEdge,
 		Parent:      parent,
 		Child:       child,
-		ParentDelta: prevHash,
+		ParentDelta: deltaParentSeq,
+		Seq:         deltaParentSeq + 1,
 	}
 
 	dt.Push(delta)
@@ -95,7 +108,20 @@ func (dt *DeltaTree) removeEdgeEvent(parent *Vertex, child *Vertex) error {
 	opHash := sha1.Sum([]byte{removeEdge})
 	opStr := fmt.Sprintf("%x", opHash[:])
 
-	prevHash := dt.Pointer
+	var prevHash string
+
+	deltaParentSeq := dt.Pointer
+	if deltaParentSeq == 0 {
+		prevHash = ""
+	} else {
+		deltaParentPtr, ok := dt.Tree[deltaParentSeq]
+		if !ok {
+			return errors.New("Parent seq not found")
+		}
+
+		deltaParent := *deltaParentPtr
+		prevHash = deltaParent.GetId()
+	}
 
 	uuid := parentStr + childStr + opStr + prevHash
 	uuidHash := sha1.Sum([]byte(uuid))
@@ -106,7 +132,8 @@ func (dt *DeltaTree) removeEdgeEvent(parent *Vertex, child *Vertex) error {
 		Operation:   removeEdge,
 		Parent:      parent,
 		Child:       child,
-		ParentDelta: prevHash,
+		ParentDelta: deltaParentSeq,
+		Seq:         deltaParentSeq + 1,
 	}
 
 	dt.Push(delta)
@@ -121,7 +148,20 @@ func (dt *DeltaTree) addVertexEvent(vertex *Vertex) error {
 	opHash := sha1.Sum([]byte{addVertex})
 	opStr := fmt.Sprintf("%x", opHash[:])
 
-	prevHash := dt.Pointer
+	var prevHash string
+
+	deltaParentSeq := dt.Pointer
+	if deltaParentSeq == 0 {
+		prevHash = ""
+	} else {
+		deltaParentPtr, ok := dt.Tree[deltaParentSeq]
+		if !ok {
+			return errors.New("Parent seq not found")
+		}
+
+		deltaParent := *deltaParentPtr
+		prevHash = deltaParent.GetId()
+	}
 
 	uuid := hashStr + opStr + prevHash
 	uuidHash := sha1.Sum([]byte(uuid))
@@ -131,7 +171,8 @@ func (dt *DeltaTree) addVertexEvent(vertex *Vertex) error {
 		Id:          uuidStr,
 		Operation:   addVertex,
 		Vertex:      vertex,
-		ParentDelta: prevHash,
+		ParentDelta: deltaParentSeq,
+		Seq:         deltaParentSeq + 1,
 	}
 
 	dt.Push(delta)
@@ -146,7 +187,20 @@ func (dt *DeltaTree) removeVertexEvent(vertex *Vertex) error {
 	opHash := sha1.Sum([]byte{addVertex})
 	opStr := fmt.Sprintf("%x", opHash[:])
 
-	prevHash := dt.Pointer
+	var prevHash string
+
+	deltaParentSeq := dt.Pointer
+	if deltaParentSeq == 0 {
+		prevHash = ""
+	} else {
+		deltaParentPtr, ok := dt.Tree[deltaParentSeq]
+		if !ok {
+			return errors.New("Parent seq not found")
+		}
+
+		deltaParent := *deltaParentPtr
+		prevHash = deltaParent.GetId()
+	}
 
 	uuid := hashStr + opStr + prevHash
 	uuidHash := sha1.Sum([]byte(uuid))
@@ -156,7 +210,8 @@ func (dt *DeltaTree) removeVertexEvent(vertex *Vertex) error {
 		Id:          uuidStr,
 		Operation:   removeVertex,
 		Vertex:      vertex,
-		ParentDelta: prevHash,
+		ParentDelta: deltaParentSeq,
+		Seq:         deltaParentSeq + 1,
 	}
 
 	dt.Push(delta)
@@ -209,4 +264,28 @@ func (dt *DeltaTree) SaveDelta() {
 		fmt.Println("Error encoding delta")
 		return
 	}
+}
+
+func LoadRemoteDelta() *DeltaTree {
+	file, fileErr := os.Open("./.pm/remote/delta")
+
+	if fileErr != nil {
+		fmt.Println("Error opening remote delta file")
+		return nil
+	}
+	defer file.Close()
+
+	gob.Register(&VertexDelta{})
+	gob.Register(&EdgeDelta{})
+
+	decoder := gob.NewDecoder(file)
+
+	var deltaTree *DeltaTree
+	decodingErr := decoder.Decode(&deltaTree)
+	if decodingErr != nil {
+		fmt.Println("Error decoding remote delta tree")
+		return nil
+	}
+
+	return deltaTree
 }

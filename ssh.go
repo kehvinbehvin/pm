@@ -14,7 +14,7 @@ func retrieveFile() {
 	privateKey, err := os.ReadFile(keyPath)
 	if err != nil {
 		fmt.Printf(err.Error())
-		return 
+		return
 	}
 
 	// Create the signer for the private key
@@ -74,14 +74,14 @@ func putFile() {
 	privateKey, err := os.ReadFile(keyPath)
 	if err != nil {
 		fmt.Printf(err.Error())
-		return 
+		return
 	}
 
 	// Create the signer for the private key
 	signer, err := ssh.ParsePrivateKey(privateKey)
 	if err != nil {
 		fmt.Printf(err.Error())
-		return 
+		return
 	}
 
 	// Create SSH client configuration
