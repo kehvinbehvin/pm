@@ -102,15 +102,18 @@ like in a git-style.
   - Group all deltas by events and end state
   - Ask user to choose which end state
 
-- List out all nodes (vertex or edge)
-- for each node, record the ops made on it
-- find out the final state of the node, if diff
-- then considered as conflicting
-- if conflicting, split between vertexes and edges
-  - for vertexes
-    - get user's input
-  - for edges
-    - 
+- Deviation case
+  - Given all the deltas after LCS on both trees
+  - Build 2 trees that represent the end state of applying the deltas in sequence 
+
+DeltaState {
+  Vertex
+  Opp: Create | Destroy | nil {make sure to store reference to delta here}
+  Opp: Add Child | Remove Child | nil {make sure to store reference to delta here}
+}
+  - Construct DeltaStates from each node
+  - Compare all DeltaStates, if any have conflicting, get User input
+  - Else continue
 
 - Add Vertex, Remove Vertex
 - Add Vertex, Remove Vertex. Add Vertex

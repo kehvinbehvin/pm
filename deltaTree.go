@@ -327,29 +327,26 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
 		return nil
 	}
 
-	lastCommonSeq, lcsErr := calculateLcs(primaryTree, secondaryTree)
+	lastCommonHash, lcsErr := calculateLcs(primaryTree, secondaryTree)
 	if lcsErr != nil {
 		return lcsErr
 	}
-	fmt.Println("LCS: ", lastCommonSeq)
-	if lastCommonSeq > 0 {
-		return nil
-	}
+	fmt.Println("LCS: ", lastCommonHash)
 
-	hasDeviation, deviationError := checkForDeviation(primaryTree, secondaryTree, lastCommonSeq)
+	hasDeviation, deviationError := checkForDeviation(primaryTree, secondaryTree, lastCommonHash)
 	if deviationError != nil {
 		return deviationError
 	}
 
 	// No conflicts, return all deltas required to bring both trees to the lastest of 2 trees
 	if !hasDeviation {
-		mergeErr := fastForward(primaryTree, secondaryTree, lastCommonSeq)
+		mergeErr := fastForward(primaryTree, secondaryTree, lastCommonHash)
 		if mergeErr != nil {
 			return errors.New("Error fast forwarding tree")
 		}
 
 	} else {
-		conflictingErr := manualMerge(primaryTree, secondaryTree, lastCommonSeq)
+		conflictingErr := manualMerge(primaryTree, secondaryTree, lastCommonHash)
 		if conflictingErr != nil {
 			return errors.New("Error performing manual merge")
 		}
@@ -357,7 +354,9 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
 	return nil
 }
 
-func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (int, error) {
+// Primary should be lcoal
+// Secondary should be remote
+func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (string, error) {
 	for i := primaryTree.Pointer; i >= 0; i-- {
 		primaryDelta := *primaryTree.SeqTree[i]
 		primaryId := primaryDelta.GetId()
@@ -365,30 +364,179 @@ func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (int, error)
 		_, ok := secondaryTree.IdTree[primaryId]
 		if ok {
 			if (i < primaryTree.Pointer) && i == secondaryTree.Pointer {
-				fmt.Println("Local is ahead of Remote", i, primaryId)
-				return i, nil
-			} else if (secondaryTree.Pointer > i) {
-				fmt.Println("Remote is ahead of Local", i, primaryId)
-				return i, nil
+				fmt.Println("Local is ahead of Remote", primaryId)
+				return primaryId, nil
+			} else if secondaryTree.Pointer > i {
+				fmt.Println("Remote is ahead of Local", primaryId)
+				return primaryId, nil
 			} else {
 				fmt.Println("Both are the same", i, primaryId)
 
-				return i, nil
+				return primaryId, nil
 			}
 		}
 	}
 
-	return 0, nil
+	return "", nil
 }
 
-func checkForDeviation(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonSeq int) (bool, error) {
-	return true, nil
+func checkForDeviation(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonHash string) (bool, error) {
+	primaryLatestSeq := primaryTree.Pointer
+	commonPrimaryDelta := *primaryTree.IdTree[lastCommonHash]
+	commonPrimarySeq := commonPrimaryDelta.GetSeq()
+	secondaryLatestSeq := secondaryTree.Pointer
+	commonSecondaryDelta := *secondaryTree.IdTree[lastCommonHash]
+	commonSecondarySeq := commonSecondaryDelta.GetSeq()
+
+	if (primaryLatestSeq > commonPrimarySeq) && (secondaryLatestSeq > commonSecondarySeq) {
+		return true, nil
+	}
+
+	return false, nil
 }
 
-func fastForward(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonSeq int) error {
+func fastForward(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonSeq string) error {
+	fmt.Println("Can fast forward")
 	return nil
 }
 
-func manualMerge(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonSeq int) error {
+func manualMerge(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonHash string) error {
+	fmt.Println("Need to manually merge")
+
+	var primaryDeviatedDeltas []*Delta
+	var secondaryDeviatedDeltas []*Delta
+
+	primaryLastDelta := *primaryTree.IdTree[lastCommonHash]
+	secondaryLastDelta := *secondaryTree.IdTree[lastCommonHash]
+
+	primaryLastCommonSeq := primaryLastDelta.GetSeq()
+	for i := primaryLastCommonSeq + 1; i <= primaryTree.Pointer; i++ {
+		primaryDeviatedDeltas = append(primaryDeviatedDeltas, primaryTree.SeqTree[i])
+	}
+
+	secondaryLastCommonSeq := secondaryLastDelta.GetSeq()
+	for i := secondaryLastCommonSeq + 1; i <= secondaryTree.Pointer; i++ {
+		secondaryDeviatedDeltas = append(secondaryDeviatedDeltas, secondaryTree.SeqTree[i])
+	}
+
+	primaryTreeState, priErr := squashIntoState(primaryDeviatedDeltas)
+	if priErr != nil {
+		return priErr
+	}
+	secondaryTreeState, secErr := squashIntoState(secondaryDeviatedDeltas)
+	if secErr != nil {
+		return secErr
+	}
+	fmt.Print(primaryTreeState)
+	fmt.Print(secondaryTreeState)
+
+	// deltasToApply, deconflictErr := deconflictStates(primaryTreeState, secondaryTreeState)
+	// if deconflictErr != nil {
+	// 	return errors.New("Error deconflicting states")
+	// }
+
+	fmt.Println("Merge successful")
 	return nil
+}
+
+type State struct {
+	Vertexes map[string]*Delta
+	Edges    map[string]*Delta
+}
+
+func (s *State) String() string {
+	var sb strings.Builder
+
+	// Print Vertexes
+	sb.WriteString("Vertexes:\n")
+	for id, deltaPtr := range s.Vertexes {
+		delta := *deltaPtr
+		sb.WriteString(fmt.Sprintf("  %s: %s\n", id, delta))
+	}
+
+	// Print Edges
+	sb.WriteString("Edges:\n")
+	for id, deltaPtr := range s.Edges {
+		delta := *deltaPtr
+		sb.WriteString(fmt.Sprintf("  %s: %s\n", id, delta))
+	}
+
+	return sb.String()
+}
+
+func squashIntoState(deltas []*Delta) (*State, error) {
+	state := &State{
+		Vertexes: make(map[string]*Delta),
+		Edges:    make(map[string]*Delta),
+	}
+	for _, deltaPtr := range deltas {
+		delta := *deltaPtr
+		op := delta.GetOp()
+		gid := delta.GetGid()
+
+		switch op {
+		case addVertex:
+			fmt.Println("addVertex");
+			if existingDeltaPtr, ok := state.Vertexes[gid]; !ok {
+				state.Vertexes[gid] = &delta
+			} else {
+				// Merge
+				existingDelta := *existingDeltaPtr
+				existingOp := existingDelta.GetOp()
+				switch existingOp {
+				case addVertex:
+					continue
+				case removeVertex:
+					delete(state.Vertexes, gid)
+				}
+			}
+		case removeVertex:
+			fmt.Println("removeVertex");
+			if existingDeltaPtr, ok := state.Vertexes[gid]; !ok {
+				state.Vertexes[gid] = &delta
+			} else {
+				// Merge
+				existingDelta := *existingDeltaPtr
+				existingOp := existingDelta.GetOp()
+				switch existingOp {
+				case addVertex:
+					delete(state.Vertexes, gid)
+				case removeVertex:
+					continue
+				}
+			}
+		case addEdge:
+			fmt.Println("addEdge");
+			if existingEdgePtr, ok := state.Edges[gid]; !ok {
+				state.Edges[gid] = &delta
+			} else {
+				// Merge
+				existingEdge := *existingEdgePtr
+				existingOp := existingEdge.GetOp()
+				switch existingOp {
+				case addEdge:
+					continue
+				case removeEdge:
+					delete(state.Edges, gid)
+				}
+
+			}
+		case removeEdge:
+			fmt.Println("removeEdge");
+			if existingEdgePtr, ok := state.Edges[gid]; !ok {
+				state.Edges[gid] = &delta
+			} else {
+				// Merge
+				existingEdge := *existingEdgePtr
+				existingOp := existingEdge.GetOp()
+				switch existingOp {
+				case addEdge:
+					delete(state.Edges, gid)
+				case removeEdge:
+					continue
+				}
+			}
+		}
+	}
+	return state, nil
 }

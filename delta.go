@@ -18,6 +18,8 @@ type Delta interface {
 	String() string
 	GetParent(*DeltaTree) *Delta
 	GetSeq() int
+	GetOp() byte
+	GetGid() string
 }
 
 type VertexDelta struct {
@@ -26,6 +28,16 @@ type VertexDelta struct {
 	Vertex      *Vertex
 	ParentDelta int
 	Seq         int
+}
+
+func (vd *VertexDelta) GetGid() string {
+	vertex := *vd.Vertex
+	gid := vertex.ID
+	return gid
+}
+
+func (vd *VertexDelta) GetOp() byte {
+	return vd.Operation
 }
 
 func (vd *VertexDelta) Set() {
@@ -66,6 +78,17 @@ type EdgeDelta struct {
 	Child       *Vertex
 	ParentDelta int
 	Seq         int
+}
+
+func (ed *EdgeDelta) GetGid() string {
+	parent := *ed.Parent
+	child := *ed.Child
+	gid := parent.ID + child.ID
+	return gid
+}
+
+func (ed *EdgeDelta) GetOp() byte {
+	return ed.Operation
 }
 
 func (ed *EdgeDelta) Set() {
