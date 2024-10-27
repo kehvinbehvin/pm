@@ -16,18 +16,14 @@ type Delta interface {
 	UnSet()
 	GetId() string
 	String() string
-	GetParent(*DeltaTree) *Delta
-	GetSeq() int
 	GetOp() byte
 	GetGid() string
 }
 
 type VertexDelta struct {
-	Id          string
-	Operation   byte
-	Vertex      *Vertex
-	ParentDelta int
-	Seq         int
+	Id        string
+	Operation byte
+	Vertex    *Vertex
 }
 
 func (vd *VertexDelta) GetGid() string {
@@ -52,32 +48,15 @@ func (vd *VertexDelta) GetId() string {
 	return vd.Id
 }
 
-func (vd *VertexDelta) GetSeq() int {
-	return vd.Seq
-}
-
-func (vd *VertexDelta) GetParent(dt *DeltaTree) *Delta {
-	parentId := vd.ParentDelta
-	delta, ok := dt.SeqTree[parentId]
-	if !ok {
-		fmt.Println("Cannot find parent")
-		return nil
-	}
-
-	return delta
-}
-
 func (vd *VertexDelta) String() string {
-	return fmt.Sprintf("VertexDelta(Id: %s, Operation: %d, Vertex: %s, ParentDelta: %d)", vd.Id, vd.Operation, vd.Vertex.ID, vd.ParentDelta)
+	return fmt.Sprintf("VertexDelta(Id: %s, Operation: %d, Vertex: %s)", vd.Id, vd.Operation, vd.Vertex.ID)
 }
 
 type EdgeDelta struct {
-	Id          string
-	Operation   byte
-	Parent      *Vertex
-	Child       *Vertex
-	ParentDelta int
-	Seq         int
+	Id        string
+	Operation byte
+	Parent    *Vertex
+	Child     *Vertex
 }
 
 func (ed *EdgeDelta) GetGid() string {
@@ -101,21 +80,6 @@ func (ed *EdgeDelta) GetId() string {
 	return ed.Id
 }
 
-func (ed *EdgeDelta) GetSeq() int {
-	return ed.Seq
-}
-
-func (ed *EdgeDelta) GetParent(dt *DeltaTree) *Delta {
-	parentId := ed.ParentDelta
-	delta, ok := dt.SeqTree[parentId]
-	if !ok {
-		fmt.Println("Cannot find parent")
-		return nil
-	}
-
-	return delta
-}
-
 func (ed *EdgeDelta) String() string {
-	return fmt.Sprintf("EdgeDelta(Id: %s, Operation: %d, Parent: %s, Child: %s, ParentDelta: %d)", ed.Id, ed.Operation, ed.Parent.ID, ed.Child.ID, ed.ParentDelta)
+	return fmt.Sprintf("EdgeDelta(Id: %s, Operation: %d, Parent: %s, Child: %s)", ed.Id, ed.Operation, ed.Parent.ID, ed.Child.ID)
 }
