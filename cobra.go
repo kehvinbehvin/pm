@@ -107,6 +107,77 @@ func init() {
 		},
 	}
 
+	var deleteCmd = &cobra.Command{
+		Use:   "delete",
+		Short: "Delete epics, stories or tasks",
+		Run: func(cmd *cobra.Command, args []string) {
+			epics := len(eValues)
+			stories := len(sValues)
+			tasks := len(tValues)
+
+			pmDag := LoadDag("pmDag")
+			defer pmDag.SaveDag()
+
+			deltaTree := LoadDelta()
+			defer deltaTree.SaveDelta()
+
+			if epics > 0 {
+				for _, value := range eValues {
+					vertexToDelete := pmDag.retrieveVertex(value)
+					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree)
+					if removeErr != nil {
+						return
+					}
+					deltaTree.removeVertexEvent(vertexToDelete)
+				}
+
+			}
+
+			if stories > 0 {
+				for _, value := range sValues {
+					vertexToDelete := pmDag.retrieveVertex(value)
+					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree)
+					if removeErr != nil {
+						return
+					}
+					deltaTree.removeVertexEvent(vertexToDelete)
+				}
+
+			}
+
+			if tasks > 0 {
+				for _, value := range tValues {
+					vertexToDelete := pmDag.retrieveVertex(value)
+					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree)
+					if removeErr != nil {
+						return
+					}
+					deltaTree.removeVertexEvent(vertexToDelete)
+				}
+
+			}
+
+			epicTrie := Load("epic")
+			defer epicTrie.Save()
+			for _, value := range eValues {
+				epicTrie.removeWord(value)
+			}
+
+			storyTrie := Load("story")
+			defer storyTrie.Save()
+			for _, value := range sValues {
+				storyTrie.removeWord(value)
+			}
+
+			taskTrie := Load("task")
+			defer taskTrie.Save()
+			for _, value := range tValues {
+				taskTrie.removeWord(value)
+			}
+
+		},
+	}
+
 	var addCmd = &cobra.Command{
 		Use:   "add",
 		Short: "Add epics, stories or tasks",
@@ -581,6 +652,7 @@ func init() {
 	rootCmd.AddCommand(detachCmd)
 	rootCmd.AddCommand(linkCmd)
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(epicCmd)
 	rootCmd.AddCommand(storyCmd)
 	rootCmd.AddCommand(taskCmd)
@@ -599,19 +671,23 @@ func init() {
 	// Add flags to the add command for epic, task, and story
 	linkCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
 	linkCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add a story")
-	linkCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
+	linkCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add a task")
 
 	addCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
 	addCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add a story")
-	addCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
+	addCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add a task")
+
+	deleteCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Delete an epic")
+	deleteCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Delete a story")
+	deleteCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Delete a task")
 
 	viewCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
 	viewCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add an story")
-	viewCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
+	viewCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add a task")
 
 	editCmd.Flags().StringSliceVarP(&eValues, "epic", "e", []string{}, "Add an epic")
 	editCmd.Flags().StringSliceVarP(&sValues, "story", "s", []string{}, "Add an story")
-	editCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add an task")
+	editCmd.Flags().StringSliceVarP(&tValues, "task", "t", []string{}, "Add a task")
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }

@@ -76,14 +76,15 @@ func (d *Dag) addEdge(from *Vertex, to *Vertex) error {
 	return nil
 }
 
-func (d *Dag) removeEdge(from *Vertex, to *Vertex) {
+func (d *Dag) removeEdge(from *Vertex, to *Vertex) error {
 	_, hasToEdge := from.Children[to.ID]
 	if !hasToEdge {
 		fmt.Println("Vertex does not exist")
-		return
+		return errors.New("Vertex does not exist")
 	}
 
 	delete(from.Children, to.ID)
+	return nil
 }
 
 func (d *Dag) addVertex(in *Vertex) error {
@@ -96,18 +97,23 @@ func (d *Dag) addVertex(in *Vertex) error {
 	return nil
 }
 
-func (d *Dag) removeVertex(out *Vertex) {
+func (d *Dag) removeVertex(out *Vertex, deltaTree *DeltaTree) error {
 	_, exists := d.Vertices[out.ID]
 	if !exists {
 		fmt.Println("Deleting non existent vertex")
-		return
+		return errors.New("Deleting non existent vertex")
 	}
 
 	for _, value := range out.Children {
-		d.removeEdge(out, value)
+		removeErr := d.removeEdge(out, value)
+		if removeErr != nil {
+			return removeErr
+		}
+		deltaTree.removeEdgeEvent(out, value)
 	}
 
 	delete(d.Vertices, out.ID)
+	return nil
 }
 
 func (d *Dag) retrieveVertex(vertexID string) *Vertex {

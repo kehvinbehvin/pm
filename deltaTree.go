@@ -476,7 +476,7 @@ func squashIntoState(deltas []*Delta) (*State, error) {
 
 		switch op {
 		case addVertex:
-			fmt.Println("addVertex");
+			fmt.Println("addVertex")
 			if existingDeltaPtr, ok := state.Vertexes[gid]; !ok {
 				state.Vertexes[gid] = &delta
 			} else {
@@ -491,7 +491,7 @@ func squashIntoState(deltas []*Delta) (*State, error) {
 				}
 			}
 		case removeVertex:
-			fmt.Println("removeVertex");
+			fmt.Println("removeVertex")
 			if existingDeltaPtr, ok := state.Vertexes[gid]; !ok {
 				state.Vertexes[gid] = &delta
 			} else {
@@ -506,7 +506,7 @@ func squashIntoState(deltas []*Delta) (*State, error) {
 				}
 			}
 		case addEdge:
-			fmt.Println("addEdge");
+			fmt.Println("addEdge")
 			if existingEdgePtr, ok := state.Edges[gid]; !ok {
 				state.Edges[gid] = &delta
 			} else {
@@ -522,7 +522,7 @@ func squashIntoState(deltas []*Delta) (*State, error) {
 
 			}
 		case removeEdge:
-			fmt.Println("removeEdge");
+			fmt.Println("removeEdge")
 			if existingEdgePtr, ok := state.Edges[gid]; !ok {
 				state.Edges[gid] = &delta
 			} else {
