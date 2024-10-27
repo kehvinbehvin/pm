@@ -46,7 +46,7 @@ func (vd *VertexDelta) GetSeq() int {
 
 func (vd *VertexDelta) GetParent(dt *DeltaTree) *Delta {
 	parentId := vd.ParentDelta
-	delta, ok := dt.Tree[parentId]
+	delta, ok := dt.SeqTree[parentId]
 	if !ok {
 		fmt.Println("Cannot find parent")
 		return nil
@@ -84,7 +84,7 @@ func (ed *EdgeDelta) GetSeq() int {
 
 func (ed *EdgeDelta) GetParent(dt *DeltaTree) *Delta {
 	parentId := ed.ParentDelta
-	delta, ok := dt.Tree[parentId]
+	delta, ok := dt.SeqTree[parentId]
 	if !ok {
 		fmt.Println("Cannot find parent")
 		return nil

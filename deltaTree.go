@@ -10,20 +10,22 @@ import (
 )
 
 type DeltaTree struct {
-	Tree    map[int]*Delta
+	SeqTree map[int]*Delta
+	IdTree  map[string]*Delta
 	Pointer int
 }
 
 func NewDeltaTree() *DeltaTree {
 	return &DeltaTree{
-		Tree:    make(map[int]*Delta),
+		SeqTree: make(map[int]*Delta),
+		IdTree:  make(map[string]*Delta),
 		Pointer: 0,
 	}
 }
 
 // Not in use now
 func (dt *DeltaTree) Checkout(nodeHash int) error {
-	_, ok := dt.Tree[nodeHash]
+	_, ok := dt.SeqTree[nodeHash]
 	if !ok {
 		return errors.New("No hash found")
 	}
@@ -33,13 +35,13 @@ func (dt *DeltaTree) Checkout(nodeHash int) error {
 
 func (dt *DeltaTree) Push(delta Delta) error {
 	deltaId := delta.GetSeq()
-	_, ok := dt.Tree[deltaId]
+	_, ok := dt.SeqTree[deltaId]
 	if ok {
 		return errors.New("Existing delta found")
 	}
 
 	dt.Pointer = delta.GetSeq()
-	dt.Tree[dt.Pointer] = &delta
+	dt.SeqTree[dt.Pointer] = &delta
 	return nil
 }
 
@@ -48,7 +50,7 @@ func (dt *DeltaTree) String() string {
 	builder.WriteString(fmt.Sprintf("DeltaTree (Pointer: %d)\n", dt.Pointer))
 	builder.WriteString("Deltas:\n")
 
-	for id, delta := range dt.Tree {
+	for id, delta := range dt.SeqTree {
 		builder.WriteString(fmt.Sprintf("ID: %d, Delta: %s\n", id, *delta))
 	}
 
@@ -71,7 +73,7 @@ func (dt *DeltaTree) addEdgeEvent(parent *Vertex, child *Vertex) error {
 	if deltaParentSeq == 0 {
 		prevHash = ""
 	} else {
-		deltaParentPtr, ok := dt.Tree[deltaParentSeq]
+		deltaParentPtr, ok := dt.SeqTree[deltaParentSeq]
 		if !ok {
 			return errors.New("Parent seq not found")
 		}
@@ -114,7 +116,7 @@ func (dt *DeltaTree) removeEdgeEvent(parent *Vertex, child *Vertex) error {
 	if deltaParentSeq == 0 {
 		prevHash = ""
 	} else {
-		deltaParentPtr, ok := dt.Tree[deltaParentSeq]
+		deltaParentPtr, ok := dt.SeqTree[deltaParentSeq]
 		if !ok {
 			return errors.New("Parent seq not found")
 		}
@@ -154,7 +156,7 @@ func (dt *DeltaTree) addVertexEvent(vertex *Vertex) error {
 	if deltaParentSeq == 0 {
 		prevHash = ""
 	} else {
-		deltaParentPtr, ok := dt.Tree[deltaParentSeq]
+		deltaParentPtr, ok := dt.SeqTree[deltaParentSeq]
 		if !ok {
 			return errors.New("Parent seq not found")
 		}
@@ -193,7 +195,7 @@ func (dt *DeltaTree) removeVertexEvent(vertex *Vertex) error {
 	if deltaParentSeq == 0 {
 		prevHash = ""
 	} else {
-		deltaParentPtr, ok := dt.Tree[deltaParentSeq]
+		deltaParentPtr, ok := dt.SeqTree[deltaParentSeq]
 		if !ok {
 			return errors.New("Parent seq not found")
 		}
@@ -288,4 +290,71 @@ func LoadRemoteDelta() *DeltaTree {
 	}
 
 	return deltaTree
+}
+
+type DeltaPacket struct {
+	DeltaOperations []*Delta
+	Tree            *DeltaTree
+}
+
+type ConflictingDeltaPacket struct {
+	Primary   *Delta
+	Secondary *Delta
+	Selection *Delta
+	Tree      *DeltaTree
+}
+
+// primaryTree applies to secondaryTree
+func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
+	primaryTreeLatestDelta := *primaryTree.SeqTree[primaryTree.Pointer]
+	primaryDeltaId := primaryTreeLatestDelta.GetId()
+
+	secondaryTreeLatestDelta := *secondaryTree.SeqTree[secondaryTree.Pointer]
+	secondaryDeltaId := secondaryTreeLatestDelta.GetId()
+
+	// Early return for identical trees
+	isIdentical := primaryDeltaId == secondaryDeltaId
+	if isIdentical {
+		return nil
+	}
+
+	lastCommonSeq, lcsErr := calculateLcs(primaryTree, secondaryTree)
+	if lcsErr != nil {
+		return lcsErr
+	}
+	hasDeviation, deviationError := checkForDeviation(primaryTree, secondaryTree, lastCommonSeq)
+	if deviationError != nil {
+		return deviationError
+	}
+
+	// No conflicts, return all deltas required to bring both trees to the lastest of 2 trees
+	if !hasDeviation {
+		mergeErr := fastForward(primaryTree, secondaryTree, lastCommonSeq)
+		if mergeErr != nil {
+			return errors.New("Error fast forwarding tree")
+		}
+
+	} else {
+		conflictingErr := manualMerge(primaryTree, secondaryTree, lastCommonSeq)
+		if conflictingErr != nil {
+			return errors.New("Error performing manual merge")
+		}
+	}
+	return nil
+}
+
+func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (int, error) {
+	return 0, nil
+}
+
+func checkForDeviation(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonSeq int) (bool, error) {
+	return true, nil
+}
+
+func fastForward(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonSeq int) error {
+	return nil
+}
+
+func manualMerge(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonSeq int) error {
+	return nil
 }

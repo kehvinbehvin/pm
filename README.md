@@ -86,6 +86,50 @@ like in a git-style.
   - if the change is an edge, the delta would be the ID of parent vertex and the ID of the child vertex + the operation in bytes
   - if the change is a vertex, the delta would be the binary of the vertex + the operation in bytes
 
+## Dealing with conflicts
+- Local ahead of Remote
+  - Diff the local against the remote
+  - Returns extra deltas that local has 
+  - Push extra deltas to remote
+- Local behind of Remote
+  - Diff the local against the remote
+  - Returns extra deltas that remote has
+  - Pull extra deltas from remote
+- Local and Remote have deviated
+  - Allows non-conflicting events to be applied
+  - Diff the local against the remote
+  - Identify all deltas that operate on the same vertex or add the same Edge(parent, child)
+  - Group all deltas by events and end state
+  - Ask user to choose which end state
+
+- List out all nodes (vertex or edge)
+- for each node, record the ops made on it
+- find out the final state of the node, if diff
+- then considered as conflicting
+- if conflicting, split between vertexes and edges
+  - for vertexes
+    - get user's input
+  - for edges
+    - 
+
+- Add Vertex, Remove Vertex
+- Add Vertex, Remove Vertex. Add Vertex
+
+- Add Vertex 1, Add Edge 1-2, Remove Vertex 1
+- Add Vertex 1, Add Edge 1-2, Remove Edge 1-2
+- A V1, A V2, A E(1,2), R E(1,2) 
+
+Case 1
+Vertex 1
+- Remove
+Edge 1-2
+- Add
+
+Case 2
+Edge 1-2
+- Remove
+Vertex 1
+- Add
 
 ## Building
 - go build .
