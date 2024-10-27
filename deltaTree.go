@@ -34,14 +34,18 @@ func (dt *DeltaTree) Checkout(nodeHash int) error {
 }
 
 func (dt *DeltaTree) Push(delta Delta) error {
-	deltaId := delta.GetSeq()
-	_, ok := dt.SeqTree[deltaId]
+	deltaSeq := delta.GetSeq()
+	_, ok := dt.SeqTree[deltaSeq]
 	if ok {
 		return errors.New("Existing delta found")
 	}
 
 	dt.Pointer = delta.GetSeq()
 	dt.SeqTree[dt.Pointer] = &delta
+
+	deltaId := delta.GetId()
+	dt.IdTree[deltaId] = &delta
+
 	return nil
 }
 
@@ -51,7 +55,11 @@ func (dt *DeltaTree) String() string {
 	builder.WriteString("Deltas:\n")
 
 	for id, delta := range dt.SeqTree {
-		builder.WriteString(fmt.Sprintf("ID: %d, Delta: %s\n", id, *delta))
+		builder.WriteString(fmt.Sprintf("Seq: %d, Delta: %s\n", id, *delta))
+	}
+
+	for id, delta := range dt.IdTree {
+		builder.WriteString(fmt.Sprintf("ID: %s, Delta: %s\n", id, *delta))
 	}
 
 	return builder.String()
@@ -315,6 +323,7 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
 	// Early return for identical trees
 	isIdentical := primaryDeltaId == secondaryDeltaId
 	if isIdentical {
+		fmt.Println("Both trees are identical")
 		return nil
 	}
 
@@ -322,6 +331,11 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
 	if lcsErr != nil {
 		return lcsErr
 	}
+	fmt.Println("LCS: ", lastCommonSeq)
+	if lastCommonSeq > 0 {
+		return nil
+	}
+
 	hasDeviation, deviationError := checkForDeviation(primaryTree, secondaryTree, lastCommonSeq)
 	if deviationError != nil {
 		return deviationError
@@ -344,6 +358,26 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
 }
 
 func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (int, error) {
+	for i := primaryTree.Pointer; i >= 0; i-- {
+		primaryDelta := *primaryTree.SeqTree[i]
+		primaryId := primaryDelta.GetId()
+
+		_, ok := secondaryTree.IdTree[primaryId]
+		if ok {
+			if (i < primaryTree.Pointer) && i == secondaryTree.Pointer {
+				fmt.Println("Local is ahead of Remote", i, primaryId)
+				return i, nil
+			} else if (secondaryTree.Pointer > i) {
+				fmt.Println("Remote is ahead of Local", i, primaryId)
+				return i, nil
+			} else {
+				fmt.Println("Both are the same", i, primaryId)
+
+				return i, nil
+			}
+		}
+	}
+
 	return 0, nil
 }
 

@@ -1,6 +1,6 @@
 module github/pm
 
-go 1.21.1
+go 1.23.2
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect

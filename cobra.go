@@ -557,10 +557,22 @@ func init() {
 		Run: func(cmd *cobra.Command, args []string) {
 			deltaTree := LoadDelta()
 			defer deltaTree.SaveDelta()
+			if deltaTree == nil {
+				fmt.Printf("Local tree is empty")
+				return
+			}
 
 			fmt.Println(deltaTree)
+
 			remoteTree := LoadRemoteDelta()
+			if remoteTree == nil {
+				fmt.Printf("Remote tree is empty")
+				return
+			}
+
 			fmt.Println(remoteTree)
+
+			MergeTrees(deltaTree, remoteTree)
 		},
 	}
 
