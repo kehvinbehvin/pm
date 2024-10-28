@@ -10,14 +10,14 @@ import (
 )
 
 type DeltaTree struct {
-	Seq []*Delta
+	Seq     []*Delta
 	IdTree  map[string]*Delta
 	Pointer int
 }
 
 func NewDeltaTree() *DeltaTree {
 	return &DeltaTree{
-		Seq: []*Delta{},
+		Seq:     []*Delta{},
 		IdTree:  make(map[string]*Delta),
 		Pointer: 0,
 	}
@@ -32,7 +32,9 @@ func (dt *DeltaTree) Push(delta Delta) error {
 	//
 	// dt.Pointer = delta.GetSeq()
 	// dt.SeqTree[dt.Pointer] = &delta
-	dt.Pointer += 1
+	if len(dt.Seq) > 0 {
+		dt.Pointer += 1
+	}
 	dt.Seq = append(dt.Seq, &delta)
 
 	deltaId := delta.GetId()
@@ -69,7 +71,7 @@ func (dt *DeltaTree) addEdgeEvent(parent *Vertex, child *Vertex) error {
 
 	var prevHash string
 	deltaTreeLength := len(dt.Seq)
-	
+
 	if deltaTreeLength == 0 {
 		prevHash = ""
 	} else {
@@ -83,10 +85,10 @@ func (dt *DeltaTree) addEdgeEvent(parent *Vertex, child *Vertex) error {
 	uuidStr := fmt.Sprintf("%x", uuidHash[:])
 
 	delta := &EdgeDelta{
-		Id:          uuidStr,
-		Operation:   addEdge,
-		Parent:      parent,
-		Child:       child,
+		Id:        uuidStr,
+		Operation: addEdge,
+		Parent:    parent,
+		Child:     child,
 	}
 
 	dt.Push(delta)
@@ -106,7 +108,7 @@ func (dt *DeltaTree) removeEdgeEvent(parent *Vertex, child *Vertex) error {
 
 	var prevHash string
 	deltaTreeLength := len(dt.Seq)
-	
+
 	if deltaTreeLength == 0 {
 		prevHash = ""
 	} else {
@@ -115,16 +117,15 @@ func (dt *DeltaTree) removeEdgeEvent(parent *Vertex, child *Vertex) error {
 		prevHash = parentDelta.GetId()
 	}
 
-
 	uuid := parentStr + childStr + opStr + prevHash
 	uuidHash := sha1.Sum([]byte(uuid))
 	uuidStr := fmt.Sprintf("%x", uuidHash[:])
 
 	delta := &EdgeDelta{
-		Id:          uuidStr,
-		Operation:   removeEdge,
-		Parent:      parent,
-		Child:       child,
+		Id:        uuidStr,
+		Operation: removeEdge,
+		Parent:    parent,
+		Child:     child,
 	}
 
 	dt.Push(delta)
@@ -155,9 +156,9 @@ func (dt *DeltaTree) addVertexEvent(vertex *Vertex) error {
 	uuidStr := fmt.Sprintf("%x", uuidHash[:])
 
 	delta := &VertexDelta{
-		Id:          uuidStr,
-		Operation:   addVertex,
-		Vertex:      vertex,
+		Id:        uuidStr,
+		Operation: addVertex,
+		Vertex:    vertex,
 	}
 
 	dt.Push(delta)
@@ -188,9 +189,9 @@ func (dt *DeltaTree) removeVertexEvent(vertex *Vertex) error {
 	uuidStr := fmt.Sprintf("%x", uuidHash[:])
 
 	delta := &VertexDelta{
-		Id:          uuidStr,
-		Operation:   removeVertex,
-		Vertex:      vertex,
+		Id:        uuidStr,
+		Operation: removeVertex,
+		Vertex:    vertex,
 	}
 
 	dt.Push(delta)
@@ -223,8 +224,8 @@ func LoadDelta() *DeltaTree {
 
 }
 
-func (dt *DeltaTree) SaveDelta() {
-	file, err := os.Create("./.pm/delta")
+func (dt *DeltaTree) SaveDelta(fileName string) {
+	file, err := os.Create(fileName)
 	if err != nil {
 		fmt.Printf(err.Error())
 		fmt.Println("Error creating file")
@@ -281,8 +282,16 @@ type ConflictingDeltaPacket struct {
 	Tree      *DeltaTree
 }
 
+const (
+	localAhead    byte = 1
+	remoteAhead byte = 2
+	deviated      byte = 3
+	conflicted   byte = 4
+	identical   byte = 5
+)
+
 // primaryTree applies to secondaryTree
-func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
+func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree, dag *Dag) error {
 	primaryTreeLatestDelta := *primaryTree.Seq[primaryTree.Pointer]
 	primaryDeltaId := primaryTreeLatestDelta.GetId()
 
@@ -296,11 +305,10 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
 		return nil
 	}
 
-	lastCommonHash, lcsErr := calculateLcs(primaryTree, secondaryTree)
+	lastCommonHash, longerTree, shorterTree, lcsType, lcsErr := calculateLcs(primaryTree, secondaryTree)
 	if lcsErr != nil {
 		return lcsErr
 	}
-	fmt.Println("LCS: ", lastCommonHash)
 
 	hasDeviation, deviationError := checkForDeviation(primaryTree, secondaryTree, lastCommonHash)
 	if deviationError != nil {
@@ -309,7 +317,7 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
 
 	// No conflicts, return all deltas required to bring both trees to the lastest of 2 trees
 	if !hasDeviation {
-		mergeErr := fastForward(primaryTree, secondaryTree, lastCommonHash)
+		mergeErr := fastForward(shorterTree, longerTree, lastCommonHash, dag, lcsType)
 		if mergeErr != nil {
 			return errors.New("Error fast forwarding tree")
 		}
@@ -325,7 +333,7 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree) error {
 
 // Primary should be lcoal
 // Secondary should be remote
-func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (string, error) {
+func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (string, *DeltaTree, *DeltaTree, byte, error) {
 	for i := primaryTree.Pointer; i >= 0; i-- {
 		primaryDelta := *primaryTree.Seq[i]
 		primaryId := primaryDelta.GetId()
@@ -334,25 +342,25 @@ func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (string, err
 		if ok {
 			if (i < primaryTree.Pointer) && i == secondaryTree.Pointer {
 				fmt.Println("Local is ahead of Remote", primaryId)
-				return primaryId, nil
+				return primaryId, primaryTree, secondaryTree, localAhead, nil
 			} else if secondaryTree.Pointer > i {
 				fmt.Println("Remote is ahead of Local", primaryId)
-				return primaryId, nil
+				return primaryId, secondaryTree, primaryTree, remoteAhead, nil
 			} else {
 				fmt.Println("Both are the same", i, primaryId)
 
-				return primaryId, nil
+				return primaryId, nil, nil, identical, nil
 			}
 		}
 	}
 
-	return "", nil
+	return "", nil, nil, 0 , nil
 }
 
 func getPositionFromHash(hash string, tree *DeltaTree) (int, error) {
 	for key, value := range tree.Seq {
-		delta := *value;
-		id := delta.GetId();;
+		delta := *value
+		id := delta.GetId()
 		if hash == id {
 			return key, nil
 		}
@@ -381,8 +389,40 @@ func checkForDeviation(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCom
 	return false, nil
 }
 
-func fastForward(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonSeq string) error {
-	fmt.Println("Can fast forward")
+func fastForward(shortTree *DeltaTree, longTree *DeltaTree, lastCommonSeq string, dag *Dag, lcsType byte) error {
+	longTreeLastCommonSeq, err := getPositionFromHash(lastCommonSeq, longTree)
+	if err != nil {
+		fmt.Println("Could not get position")
+		return err
+	}
+
+	nextSeq := longTreeLastCommonSeq + 1;
+	fmt.Println(nextSeq)
+	if nextSeq >= len(longTree.Seq) {
+		fmt.Println("Out of index")
+		return errors.New("No more commits to add")
+	}
+
+	deltasToApply := longTree.Seq[nextSeq:]
+	for _, deltaPtr := range deltasToApply {
+		fmt.Println(deltaPtr)
+		delta := *deltaPtr
+		if lcsType == remoteAhead {
+			err = delta.SetDag(dag, shortTree)
+		        if err != nil {
+				fmt.Println(err.Error())
+				return err
+			}
+
+		}
+
+		err = delta.SetDeltaTree(shortTree)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+	}
+
 	return nil
 }
 

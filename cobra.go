@@ -96,7 +96,7 @@ func init() {
 				fmt.Printf("Error creating delta file: %v\n", deltaErr)
 			}
 			deltaTree := NewDeltaTree()
-			deltaTree.SaveDelta()
+			deltaTree.SaveDelta("./.pm/delta")
 
 			defer deltaFile.Close()
 
@@ -119,7 +119,7 @@ func init() {
 			defer pmDag.SaveDag()
 
 			deltaTree := LoadDelta()
-			defer deltaTree.SaveDelta()
+			defer deltaTree.SaveDelta("./.pm/delta")
 
 			if epics > 0 {
 				for _, value := range eValues {
@@ -190,7 +190,7 @@ func init() {
 			defer pmDag.SaveDag()
 
 			deltaTree := LoadDelta()
-			defer deltaTree.SaveDelta()
+			defer deltaTree.SaveDelta("./.pm/delta")
 
 			var nodesToSave []*Vertex
 
@@ -256,7 +256,7 @@ func init() {
 			defer pmDag.SaveDag()
 
 			deltaTree := LoadDelta()
-			defer deltaTree.SaveDelta()
+			defer deltaTree.SaveDelta("./.pm/delta")
 
 			if tasks > 0 {
 				if epics > 1 || stories > 1 {
@@ -627,7 +627,7 @@ func init() {
 		Short: "Test",
 		Run: func(cmd *cobra.Command, args []string) {
 			deltaTree := LoadDelta()
-			defer deltaTree.SaveDelta()
+			defer deltaTree.SaveDelta("./.pm/delta")
 			if deltaTree == nil {
 				fmt.Printf("Local tree is empty")
 				return
@@ -636,6 +636,7 @@ func init() {
 			fmt.Println(deltaTree)
 
 			remoteTree := LoadRemoteDelta()
+			defer remoteTree.SaveDelta("./.pm/remote/delta")
 			if remoteTree == nil {
 				fmt.Printf("Remote tree is empty")
 				return
@@ -643,7 +644,9 @@ func init() {
 
 			fmt.Println(remoteTree)
 
-			MergeTrees(deltaTree, remoteTree)
+			pmDag := LoadDag("pmDag")
+			defer pmDag.SaveDag()
+			MergeTrees(deltaTree, remoteTree, pmDag)
 		},
 	}
 

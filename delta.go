@@ -12,7 +12,8 @@ const (
 )
 
 type Delta interface {
-	Set()
+	SetDag(*Dag, *DeltaTree) error
+	SetDeltaTree(*DeltaTree) error
 	UnSet()
 	GetId() string
 	String() string
@@ -36,8 +37,38 @@ func (vd *VertexDelta) GetOp() byte {
 	return vd.Operation
 }
 
-func (vd *VertexDelta) Set() {
+func (vd *VertexDelta) SetDag(dag *Dag, tree *DeltaTree) (error) {
+	switch vd.Operation {
+	case addVertex:
+		err := dag.addVertex(vd.Vertex)
+		if err != nil {
+			return err
+		}
+	case removeVertex:
+		err := dag.removeVertex(vd.Vertex, tree)
+		if err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func (vd *VertexDelta) SetDeltaTree(tree *DeltaTree) (error) {
+	switch vd.Operation {
+	case addVertex:
+		err := tree.addVertexEvent(vd.Vertex)
+		if err != nil {
+			return nil
+		}
+	case removeVertex:
+		err := tree.removeVertexEvent(vd.Vertex)
+		if err != nil {
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func (vd *VertexDelta) UnSet() {
@@ -70,7 +101,38 @@ func (ed *EdgeDelta) GetOp() byte {
 	return ed.Operation
 }
 
-func (ed *EdgeDelta) Set() {
+func (ed *EdgeDelta) SetDag(dag *Dag, tree *DeltaTree) (error) {
+	switch ed.Operation {
+	case addEdge:
+		err := dag.addEdge(ed.Parent, ed.Child)
+		if err != nil {
+			return err
+		}
+	case removeEdge:
+		err := dag.removeEdge(ed.Parent, ed.Child)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ed *EdgeDelta) SetDeltaTree(tree *DeltaTree) (error) {
+	switch ed.Operation {
+	case addEdge:
+		err := tree.addEdgeEvent(ed.Parent, ed.Child)
+		if err != nil {
+			return nil
+		}
+	case removeEdge:
+		err := tree.removeEdgeEvent(ed.Parent, ed.Child)
+		if err != nil {
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func (ed *EdgeDelta) UnSet() {
