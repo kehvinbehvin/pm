@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/sha1"
 	"encoding/gob"
 	"errors"
@@ -24,14 +25,6 @@ func NewDeltaTree() *DeltaTree {
 }
 
 func (dt *DeltaTree) Push(delta Delta) error {
-	// deltaSeq := delta.GetSeq()
-	// _, ok := dt.SeqTree[deltaSeq]
-	// if ok {
-	// 	return errors.New("Existing delta found")
-	// }
-	//
-	// dt.Pointer = delta.GetSeq()
-	// dt.SeqTree[dt.Pointer] = &delta
 	if len(dt.Seq) > 0 {
 		dt.Pointer += 1
 	}
@@ -41,6 +34,36 @@ func (dt *DeltaTree) Push(delta Delta) error {
 	dt.IdTree[deltaId] = &delta
 
 	return nil
+}
+
+func (dt *DeltaTree) Pop() (*Delta, error) {
+	if len(dt.Seq) == 0 {
+		return nil, fmt.Errorf("cannot pop from an empty DeltaTree")
+	}
+
+	// Get the last element in Seq
+	lastDelta := dt.Seq[len(dt.Seq)-1]
+	delta := *lastDelta
+
+	// Remove the last element from Seq
+	dt.Seq = dt.Seq[:len(dt.Seq)-1]
+
+	// Update Pointer to the new last element (or -1 if Seq is empty)
+	if len(dt.Seq) == 0 {
+		dt.Pointer = 0
+	} else {
+		dt.Pointer = len(dt.Seq) - 1
+	}
+
+	// Remove the last delta from IdTree
+	deltaId := delta.GetId()
+	invertErr := delta.InvertOp();
+	if invertErr != nil {
+		return nil, invertErr
+	}
+	delete(dt.IdTree, deltaId)
+
+	return &delta, nil
 }
 
 func (dt *DeltaTree) String() string {
@@ -283,10 +306,10 @@ type ConflictingDeltaPacket struct {
 }
 
 const (
-	localAhead    byte = 1
+	localAhead  byte = 1
 	remoteAhead byte = 2
-	deviated      byte = 3
-	conflicted   byte = 4
+	deviated    byte = 3
+	conflicted  byte = 4
 	identical   byte = 5
 )
 
@@ -323,7 +346,7 @@ func MergeTrees(primaryTree *DeltaTree, secondaryTree *DeltaTree, dag *Dag) erro
 		}
 
 	} else {
-		conflictingErr := manualMerge(primaryTree, secondaryTree, lastCommonHash)
+		conflictingErr := manualMerge(primaryTree, secondaryTree, lastCommonHash, dag)
 		if conflictingErr != nil {
 			return errors.New("Error performing manual merge")
 		}
@@ -354,7 +377,7 @@ func calculateLcs(primaryTree *DeltaTree, secondaryTree *DeltaTree) (string, *De
 		}
 	}
 
-	return "", nil, nil, 0 , nil
+	return "", nil, nil, 0, nil
 }
 
 func getPositionFromHash(hash string, tree *DeltaTree) (int, error) {
@@ -396,7 +419,7 @@ func fastForward(shortTree *DeltaTree, longTree *DeltaTree, lastCommonSeq string
 		return err
 	}
 
-	nextSeq := longTreeLastCommonSeq + 1;
+	nextSeq := longTreeLastCommonSeq + 1
 	fmt.Println(nextSeq)
 	if nextSeq >= len(longTree.Seq) {
 		fmt.Println("Out of index")
@@ -408,8 +431,8 @@ func fastForward(shortTree *DeltaTree, longTree *DeltaTree, lastCommonSeq string
 		fmt.Println(deltaPtr)
 		delta := *deltaPtr
 		if lcsType == remoteAhead {
-			err = delta.SetDag(dag, shortTree)
-		        if err != nil {
+			err = delta.SetDag(dag, shortTree, false)
+			if err != nil {
 				fmt.Println(err.Error())
 				return err
 			}
@@ -426,7 +449,7 @@ func fastForward(shortTree *DeltaTree, longTree *DeltaTree, lastCommonSeq string
 	return nil
 }
 
-func manualMerge(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonHash string) error {
+func manualMerge(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonHash string, dag *Dag) error {
 	fmt.Println("Need to manually merge")
 
 	var primaryDeviatedDeltas []*Delta
@@ -450,29 +473,172 @@ func manualMerge(primaryTree *DeltaTree, secondaryTree *DeltaTree, lastCommonHas
 		secondaryDeviatedDeltas = append(secondaryDeviatedDeltas, secondaryTree.Seq[i])
 	}
 
-	primaryTreeState, priErr := squashIntoState(primaryDeviatedDeltas)
+	localTreeState, priErr := squashIntoState(primaryDeviatedDeltas)
 	if priErr != nil {
 		return priErr
 	}
-	secondaryTreeState, secErr := squashIntoState(secondaryDeviatedDeltas)
+	remoteTreeState, secErr := squashIntoState(secondaryDeviatedDeltas)
 	if secErr != nil {
 		return secErr
 	}
-	fmt.Print(primaryTreeState)
-	fmt.Print(secondaryTreeState)
+	fmt.Print(localTreeState)
+	fmt.Print(remoteTreeState)
 
-	// deltasToApply, deconflictErr := deconflictStates(primaryTreeState, secondaryTreeState)
-	// if deconflictErr != nil {
-	// 	return errors.New("Error deconflicting states")
-	// }
+	_, deconflictErr := deconflictStates(localTreeState, remoteTreeState, primaryLastCommonSeq, dag, primaryTree, secondaryDeviatedDeltas)
+	if deconflictErr != nil {
+		return errors.New("Error deconflicting states")
+	}
 
 	fmt.Println("Merge successful")
 	return nil
 }
 
-func deconflictStates(primaryState *State, secondaryState *State) ([]*Delta, error) {
+// YesNoPrompt asks yes/no questions using the label.
+func YesNoPrompt(label string, def bool) bool {
+	choices := "Y/n"
+	if !def {
+		choices = "y/N"
+	}
+
+	r := bufio.NewReader(os.Stdin)
+	var s string
+
+	for {
+		fmt.Fprintf(os.Stderr, "%s (%s) ", label, choices)
+		s, _ = r.ReadString('\n')
+		s = strings.TrimSpace(s)
+		if s == "" {
+			return def
+		}
+		s = strings.ToLower(s)
+		if s == "y" || s == "yes" {
+			return true
+		}
+		if s == "n" || s == "no" {
+			return false
+		}
+	}
+}
+
+func deconflictStates(primaryState *State, secondaryState *State, localLastCommonSeq int, dag *Dag, localDeltaTree *DeltaTree, remoteDeviatedDeltas []*Delta) ([]*Delta, error) {
+	var localDeltasToAskUser []*Delta
+	var remoteDeltasToAskUser []*Delta
+
+	var deltaSetToApply []*Delta
+
+	// Compare 2 states
+	for primaryKey, primaryValue := range primaryState.Vertexes {
+		if _, ok := secondaryState.Vertexes[primaryKey]; !ok {
+				localDeltasToAskUser = append(localDeltasToAskUser, primaryValue)
+		} else {
+			deltaSetToApply = append(deltaSetToApply, primaryValue)
+		}
+	}
+	//
+	// for primaryKey, primaryValue := range primaryState.Edges {
+	// 	if _, ok := secondaryState.Edges[primaryKey]; !ok {
+	// 		localDeltasToAskUser = append(localDeltasToAskUser, primaryValue)
+	// 	} else {
+	// 		deltaSetToApply = append(deltaSetToApply, primaryValue)
+	// 	}
+	// }
+
+	for secondaryKey, secondaryValue := range secondaryState.Vertexes {
+		if _, ok := primaryState.Vertexes[secondaryKey]; !ok {
+				remoteDeltasToAskUser = append(remoteDeltasToAskUser, secondaryValue)
+		}
+	}
+
+	// for secondaryKey, secondaryValue := range secondaryState.Edges {
+	// 	if _, ok := primaryState.Edges[secondaryKey]; !ok {
+	// 		remoteDeltasToAskUser = append(remoteDeltasToAskUser, secondaryValue)
+	// 	}
+	// }
+
+	// if identical gid, take 1
+
+	var localDeltasToKeep []Delta
+	var remoteDeltasToDiscard []*Delta
+	// if unique, check with user
+	for _, deltaValue := range localDeltasToAskUser {
+		delta := *deltaValue
+		gid := delta.GetGid()
+		ok := YesNoPrompt(gid+"\n"+"Do you want to keep this local change?", true)
+		if ok {
+			localDeltasToKeep = append(localDeltasToKeep, *deltaValue)
+		}
+	}
+
+	for _, deltaValue := range remoteDeltasToAskUser {
+		delta := *deltaValue
+		gid := delta.GetGid()
+		ok := YesNoPrompt(gid+"\n"+"Do you want to keep this remote change?", true)
+		if !ok {
+			remoteDeltasToDiscard = append(remoteDeltasToDiscard, deltaValue)
+		}
+	}
+
+	// Rewind local dag and deltaTree to last common hash
+	count := len(localDeltaTree.Seq)
+	var reverseDeltas []*Delta
+	for i := localLastCommonSeq; i < count - 1; i++ {
+		poppedDelta, popErr:= localDeltaTree.Pop();
+		if popErr != nil {
+			return nil, popErr
+		}
+		reverseDeltas = append(reverseDeltas, poppedDelta)
+	}
+
+	for _, reverseDeltaPtr := range reverseDeltas {
+		delta := *reverseDeltaPtr
+		delta.SetDag(dag, localDeltaTree, true)
+	}
+
+	// Replay all deltas after commonHash for remote (This will include common deltas)
+	for _, deltaValue := range remoteDeviatedDeltas {
+		delta := *deltaValue
+		delta.SetDag(dag, localDeltaTree, false)
+		delta.SetDeltaTree(localDeltaTree)
+	}
+
+	// Apply negative commits of to attain desired state for remoteDeltasToKeep
+	// mergeCommitDeltas, invertErr := invertDeltaOp(remoteDeltasToDiscard)
+	// if invertErr != nil {
+	// 	return nil, invertErr
+	// }
+	//
+	// for _, deltaValue := range mergeCommitDeltas {
+	// 	delta := *deltaValue
+	// 	delta.SetDag(dag, localDeltaTree, false)
+	// 	delta.SetDeltaTree(localDeltaTree)
+	//
+	// }
+
+	// Apply all localDeltasToKeep
+	for _, delta := range localDeltasToKeep {
+		fmt.Println("local delta op", delta.GetOp())
+		delta.InvertOp()
+		delta.SetDag(dag, localDeltaTree, false)
+		delta.SetDeltaTree(localDeltaTree)
+	}
 
 	return nil, nil
+}
+
+func invertDeltaOp(deltas []*Delta) ([]*Delta, error) {
+	var copies []*Delta
+
+	for _, ptr := range deltas {
+		delta := *ptr
+		copied := delta
+		err := copied.InvertOp()
+		if err != nil {
+			return nil, err
+		}
+
+		copies = append(copies, &copied)
+	}
+	return copies, nil
 }
 
 type State struct {

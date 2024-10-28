@@ -124,7 +124,7 @@ func init() {
 			if epics > 0 {
 				for _, value := range eValues {
 					vertexToDelete := pmDag.retrieveVertex(value)
-					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree)
+					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree, false)
 					if removeErr != nil {
 						return
 					}
@@ -136,7 +136,7 @@ func init() {
 			if stories > 0 {
 				for _, value := range sValues {
 					vertexToDelete := pmDag.retrieveVertex(value)
-					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree)
+					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree, false)
 					if removeErr != nil {
 						return
 					}
@@ -148,7 +148,7 @@ func init() {
 			if tasks > 0 {
 				for _, value := range tValues {
 					vertexToDelete := pmDag.retrieveVertex(value)
-					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree)
+					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree, false)
 					if removeErr != nil {
 						return
 					}
@@ -633,8 +633,12 @@ func init() {
 				return
 			}
 
-			fmt.Println(deltaTree)
+			for _, value := range deltaTree.Seq {
+				delta := *value
+				fmt.Println(delta)
+			}
 
+			fmt.Println("DONE")
 			remoteTree := LoadRemoteDelta()
 			defer remoteTree.SaveDelta("./.pm/remote/delta")
 			if remoteTree == nil {
@@ -642,8 +646,13 @@ func init() {
 				return
 			}
 
-			fmt.Println(remoteTree)
+			for _, value := range remoteTree.Seq {
+				delta := *value
+				fmt.Println(delta)
+			}
 
+				
+			fmt.Println("DONE")
 			pmDag := LoadDag("pmDag")
 			defer pmDag.SaveDag()
 			MergeTrees(deltaTree, remoteTree, pmDag)

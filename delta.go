@@ -12,13 +12,14 @@ const (
 )
 
 type Delta interface {
-	SetDag(*Dag, *DeltaTree) error
+	SetDag(*Dag, *DeltaTree, bool) error
 	SetDeltaTree(*DeltaTree) error
 	UnSet()
 	GetId() string
 	String() string
 	GetOp() byte
 	GetGid() string
+	InvertOp() error
 }
 
 type VertexDelta struct {
@@ -37,7 +38,18 @@ func (vd *VertexDelta) GetOp() byte {
 	return vd.Operation
 }
 
-func (vd *VertexDelta) SetDag(dag *Dag, tree *DeltaTree) (error) {
+func (vd *VertexDelta) InvertOp() error {
+	switch vd.Operation {
+	case addVertex:
+		vd.Operation = removeVertex
+	case removeVertex:
+		vd.Operation = addVertex
+	}
+
+	return nil
+}
+
+func (vd *VertexDelta) SetDag(dag *Dag, tree *DeltaTree, silent bool) error {
 	switch vd.Operation {
 	case addVertex:
 		err := dag.addVertex(vd.Vertex)
@@ -45,7 +57,7 @@ func (vd *VertexDelta) SetDag(dag *Dag, tree *DeltaTree) (error) {
 			return err
 		}
 	case removeVertex:
-		err := dag.removeVertex(vd.Vertex, tree)
+		err := dag.removeVertex(vd.Vertex, tree, silent)
 		if err != nil {
 			return err
 		}
@@ -54,7 +66,7 @@ func (vd *VertexDelta) SetDag(dag *Dag, tree *DeltaTree) (error) {
 	return nil
 }
 
-func (vd *VertexDelta) SetDeltaTree(tree *DeltaTree) (error) {
+func (vd *VertexDelta) SetDeltaTree(tree *DeltaTree) error {
 	switch vd.Operation {
 	case addVertex:
 		err := tree.addVertexEvent(vd.Vertex)
@@ -101,7 +113,18 @@ func (ed *EdgeDelta) GetOp() byte {
 	return ed.Operation
 }
 
-func (ed *EdgeDelta) SetDag(dag *Dag, tree *DeltaTree) (error) {
+func (ed *EdgeDelta) InvertOp() error {
+	switch ed.Operation {
+	case addEdge:
+		ed.Operation = removeEdge
+	case removeEdge:
+		ed.Operation = addEdge
+	}
+
+	return nil
+}
+
+func (ed *EdgeDelta) SetDag(dag *Dag, tree *DeltaTree, silent bool) error {
 	switch ed.Operation {
 	case addEdge:
 		err := dag.addEdge(ed.Parent, ed.Child)
@@ -118,7 +141,7 @@ func (ed *EdgeDelta) SetDag(dag *Dag, tree *DeltaTree) (error) {
 	return nil
 }
 
-func (ed *EdgeDelta) SetDeltaTree(tree *DeltaTree) (error) {
+func (ed *EdgeDelta) SetDeltaTree(tree *DeltaTree) error {
 	switch ed.Operation {
 	case addEdge:
 		err := tree.addEdgeEvent(ed.Parent, ed.Child)

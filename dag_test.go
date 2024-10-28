@@ -53,7 +53,7 @@ func TestRemoveVertex(t *testing.T) {
 	v := newVertex("A")
 	dag.addVertex(v)
 
-	dag.removeVertex(v)
+	dag.removeVertex(v, false)
 
 	if _, exists := dag.Vertices["A"]; exists {
 		t.Errorf("Expected vertex 'A' to be removed from the DAG")
@@ -64,7 +64,7 @@ func TestRemoveVertex(t *testing.T) {
 func TestRemoveNonExistentVertex(t *testing.T) {
 	dag := newDag("testDag")
 	v := newVertex("A")
-	dag.removeVertex(v)
+	dag.removeVertex(v, false)
 
 	if len(dag.Vertices) != 0 {
 		t.Errorf("Expected DAG to have no vertices, but found %d", len(dag.Vertices))

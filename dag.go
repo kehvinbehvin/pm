@@ -97,7 +97,7 @@ func (d *Dag) addVertex(in *Vertex) error {
 	return nil
 }
 
-func (d *Dag) removeVertex(out *Vertex, deltaTree *DeltaTree) error {
+func (d *Dag) removeVertex(out *Vertex, deltaTree *DeltaTree, silent bool) error {
 	_, exists := d.Vertices[out.ID]
 	if !exists {
 		fmt.Println("Deleting non existent vertex")
@@ -109,7 +109,9 @@ func (d *Dag) removeVertex(out *Vertex, deltaTree *DeltaTree) error {
 		if removeErr != nil {
 			return removeErr
 		}
-		deltaTree.removeEdgeEvent(out, value)
+		if !silent {
+		  deltaTree.removeEdgeEvent(out, value)
+		}
 	}
 
 	delete(d.Vertices, out.ID)
