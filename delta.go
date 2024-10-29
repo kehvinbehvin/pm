@@ -20,6 +20,7 @@ type Delta interface {
 	GetOp() byte
 	GetGid() string
 	InvertOp() error
+	GetCopy() Delta
 }
 
 type VertexDelta struct {
@@ -36,6 +37,19 @@ func (vd *VertexDelta) GetGid() string {
 
 func (vd *VertexDelta) GetOp() byte {
 	return vd.Operation
+}
+
+func (vd *VertexDelta) GetCopy() Delta {
+	originalDelta := *vd
+	originalVertex := *originalDelta.Vertex
+	vertexCopy := originalVertex
+	copy := &VertexDelta{
+		Id: originalDelta.Id,
+		Operation: originalDelta.Operation,
+		Vertex: &vertexCopy,
+	}
+
+	return copy
 }
 
 func (vd *VertexDelta) InvertOp() error {
@@ -111,6 +125,23 @@ func (ed *EdgeDelta) GetGid() string {
 
 func (ed *EdgeDelta) GetOp() byte {
 	return ed.Operation
+}
+
+func (ed *EdgeDelta) GetCopy() Delta {
+	originalDelta := *ed
+	originalParent := *originalDelta.Parent
+	originalChild := *originalDelta.Child
+	parentCopy := originalParent
+	childCopy := originalChild
+
+	copy := &EdgeDelta{
+		Id: originalDelta.Id,
+		Operation: originalDelta.Operation,
+		Parent: &parentCopy,
+		Child: &childCopy,
+	}
+
+	return copy
 }
 
 func (ed *EdgeDelta) InvertOp() error {

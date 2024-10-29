@@ -591,7 +591,8 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 
 	for _, reverseDeltaPtr := range reverseDeltas {
 		delta := *reverseDeltaPtr
-		delta.SetDag(dag, localDeltaTree, true)
+		copy := delta.GetCopy()
+		copy.SetDag(dag, localDeltaTree, true)
 	}
 
 	// Replay all deltas after commonHash for remote (This will include common deltas)
@@ -602,22 +603,21 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 	}
 
 	// Apply negative commits of to attain desired state for remoteDeltasToKeep
-	// mergeCommitDeltas, invertErr := invertDeltaOp(remoteDeltasToDiscard)
-	// if invertErr != nil {
-	// 	return nil, invertErr
-	// }
-	//
-	// for _, deltaValue := range mergeCommitDeltas {
-	// 	delta := *deltaValue
-	// 	delta.SetDag(dag, localDeltaTree, false)
-	// 	delta.SetDeltaTree(localDeltaTree)
-	//
-	// }
+	mergeCommitDeltas, invertErr := invertDeltaOp(remoteDeltasToDiscard)
+	if invertErr != nil {
+		return nil, invertErr
+	}
+
+	for _, deltaValue := range mergeCommitDeltas {
+		delta := *deltaValue
+		delta.SetDag(dag, localDeltaTree, false)
+		delta.SetDeltaTree(localDeltaTree)
+
+	}
 
 	// Apply all localDeltasToKeep
 	for _, delta := range localDeltasToKeep {
 		fmt.Println("local delta op", delta.GetOp())
-		delta.InvertOp()
 		delta.SetDag(dag, localDeltaTree, false)
 		delta.SetDeltaTree(localDeltaTree)
 	}
@@ -630,7 +630,7 @@ func invertDeltaOp(deltas []*Delta) ([]*Delta, error) {
 
 	for _, ptr := range deltas {
 		delta := *ptr
-		copied := delta
+		copied := delta.GetCopy()
 		err := copied.InvertOp()
 		if err != nil {
 			return nil, err
