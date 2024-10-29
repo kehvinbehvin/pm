@@ -1,14 +1,14 @@
-package main
+package dag
 
 import (
 	"fmt"
 )
 
 const (
-	addVertex    byte = 1
-	removeVertex byte = 2
-	addEdge      byte = 3
-	removeEdge   byte = 4
+	AddVertex    byte = 1
+	RemoveVertex byte = 2
+	AddEdge      byte = 3
+	RemoveEdge   byte = 4
 )
 
 type Delta interface {
@@ -44,9 +44,9 @@ func (vd *VertexDelta) GetCopy() Delta {
 	originalVertex := *originalDelta.Vertex
 	vertexCopy := originalVertex
 	copy := &VertexDelta{
-		Id: originalDelta.Id,
+		Id:        originalDelta.Id,
 		Operation: originalDelta.Operation,
-		Vertex: &vertexCopy,
+		Vertex:    &vertexCopy,
 	}
 
 	return copy
@@ -54,10 +54,10 @@ func (vd *VertexDelta) GetCopy() Delta {
 
 func (vd *VertexDelta) InvertOp() error {
 	switch vd.Operation {
-	case addVertex:
-		vd.Operation = removeVertex
-	case removeVertex:
-		vd.Operation = addVertex
+	case AddVertex:
+		vd.Operation = RemoveVertex
+	case RemoveVertex:
+		vd.Operation = AddVertex
 	}
 
 	return nil
@@ -65,13 +65,13 @@ func (vd *VertexDelta) InvertOp() error {
 
 func (vd *VertexDelta) SetDag(dag *Dag, tree *DeltaTree, silent bool) error {
 	switch vd.Operation {
-	case addVertex:
-		err := dag.addVertex(vd.Vertex)
+	case AddVertex:
+		err := dag.AddVertex(vd.Vertex)
 		if err != nil {
 			return err
 		}
-	case removeVertex:
-		err := dag.removeVertex(vd.Vertex, tree, silent)
+	case RemoveVertex:
+		err := dag.RemoveVertex(vd.Vertex, tree, silent)
 		if err != nil {
 			return err
 		}
@@ -82,13 +82,13 @@ func (vd *VertexDelta) SetDag(dag *Dag, tree *DeltaTree, silent bool) error {
 
 func (vd *VertexDelta) SetDeltaTree(tree *DeltaTree) error {
 	switch vd.Operation {
-	case addVertex:
-		err := tree.addVertexEvent(vd.Vertex)
+	case AddVertex:
+		err := tree.AddVertexEvent(vd.Vertex)
 		if err != nil {
 			return nil
 		}
-	case removeVertex:
-		err := tree.removeVertexEvent(vd.Vertex)
+	case RemoveVertex:
+		err := tree.RemoveVertexEvent(vd.Vertex)
 		if err != nil {
 			return nil
 		}
@@ -135,10 +135,10 @@ func (ed *EdgeDelta) GetCopy() Delta {
 	childCopy := originalChild
 
 	copy := &EdgeDelta{
-		Id: originalDelta.Id,
+		Id:        originalDelta.Id,
 		Operation: originalDelta.Operation,
-		Parent: &parentCopy,
-		Child: &childCopy,
+		Parent:    &parentCopy,
+		Child:     &childCopy,
 	}
 
 	return copy
@@ -146,10 +146,10 @@ func (ed *EdgeDelta) GetCopy() Delta {
 
 func (ed *EdgeDelta) InvertOp() error {
 	switch ed.Operation {
-	case addEdge:
-		ed.Operation = removeEdge
-	case removeEdge:
-		ed.Operation = addEdge
+	case AddEdge:
+		ed.Operation = RemoveEdge
+	case RemoveEdge:
+		ed.Operation = AddEdge
 	}
 
 	return nil
@@ -157,13 +157,13 @@ func (ed *EdgeDelta) InvertOp() error {
 
 func (ed *EdgeDelta) SetDag(dag *Dag, tree *DeltaTree, silent bool) error {
 	switch ed.Operation {
-	case addEdge:
-		err := dag.addEdge(ed.Parent, ed.Child)
+	case AddEdge:
+		err := dag.AddEdge(ed.Parent, ed.Child)
 		if err != nil {
 			return err
 		}
-	case removeEdge:
-		err := dag.removeEdge(ed.Parent, ed.Child)
+	case RemoveEdge:
+		err := dag.RemoveEdge(ed.Parent, ed.Child)
 		if err != nil {
 			return err
 		}
@@ -174,13 +174,13 @@ func (ed *EdgeDelta) SetDag(dag *Dag, tree *DeltaTree, silent bool) error {
 
 func (ed *EdgeDelta) SetDeltaTree(tree *DeltaTree) error {
 	switch ed.Operation {
-	case addEdge:
-		err := tree.addEdgeEvent(ed.Parent, ed.Child)
+	case AddEdge:
+		err := tree.AddEdgeEvent(ed.Parent, ed.Child)
 		if err != nil {
 			return nil
 		}
-	case removeEdge:
-		err := tree.removeEdgeEvent(ed.Parent, ed.Child)
+	case RemoveEdge:
+		err := tree.RemoveEdgeEvent(ed.Parent, ed.Child)
 		if err != nil {
 			return nil
 		}

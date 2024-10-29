@@ -1,4 +1,4 @@
-package main
+package dag
 
 import (
 	"encoding/gob"
@@ -12,7 +12,7 @@ type Vertex struct {
 	Children map[string]*Vertex
 }
 
-func newVertex(id string) *Vertex {
+func NewVertex(id string) *Vertex {
 	return &Vertex{
 		ID:       id,
 		Children: make(map[string]*Vertex),
@@ -47,14 +47,14 @@ type Dag struct {
 	Vertices map[string]*Vertex
 }
 
-func newDag(fileName string) *Dag {
+func NewDag(fileName string) *Dag {
 	return &Dag{
 		Id:       fileName,
 		Vertices: make(map[string]*Vertex),
 	}
 }
 
-func (d *Dag) addEdge(from *Vertex, to *Vertex) error {
+func (d *Dag) AddEdge(from *Vertex, to *Vertex) error {
 	parent, hasParent := d.Vertices[from.ID]
 	_, hasChild := d.Vertices[to.ID]
 
@@ -76,7 +76,7 @@ func (d *Dag) addEdge(from *Vertex, to *Vertex) error {
 	return nil
 }
 
-func (d *Dag) removeEdge(from *Vertex, to *Vertex) error {
+func (d *Dag) RemoveEdge(from *Vertex, to *Vertex) error {
 	_, hasToEdge := from.Children[to.ID]
 	if !hasToEdge {
 		fmt.Println("Vertex does not exist")
@@ -87,7 +87,7 @@ func (d *Dag) removeEdge(from *Vertex, to *Vertex) error {
 	return nil
 }
 
-func (d *Dag) addVertex(in *Vertex) error {
+func (d *Dag) AddVertex(in *Vertex) error {
 	_, exists := d.Vertices[in.ID]
 	if exists {
 		return errors.New("Vertex already exists")
@@ -97,7 +97,7 @@ func (d *Dag) addVertex(in *Vertex) error {
 	return nil
 }
 
-func (d *Dag) removeVertex(out *Vertex, deltaTree *DeltaTree, silent bool) error {
+func (d *Dag) RemoveVertex(out *Vertex, deltaTree *DeltaTree, silent bool) error {
 	_, exists := d.Vertices[out.ID]
 	if !exists {
 		fmt.Println("Deleting non existent vertex")
@@ -105,12 +105,12 @@ func (d *Dag) removeVertex(out *Vertex, deltaTree *DeltaTree, silent bool) error
 	}
 
 	for _, value := range out.Children {
-		removeErr := d.removeEdge(out, value)
+		removeErr := d.RemoveEdge(out, value)
 		if removeErr != nil {
 			return removeErr
 		}
 		if !silent {
-		  deltaTree.removeEdgeEvent(out, value)
+			deltaTree.RemoveEdgeEvent(out, value)
 		}
 	}
 
@@ -118,7 +118,7 @@ func (d *Dag) removeVertex(out *Vertex, deltaTree *DeltaTree, silent bool) error
 	return nil
 }
 
-func (d *Dag) retrieveVertex(vertexID string) *Vertex {
+func (d *Dag) RetrieveVertex(vertexID string) *Vertex {
 	vertex, exists := d.Vertices[vertexID]
 	if !exists {
 		fmt.Println("Non existent vertex", vertexID)

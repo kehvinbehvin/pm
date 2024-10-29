@@ -5,11 +5,13 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/spf13/cobra"
+
+	"github/pm/dag"
+	"github/pm/resolver"
 )
 
 var rootCmd = &cobra.Command{
@@ -81,7 +83,7 @@ func init() {
 			if err != nil && !os.IsExist(err) {
 				fmt.Printf("Error creating dag directory: %v\n", err)
 			}
-			pmDag := newDag("pmDag")
+			pmDag := dag.NewDag("pmDag")
 			pmDag.SaveDag()
 
 			tmpFile, tmpErr := os.Create("./.pm/tmp")
@@ -95,7 +97,7 @@ func init() {
 			if deltaErr != nil {
 				fmt.Printf("Error creating delta file: %v\n", deltaErr)
 			}
-			deltaTree := NewDeltaTree()
+			deltaTree := dag.NewDeltaTree()
 			deltaTree.SaveDelta("./.pm/delta")
 
 			defer deltaFile.Close()
@@ -115,44 +117,44 @@ func init() {
 			stories := len(sValues)
 			tasks := len(tValues)
 
-			pmDag := LoadDag("pmDag")
+			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()
 
-			deltaTree := LoadDelta()
+			deltaTree := dag.LoadDelta()
 			defer deltaTree.SaveDelta("./.pm/delta")
 
 			if epics > 0 {
 				for _, value := range eValues {
-					vertexToDelete := pmDag.retrieveVertex(value)
-					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree, false)
+					vertexToDelete := pmDag.RetrieveVertex(value)
+					removeErr := pmDag.RemoveVertex(vertexToDelete, deltaTree, false)
 					if removeErr != nil {
 						return
 					}
-					deltaTree.removeVertexEvent(vertexToDelete)
+					deltaTree.RemoveVertexEvent(vertexToDelete)
 				}
 
 			}
 
 			if stories > 0 {
 				for _, value := range sValues {
-					vertexToDelete := pmDag.retrieveVertex(value)
-					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree, false)
+					vertexToDelete := pmDag.RetrieveVertex(value)
+					removeErr := pmDag.RemoveVertex(vertexToDelete, deltaTree, false)
 					if removeErr != nil {
 						return
 					}
-					deltaTree.removeVertexEvent(vertexToDelete)
+					deltaTree.RemoveVertexEvent(vertexToDelete)
 				}
 
 			}
 
 			if tasks > 0 {
 				for _, value := range tValues {
-					vertexToDelete := pmDag.retrieveVertex(value)
-					removeErr := pmDag.removeVertex(vertexToDelete, deltaTree, false)
+					vertexToDelete := pmDag.RetrieveVertex(value)
+					removeErr := pmDag.RemoveVertex(vertexToDelete, deltaTree, false)
 					if removeErr != nil {
 						return
 					}
-					deltaTree.removeVertexEvent(vertexToDelete)
+					deltaTree.RemoveVertexEvent(vertexToDelete)
 				}
 
 			}
@@ -186,17 +188,17 @@ func init() {
 			stories := len(sValues)
 			tasks := len(tValues)
 
-			pmDag := LoadDag("pmDag")
+			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()
 
-			deltaTree := LoadDelta()
+			deltaTree := dag.LoadDelta()
 			defer deltaTree.SaveDelta("./.pm/delta")
 
-			var nodesToSave []*Vertex
+			var nodesToSave []*dag.Vertex
 
 			if epics > 0 {
 				for _, value := range eValues {
-					epic := newVertex(value)
+					epic := dag.NewVertex(value)
 					nodesToSave = append(nodesToSave, epic)
 				}
 
@@ -204,7 +206,7 @@ func init() {
 
 			if stories > 0 {
 				for _, value := range sValues {
-					story := newVertex(value)
+					story := dag.NewVertex(value)
 					nodesToSave = append(nodesToSave, story)
 				}
 
@@ -212,18 +214,18 @@ func init() {
 
 			if tasks > 0 {
 				for _, value := range tValues {
-					task := newVertex(value)
+					task := dag.NewVertex(value)
 					nodesToSave = append(nodesToSave, task)
 				}
 
 			}
 
 			for _, vs := range nodesToSave {
-				addErr := pmDag.addVertex(vs)
+				addErr := pmDag.AddVertex(vs)
 				if addErr != nil {
 					fmt.Println(addErr.Error())
 				} else {
-					deltaTree.addVertexEvent(vs)
+					deltaTree.AddVertexEvent(vs)
 				}
 			}
 
@@ -252,10 +254,10 @@ func init() {
 			stories := len(sValues)
 			tasks := len(tValues)
 
-			pmDag := LoadDag("pmDag")
+			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()
 
-			deltaTree := LoadDelta()
+			deltaTree := dag.LoadDelta()
 			defer deltaTree.SaveDelta("./.pm/delta")
 
 			if tasks > 0 {
@@ -268,26 +270,26 @@ func init() {
 				if epics == 1 && stories == 1 {
 					// 1 Epic and 1 Story per multiple task entry
 					epicValue := eValues[0]
-					epicVertex := pmDag.retrieveVertex(epicValue)
+					epicVertex := pmDag.RetrieveVertex(epicValue)
 
 					storyValue := sValues[0]
-					storyVertex := pmDag.retrieveVertex(storyValue)
+					storyVertex := pmDag.RetrieveVertex(storyValue)
 
-					edgeErr := pmDag.addEdge(epicVertex, storyVertex)
+					edgeErr := pmDag.AddEdge(epicVertex, storyVertex)
 					if edgeErr != nil {
 						fmt.Println(edgeErr.Error())
 					} else {
-						deltaTree.addEdgeEvent(epicVertex, storyVertex)
+						deltaTree.AddEdgeEvent(epicVertex, storyVertex)
 					}
 
 					for _, value := range tValues {
-						taskVertex := pmDag.retrieveVertex(value)
-						edgeErr := pmDag.addEdge(storyVertex, taskVertex)
+						taskVertex := pmDag.RetrieveVertex(value)
+						edgeErr := pmDag.AddEdge(storyVertex, taskVertex)
 
 						if edgeErr != nil {
 							fmt.Println(edgeErr.Error())
 						} else {
-							deltaTree.addEdgeEvent(storyVertex, taskVertex)
+							deltaTree.AddEdgeEvent(storyVertex, taskVertex)
 						}
 					}
 				}
@@ -301,16 +303,16 @@ func init() {
 				if epics == 1 {
 					// 1 Epic per multiple story entry
 					epicValue := eValues[0]
-					epicVertex := pmDag.retrieveVertex(epicValue)
+					epicVertex := pmDag.RetrieveVertex(epicValue)
 
 					for _, value := range sValues {
-						storyVertex := pmDag.retrieveVertex(value)
-						edgeErr := pmDag.addEdge(epicVertex, storyVertex)
+						storyVertex := pmDag.RetrieveVertex(value)
+						edgeErr := pmDag.AddEdge(epicVertex, storyVertex)
 
 						if edgeErr != nil {
 							fmt.Println(edgeErr.Error())
 						} else {
-							deltaTree.addEdgeEvent(epicVertex, storyVertex)
+							deltaTree.AddEdgeEvent(epicVertex, storyVertex)
 						}
 					}
 				}
@@ -380,7 +382,7 @@ func init() {
 			epics := len(eValues)
 			stories := len(sValues)
 			tasks := len(tValues)
-			pmDag := LoadDag("pmDag")
+			pmDag := dag.LoadDag("pmDag")
 
 			total := epics + stories + tasks
 			if total > 1 {
@@ -388,7 +390,7 @@ func init() {
 				return
 			}
 
-			var node *Vertex
+			var node *dag.Vertex
 			var nodeType string
 			var header string
 			var description []byte
@@ -397,7 +399,7 @@ func init() {
 
 			if epics > 0 {
 				// Simulate getting epic, stories, and tasks data
-				node = pmDag.retrieveVertex(eValues[0])
+				node = pmDag.RetrieveVertex(eValues[0])
 				header = eValues[0]
 				nodeType = "Epic"
 				childNodeType = "Stories"
@@ -409,7 +411,7 @@ func init() {
 				}
 
 			} else if stories > 0 {
-				node = pmDag.retrieveVertex(sValues[0])
+				node = pmDag.RetrieveVertex(sValues[0])
 				header = sValues[0]
 				nodeType = "Story"
 				childNodeType = "Tasks"
@@ -420,7 +422,7 @@ func init() {
 					return
 				}
 			} else if tasks > 0 {
-				node = pmDag.retrieveVertex(tValues[0])
+				node = pmDag.RetrieveVertex(tValues[0])
 				header = tValues[0]
 				nodeType = "Task"
 
@@ -618,7 +620,21 @@ func init() {
 		Use:   "push",
 		Short: "Push delta",
 		Run: func(cmd *cobra.Command, args []string) {
-			putFile()
+			localTree := dag.LoadDelta()
+			defer localTree.SaveDelta("./.pm/delta")
+			if localTree == nil {
+				fmt.Printf("Local tree is empty")
+				return
+			}
+
+			remoteTree := dag.LoadRemoteDelta()
+			defer remoteTree.SaveDelta("./.pm/remote/delta")
+			if remoteTree == nil {
+				fmt.Printf("Remote tree is empty")
+				return
+			}
+
+			pushDeltas(localTree, remoteTree)
 		},
 	}
 
@@ -626,7 +642,7 @@ func init() {
 		Use:   "test",
 		Short: "Test",
 		Run: func(cmd *cobra.Command, args []string) {
-			deltaTree := LoadDelta()
+			deltaTree := dag.LoadDelta()
 			defer deltaTree.SaveDelta("./.pm/delta")
 			if deltaTree == nil {
 				fmt.Printf("Local tree is empty")
@@ -639,7 +655,7 @@ func init() {
 			}
 
 			fmt.Println("DONE")
-			remoteTree := LoadRemoteDelta()
+			remoteTree := dag.LoadRemoteDelta()
 			defer remoteTree.SaveDelta("./.pm/remote/delta")
 			if remoteTree == nil {
 				fmt.Printf("Remote tree is empty")
@@ -651,11 +667,10 @@ func init() {
 				fmt.Println(delta)
 			}
 
-				
 			fmt.Println("DONE")
-			pmDag := LoadDag("pmDag")
+			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()
-			MergeTrees(deltaTree, remoteTree, pmDag)
+			resolver.MergeTrees(deltaTree, remoteTree, pmDag)
 		},
 	}
 
@@ -709,25 +724,6 @@ func Execute() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-}
-
-func walkDAG(writer *tabwriter.Writer, nodeType string, epic *Vertex) {
-	// epicTree := tree.Root(epic.ID);
-	//
-	// // Iterate over the stories (children of the epic)
-	// for _, story := range epic.Children {
-	// 	storyTree := tree.Root(story.ID)
-	//
-	// 	// Iterate over the tasks (children of the story)
-	// 	for _, task := range story.Children {
-	// 		// Print the task (level 2)
-	// 		storyTree.Child(task.ID)
-	//
-	// 	}
-	// 	epicTree.Child(storyTree)
-	// }
-	//
-	// fmt.Println(epicTree);
 }
 
 func buildSection(description []byte, listHeader string) {
