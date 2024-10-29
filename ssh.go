@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 
+	"encoding/gob"
 	"golang.org/x/crypto/ssh"
+
+	"github/pm/dag"
+	"github/pm/resolver"
 )
 
 func retrieveFile() {
@@ -68,7 +71,7 @@ func retrieveFile() {
 	}
 }
 
-func putFile() {
+func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	// Load private key
 	keyPath := "/Users/kevin/.ssh/local/pm-server/local_rsa"
 	privateKey, err := os.ReadFile(keyPath)
@@ -123,17 +126,40 @@ func putFile() {
 		panic(err)
 	}
 
+	// Local should be ahead here.
+	// If remote is ahead or is there is a deviation, we should abort
+	lastCommonHash, longerTree, _, lcsType, lcsErr := resolver.CalculateLcs(localTree, remoteTree)
+	if lcsErr != nil {
+		fmt.Println("LCS Err")
+		return
+	}
+
+	if lcsType != dag.LocalAhead {
+		fmt.Println("LCS not localahead")
+		return
+	}
+	deltasToPush, deltaErr := resolver.GetDeltasAhead(longerTree, lastCommonHash)
+	if deltaErr != nil {
+		fmt.Println("Deltas ahead error")
+		return
+	}
+
 	cmd := "put delta" // Example command to save data to a file
 	if err := session.Start(cmd); err != nil {
 		fmt.Printf("Failed to start command: %v", err)
 	}
 
 	if srcStat.Size() > 0 {
-		n, err := io.Copy(w, src)
-		if err != nil {
+		gob.Register(&dag.VertexDelta{})
+		gob.Register(&dag.EdgeDelta{})
+
+		encoder := gob.NewEncoder(w)
+		encodingErr := encoder.Encode(deltasToPush)
+		if encodingErr != nil {
+			fmt.Printf(encodingErr.Error())
+			fmt.Println("Error encoding delta")
 			return
 		}
-
-		fmt.Println(n)
+		fmt.Println("Deltas pushed")
 	}
 }
