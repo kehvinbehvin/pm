@@ -119,7 +119,7 @@ type EdgeDelta struct {
 func (ed *EdgeDelta) GetGid() string {
 	parent := *ed.Parent
 	child := *ed.Child
-	gid := parent.ID + child.ID
+	gid := parent.ID + "|" + child.ID
 	return gid
 }
 

@@ -534,14 +534,6 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 			deltaSetToApply = append(deltaSetToApply, primaryValue)
 		}
 	}
-	//
-	// for primaryKey, primaryValue := range primaryState.Edges {
-	// 	if _, ok := secondaryState.Edges[primaryKey]; !ok {
-	// 		localDeltasToAskUser = append(localDeltasToAskUser, primaryValue)
-	// 	} else {
-	// 		deltaSetToApply = append(deltaSetToApply, primaryValue)
-	// 	}
-	// }
 
 	for secondaryKey, secondaryValue := range secondaryState.Vertexes {
 		if _, ok := primaryState.Vertexes[secondaryKey]; !ok {
@@ -549,23 +541,19 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 		}
 	}
 
-	// for secondaryKey, secondaryValue := range secondaryState.Edges {
-	// 	if _, ok := primaryState.Edges[secondaryKey]; !ok {
-	// 		remoteDeltasToAskUser = append(remoteDeltasToAskUser, secondaryValue)
-	// 	}
-	// }
-
-	// if identical gid, take 1
-
 	var localDeltasToKeep []Delta
 	var remoteDeltasToDiscard []*Delta
-	// if unique, check with user
+	
+	vertexToDiscard := make(map[string]byte)
+
 	for _, deltaValue := range localDeltasToAskUser {
 		delta := *deltaValue
 		gid := delta.GetGid()
 		ok := YesNoPrompt(gid+"\n"+"Do you want to keep this local change?", true)
 		if ok {
 			localDeltasToKeep = append(localDeltasToKeep, *deltaValue)
+		} else {
+			vertexToDiscard[gid] = delta.GetOp()
 		}
 	}
 
@@ -575,10 +563,112 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 		ok := YesNoPrompt(gid+"\n"+"Do you want to keep this remote change?", true)
 		if !ok {
 			remoteDeltasToDiscard = append(remoteDeltasToDiscard, deltaValue)
+			vertexToDiscard[gid] = delta.GetOp()
+		}
+	}
+
+	var localEdgeDeltasToAskUser []*Delta
+	var remoteEdgeDeltasToAskUser []*Delta
+
+	edgesToDiscard := make(map[string]byte)
+
+	for primaryKey, primaryValue := range primaryState.Edges {
+		if _, ok := secondaryState.Edges[primaryKey]; !ok {
+			delta := *primaryValue
+			combinedGid := delta.GetGid()
+			gids := strings.Split(combinedGid, "|")
+			parentGid := gids[0]
+			childGid := gids[1]
+			// We just need to see if either the parent or child vertex was removed to not consider this edge anymore
+			if op, ok := vertexToDiscard[parentGid]; ok {
+				switch op {
+				case addVertex:
+					// Invalid (Cannot add if vertex does not exist)
+					// Skip when invalid
+				case removeVertex:
+					// Valid (Vertex exists)
+					localEdgeDeltasToAskUser = append(localEdgeDeltasToAskUser, primaryValue)
+				}
+
+			} else {
+				if op, ok := vertexToDiscard[childGid]; ok {
+					switch op {
+					case addVertex:
+						// Invalid (Cannot add if vertex does not exist)
+						// Skip when invalid
+					case removeVertex:
+						// Valid (Vertex exists)
+						localEdgeDeltasToAskUser = append(localEdgeDeltasToAskUser, primaryValue)
+					}
+				} else {
+					localEdgeDeltasToAskUser = append(localEdgeDeltasToAskUser, primaryValue)
+				}
+			}
+
+
+		}
+	}
+
+	for secondaryKey, secondaryValue := range secondaryState.Edges {
+		if _, ok := primaryState.Edges[secondaryKey]; !ok {
+			delta := *secondaryValue
+			combinedGid := delta.GetGid()
+			gids := strings.Split(combinedGid, "|")
+			parentGid := gids[0]
+			childGid := gids[1]
+			// TODO: Refactor into function
+			// We just need to see if either the parent or child vertex was removed to not consider this edge anymore
+			if op, ok := vertexToDiscard[parentGid]; ok {
+				switch op {
+				case addVertex:
+					// Invalid (Cannot add if vertex does not exist)
+					// Skip when invalid
+				case removeVertex:
+					// Valid (Vertex exists)
+					remoteEdgeDeltasToAskUser = append(remoteEdgeDeltasToAskUser, secondaryValue)
+				}
+
+			} else {
+				if op, ok := vertexToDiscard[childGid]; ok {
+					switch op {
+					case addVertex:
+						// Invalid (Cannot add if vertex does not exist)
+						// Skip when invalid
+					case removeVertex:
+						// Valid (Vertex exists)
+						remoteEdgeDeltasToAskUser = append(remoteEdgeDeltasToAskUser, secondaryValue)
+					}
+				} else {
+					remoteEdgeDeltasToAskUser = append(remoteEdgeDeltasToAskUser, secondaryValue)
+				}
+			}
+
+		}
+	}
+
+	for _, deltaValue := range localEdgeDeltasToAskUser {
+		delta := *deltaValue
+		gid := delta.GetGid()
+		ok := YesNoPrompt(gid+"\n"+"Do you want to keep this local change?", true)
+		if ok {
+			localDeltasToKeep = append(localDeltasToKeep, *deltaValue)
+		} else {
+			edgesToDiscard[gid] = delta.GetOp()
+		}
+	}
+
+	for _, deltaValue := range remoteEdgeDeltasToAskUser {
+		delta := *deltaValue
+		gid := delta.GetGid()
+		ok := YesNoPrompt(gid+"\n"+"Do you want to keep this remote change?", true)
+		if !ok {
+			remoteDeltasToDiscard = append(remoteDeltasToDiscard, deltaValue)
+			edgesToDiscard[gid] = delta.GetOp()
 		}
 	}
 
 	// Rewind local dag and deltaTree to last common hash
+	fmt.Println("Rewinding existing local delta tree")
 	count := len(localDeltaTree.Seq)
 	var reverseDeltas []*Delta
 	for i := localLastCommonSeq; i < count - 1; i++ {
@@ -589,12 +679,14 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 		reverseDeltas = append(reverseDeltas, poppedDelta)
 	}
 
-	for _, reverseDeltaPtr := range reverseDeltas {
-		delta := *reverseDeltaPtr
+	fmt.Println("Updating local dag")
+	for i := len(reverseDeltas) - 1; i >= 0; i-- {
+		delta := *reverseDeltas[i]
 		copy := delta.GetCopy()
 		copy.SetDag(dag, localDeltaTree, true)
 	}
 
+	fmt.Println("Replay all deltas after commonHash for remote")
 	// Replay all deltas after commonHash for remote (This will include common deltas)
 	for _, deltaValue := range remoteDeviatedDeltas {
 		delta := *deltaValue
@@ -608,16 +700,18 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 		return nil, invertErr
 	}
 
-	for _, deltaValue := range mergeCommitDeltas {
-		delta := *deltaValue
+	fmt.Println("Applying negative commits to retain desired state for remote")
+	for i := len(mergeCommitDeltas) - 1; i >= 0; i-- {
+		delta := *mergeCommitDeltas[i]
 		delta.SetDag(dag, localDeltaTree, false)
 		delta.SetDeltaTree(localDeltaTree)
 
 	}
 
+	fmt.Println("Applying localDeltasToKeep")
 	// Apply all localDeltasToKeep
 	for _, delta := range localDeltasToKeep {
-		fmt.Println("local delta op", delta.GetOp())
+		delta.InvertOp()
 		delta.SetDag(dag, localDeltaTree, false)
 		delta.SetDeltaTree(localDeltaTree)
 	}
