@@ -54,6 +54,12 @@ func MergeTrees(primaryTree *dag.DeltaTree, secondaryTree *dag.DeltaTree, dag *d
 // Primary should be lcoal
 // Secondary should be remote
 func CalculateLcs(primaryTree *dag.DeltaTree, secondaryTree *dag.DeltaTree) (string, *dag.DeltaTree, *dag.DeltaTree, byte, error) {
+	if len(primaryTree.Seq) > 0 && len(secondaryTree.Seq) == 0 {
+		primaryDelta := *primaryTree.Seq[0]
+		primaryId := primaryDelta.GetId()
+		return primaryId, primaryTree, secondaryTree, dag.LocalAhead, nil
+	}
+
 	for i := primaryTree.Pointer; i >= 0; i-- {
 		primaryDelta := *primaryTree.Seq[i]
 		primaryId := primaryDelta.GetId()
