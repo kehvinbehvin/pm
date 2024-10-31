@@ -106,6 +106,15 @@ func init() {
 			if err != nil && !os.IsExist(err) {
 				fmt.Printf("Error creating remote directory: %v\n", err)
 			}
+
+			remoteDeltaFile, remoteDeltaErr := os.Create("./.pm/remote/delta")
+			if remoteDeltaErr != nil {
+				fmt.Printf("Error creating delta file: %v\n", remoteDeltaErr)
+			}
+			remoteDeltaTree := dag.NewDeltaTree()
+			remoteDeltaTree.SaveDelta("./.pm/remote/delta")
+
+			defer remoteDeltaFile.Close()
 		},
 	}
 
@@ -120,7 +129,7 @@ func init() {
 			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()
 
-			deltaTree := dag.LoadDelta()
+			deltaTree := dag.LoadDelta("./.pm/delta")
 			defer deltaTree.SaveDelta("./.pm/delta")
 
 			if epics > 0 {
@@ -191,7 +200,7 @@ func init() {
 			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()
 
-			deltaTree := dag.LoadDelta()
+			deltaTree := dag.LoadDelta("./.pm/delta")
 			defer deltaTree.SaveDelta("./.pm/delta")
 
 			var nodesToSave []*dag.Vertex
@@ -257,7 +266,7 @@ func init() {
 			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()
 
-			deltaTree := dag.LoadDelta()
+			deltaTree := dag.LoadDelta("./.pm/delta")
 			defer deltaTree.SaveDelta("./.pm/delta")
 
 			if tasks > 0 {
@@ -620,7 +629,7 @@ func init() {
 		Use:   "push",
 		Short: "Push delta",
 		Run: func(cmd *cobra.Command, args []string) {
-			localTree := dag.LoadDelta()
+			localTree := dag.LoadDelta("./.pm/delta")
 			defer localTree.SaveDelta("./.pm/delta")
 			if localTree == nil {
 				fmt.Printf("Local tree is empty")
@@ -642,9 +651,9 @@ func init() {
 		Use:   "test",
 		Short: "Test",
 		Run: func(cmd *cobra.Command, args []string) {
-			deltaTree := dag.LoadDelta()
+			deltaTree := dag.LoadDelta("./.pm/delta")
 			defer deltaTree.SaveDelta("./.pm/delta")
-			if deltaTree == nil {
+			if deltaTree == nil || len(deltaTree.Seq) == 0 {
 				fmt.Printf("Local tree is empty")
 				return
 			}
@@ -657,7 +666,7 @@ func init() {
 			fmt.Println("DONE")
 			remoteTree := dag.LoadRemoteDelta()
 			defer remoteTree.SaveDelta("./.pm/remote/delta")
-			if remoteTree == nil {
+			if remoteTree == nil || len(remoteTree.Seq) == 0 {
 				fmt.Printf("Remote tree is empty")
 				return
 			}
