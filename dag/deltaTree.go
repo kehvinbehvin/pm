@@ -228,8 +228,8 @@ func (dt *DeltaTree) RemoveVertexEvent(vertex *Vertex) error {
 	return nil
 }
 
-func LoadDelta() *DeltaTree {
-	file, fileErr := os.Open("./.pm/delta")
+func LoadDelta(fileName string) *DeltaTree {
+	file, fileErr := os.Open(fileName)
 
 	if fileErr != nil {
 		fmt.Println("Error opening binary file")
