@@ -89,7 +89,7 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 
 	// Create SSH client configuration
 	config := &ssh.ClientConfig{
-		User: "user",
+		User: "kevin@example.com",
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
@@ -100,6 +100,7 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	conn, err := ssh.Dial("tcp", "localhost:2222", config)
 	if err != nil {
 		fmt.Println("Error connecting")
+		return
 	}
 	defer conn.Close()
 
@@ -107,6 +108,7 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	session, err := conn.NewSession()
 	if err != nil {
 		fmt.Println("Error creating new session")
+		return
 	}
 	defer session.Close()
 
@@ -138,11 +140,19 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 		fmt.Println("LCS not localahead")
 		return
 	}
-	deltasToPush, deltaErr := resolver.GetDeltasAhead(longerTree, lastCommonHash)
-	if deltaErr != nil {
+	var deltasToPush []*dag.Delta
+
+	// Push the common delta as first delta for server to check for conflicts
+	commonDelta := longerTree.IdTree[lastCommonHash]
+	deltasToPush = append(deltasToPush, commonDelta)
+
+	deltasAhead, AheadErr := resolver.GetDeltasAhead(longerTree, lastCommonHash)
+	if AheadErr != nil {
 		fmt.Println("Deltas ahead error")
 		return
 	}
+
+	deltasToPush = append(deltasToPush, deltasAhead...)
 
 	cmd := "put delta" // Example command to save data to a file
 	if err := session.Start(cmd); err != nil {
