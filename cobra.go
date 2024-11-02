@@ -621,7 +621,21 @@ func init() {
 		Use:   "pull",
 		Short: "Pull delta",
 		Run: func(cmd *cobra.Command, args []string) {
-			retrieveFile()
+			localTree := dag.LoadDelta("./.pm/delta")
+			defer localTree.SaveDelta("./.pm/delta")
+			if localTree == nil {
+				fmt.Printf("Local tree is empty")
+				return
+			}
+
+			remoteTree := dag.LoadRemoteDelta()
+			defer remoteTree.SaveDelta("./.pm/remote/delta")
+			if remoteTree == nil {
+				fmt.Printf("Remote tree is empty")
+				return
+			}
+
+			retrieveFile(localTree, remoteTree)
 		},
 	}
 
@@ -655,31 +669,36 @@ func init() {
 			defer deltaTree.SaveDelta("./.pm/delta")
 			if deltaTree == nil || len(deltaTree.Seq) == 0 {
 				fmt.Printf("Local tree is empty")
-				return
+			} else {
+				for _, value := range deltaTree.Seq {
+					delta := *value
+					fmt.Println(delta)
+				}
+				
 			}
-
-			for _, value := range deltaTree.Seq {
-				delta := *value
-				fmt.Println(delta)
-			}
-
+	
 			fmt.Println("DONE")
+
 			remoteTree := dag.LoadRemoteDelta()
 			defer remoteTree.SaveDelta("./.pm/remote/delta")
 			if remoteTree == nil || len(remoteTree.Seq) == 0 {
 				fmt.Printf("Remote tree is empty")
-				return
+			} else {
+				for _, value := range remoteTree.Seq {
+					delta := *value
+					fmt.Println(delta)
+				}
+				
 			}
 
-			for _, value := range remoteTree.Seq {
-				delta := *value
-				fmt.Println(delta)
-			}
-
+			
 			fmt.Println("DONE")
 			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()
-			resolver.MergeTrees(deltaTree, remoteTree, pmDag)
+			mergingErr := resolver.MergeTrees(deltaTree, remoteTree, pmDag)
+			if mergingErr != nil {
+				fmt.Println("Error mergingTrees", mergingErr.Error())
+			}
 		},
 	}
 
