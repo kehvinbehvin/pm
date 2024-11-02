@@ -11,7 +11,7 @@ import (
 	"github/pm/resolver"
 )
 
-func retrieveFile() {
+func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	// Load private key
 	keyPath := "/Users/kevin/.ssh/local/pm-server/local_rsa"
 	privateKey, err := os.ReadFile(keyPath)
@@ -29,7 +29,7 @@ func retrieveFile() {
 
 	// Create SSH client configuration
 	config := &ssh.ClientConfig{
-		User: "user",
+		User: "kevin@example.com",
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
@@ -40,6 +40,7 @@ func retrieveFile() {
 	conn, err := ssh.Dial("tcp", "localhost:2222", config)
 	if err != nil {
 		fmt.Println("Error connecting")
+		return
 	}
 	defer conn.Close()
 
@@ -47,28 +48,55 @@ func retrieveFile() {
 	session, err := conn.NewSession()
 	if err != nil {
 		fmt.Println("Error creating new session")
+		return
 	}
 	defer session.Close()
 
-	// Execute the command
-	cmd := "get delta"
-	output, err := session.CombinedOutput(cmd)
+	cmd := "get"
+
+	if len(remoteTree.Seq) != 0 {
+		lastRemoteDeltaPtr := remoteTree.Seq[remoteTree.Pointer];
+		if lastRemoteDeltaPtr == nil {
+			fmt.Println("Cannot find last delta on remote")
+			return 
+		}
+		lastRemoteDelta := *lastRemoteDeltaPtr
+		lastRemoteHash := lastRemoteDelta.GetId()
+
+		// Execute the command
+		cmd = cmd + " " + lastRemoteHash 
+	}
+	
+	stdOut, pipeErr := session.StdoutPipe();
+	if pipeErr != nil {
+		fmt.Println("Pipe err")
+		return
+	}
+
+	err = session.Run(cmd)
 	if err != nil {
 		fmt.Printf("Failed to run command: %v", err)
 	}
 
-	file, err := os.Create("./.pm/remote/delta")
-	if err != nil {
-		fmt.Printf("Error creating file: %v\n", err)
-		return
-	}
-	defer file.Close()
+	// Initialize decoding from the SSH session input (s)
+	decoder := gob.NewDecoder(stdOut)
 
-	err = os.WriteFile("./.pm/remote/delta", []byte(output), 0644)
-	if err != nil {
-		fmt.Println("Error writing to file")
+	// Register types to decode correctly
+	gob.Register(&dag.VertexDelta{})
+	gob.Register(&dag.EdgeDelta{})
+
+	// Decode the incoming data into a slice of Deltas (or whatever structure is expected)
+	var deltasToApply []dag.Delta
+	if err := decoder.Decode(&deltasToApply); err != nil {
+		fmt.Println("Error Decoding", err.Error())
+		fmt.Println("Could not decode remote deltas")
 		return
 	}
+
+	for _, delta := range deltasToApply {
+		delta.SetDeltaTree(remoteTree);
+	}
+
 }
 
 func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
