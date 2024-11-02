@@ -12,6 +12,18 @@ import (
 
 // primaryTree applies to secondaryTree
 func MergeTrees(primaryTree *dag.DeltaTree, secondaryTree *dag.DeltaTree, dag *dag.Dag) error {
+	isPrimaryTreeEmpty := len(primaryTree.Seq) == 0
+	isSecondaryTreeEmpty := len(secondaryTree.Seq) == 0
+	if isPrimaryTreeEmpty && !isSecondaryTreeEmpty {
+		deltasToApply := secondaryTree.Seq
+		applyErr := applyDeltasToLocal(deltasToApply, primaryTree, dag)
+		if applyErr != nil {
+			fmt.Println("Error when applying remote to local when local is empty")
+			return applyErr
+		}
+		return nil
+	}
+
 	primaryTreeLatestDelta := *primaryTree.Seq[primaryTree.Pointer]
 	primaryDeltaId := primaryTreeLatestDelta.GetId()
 
@@ -30,7 +42,7 @@ func MergeTrees(primaryTree *dag.DeltaTree, secondaryTree *dag.DeltaTree, dag *d
 		return lcsErr
 	}
 
-	hasDeviation, deviationError := checkForDeviation(primaryTree, secondaryTree, lastCommonHash)
+	hasDeviation, deviationError := CheckForDeviation(primaryTree, secondaryTree, lastCommonHash)
 	if deviationError != nil {
 		return deviationError
 	}
@@ -95,11 +107,11 @@ func getPositionFromHash(hash string, tree *dag.DeltaTree) (int, error) {
 	return 0, errors.New("No delta found")
 }
 
-func checkForDeviation(primaryTree *dag.DeltaTree, secondaryTree *dag.DeltaTree, lastCommonHash string) (bool, error) {
+func CheckForDeviation(primaryTree *dag.DeltaTree, secondaryTree *dag.DeltaTree, lastCommonHash string) (bool, error) {
 	primaryLatestSeq := primaryTree.Pointer
 	commonPrimarySeq, priErr := getPositionFromHash(lastCommonHash, primaryTree)
 	if priErr != nil {
-		return false, priErr
+		return true, priErr
 	}
 
 	secondaryLatestSeq := secondaryTree.Pointer
@@ -132,31 +144,41 @@ func GetDeltasAhead(longTree *dag.DeltaTree, lastCommonSeq string) ([]*dag.Delta
 	return deltasToApply, nil
 }
 
+func applyDeltasToLocal(deltas []*dag.Delta, tree *dag.DeltaTree, dag *dag.Dag) (error) {
+	for _, deltaPtr := range deltas {
+		delta := *deltaPtr
+		// Only fastforward the local tree.
+		// If remoteAhead, then local wil be the shortTree
+		err := delta.SetDag(dag, tree, false)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+
+		err = delta.SetDeltaTree(tree)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+	}
+	
+	return nil
+}
+
 func fastForward(shortTree *dag.DeltaTree, longTree *dag.DeltaTree, lastCommonSeq string, localDag *dag.Dag, lcsType byte) error {
 	deltasToApply, deltaErr := GetDeltasAhead(longTree, lastCommonSeq)
 	if deltaErr != nil {
 		return deltaErr
 	}
 
-	for _, deltaPtr := range deltasToApply {
-		delta := *deltaPtr
-		// Only fastforward the local tree.
-		// If remoteAhead, then local wil be the shortTree
-		if lcsType == dag.RemoteAhead {
-			err := delta.SetDag(localDag, shortTree, false)
-			if err != nil {
-				fmt.Println(err.Error())
-				return err
-			}
-
-			err = delta.SetDeltaTree(shortTree)
-			if err != nil {
-				fmt.Println(err.Error())
-				return err
-			}
+	if lcsType == dag.RemoteAhead {
+		applyErr := applyDeltasToLocal(deltasToApply, shortTree, localDag)
+		if applyErr != nil {
+			fmt.Println("Error when apply deltas to local tree and dag")
+			return applyErr
 		}
 	}
-
+	
 	return nil
 }
 
