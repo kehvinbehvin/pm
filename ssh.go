@@ -55,19 +55,19 @@ func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	cmd := "get"
 
 	if len(remoteTree.Seq) != 0 {
-		lastRemoteDeltaPtr := remoteTree.Seq[remoteTree.Pointer];
+		lastRemoteDeltaPtr := remoteTree.Seq[remoteTree.Pointer]
 		if lastRemoteDeltaPtr == nil {
 			fmt.Println("Cannot find last delta on remote")
-			return 
+			return
 		}
 		lastRemoteDelta := *lastRemoteDeltaPtr
 		lastRemoteHash := lastRemoteDelta.GetId()
 
 		// Execute the command
-		cmd = cmd + " " + lastRemoteHash 
+		cmd = cmd + " " + lastRemoteHash
 	}
-	
-	stdOut, pipeErr := session.StdoutPipe();
+
+	stdOut, pipeErr := session.StdoutPipe()
 	if pipeErr != nil {
 		fmt.Println("Pipe err")
 		return
@@ -94,7 +94,7 @@ func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	}
 
 	for _, delta := range deltasToApply {
-		delta.SetDeltaTree(remoteTree);
+		delta.SetDeltaTree(remoteTree)
 	}
 
 }

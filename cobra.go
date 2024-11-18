@@ -674,9 +674,9 @@ func init() {
 					delta := *value
 					fmt.Println(delta)
 				}
-				
+
 			}
-	
+
 			fmt.Println("DONE")
 
 			remoteTree := dag.LoadRemoteDelta()
@@ -688,10 +688,9 @@ func init() {
 					delta := *value
 					fmt.Println(delta)
 				}
-				
+
 			}
 
-			
 			fmt.Println("DONE")
 			pmDag := dag.LoadDag("pmDag")
 			defer pmDag.SaveDag()

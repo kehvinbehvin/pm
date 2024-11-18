@@ -144,12 +144,24 @@ func GetDeltasAhead(longTree *dag.DeltaTree, lastCommonSeq string) ([]*dag.Delta
 	return deltasToApply, nil
 }
 
-func applyDeltasToLocal(deltas []*dag.Delta, tree *dag.DeltaTree, dag *dag.Dag) (error) {
+func applyDeltasToLocal(deltas []*dag.Delta, tree *dag.DeltaTree, localDag *dag.Dag) error {
 	for _, deltaPtr := range deltas {
 		delta := *deltaPtr
 		// Only fastforward the local tree.
 		// If remoteAhead, then local wil be the shortTree
-		err := delta.SetDag(dag, tree, false)
+		var err error
+		op := delta.GetOp()
+		switch op {
+		case dag.AddVertex:
+		case dag.RemoveVertex:
+			vertexDelta := delta.(*dag.VertexDelta)
+			err = vertexDelta.SetDag(localDag, tree, false)
+		case dag.AddEdge:
+		case dag.RemoveEdge:
+			edgeDelta := delta.(*dag.EdgeDelta)
+			err = edgeDelta.SetDag(localDag, tree, false)
+		}
+
 		if err != nil {
 			fmt.Println(err.Error())
 			return err
@@ -161,7 +173,7 @@ func applyDeltasToLocal(deltas []*dag.Delta, tree *dag.DeltaTree, dag *dag.Dag) 
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -178,7 +190,7 @@ func fastForward(shortTree *dag.DeltaTree, longTree *dag.DeltaTree, lastCommonSe
 			return applyErr
 		}
 	}
-	
+
 	return nil
 }
 
@@ -387,14 +399,51 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 	for i := len(reverseDeltas) - 1; i >= 0; i-- {
 		delta := *reverseDeltas[i]
 		copy := delta.GetCopy()
-		copy.SetDag(localDag, localDeltaTree, true)
+
+		var err error
+		op := copy.GetOp()
+
+		switch op {
+		case dag.AddVertex:
+		case dag.RemoveVertex:
+			vertexDelta := copy.(*dag.VertexDelta)
+			err = vertexDelta.SetDag(localDag, localDeltaTree, true)
+		case dag.AddEdge:
+		case dag.RemoveEdge:
+			edgeDelta := copy.(*dag.EdgeDelta)
+			err = edgeDelta.SetDag(localDag, localDeltaTree, true)
+		}
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return nil, err
+		}
 	}
 
 	fmt.Println("Replay all deltas after commonHash for remote")
 	// Replay all deltas after commonHash for remote (This will include common deltas)
 	for _, deltaValue := range remoteDeviatedDeltas {
 		delta := *deltaValue
-		delta.SetDag(localDag, localDeltaTree, false)
+
+		var err error
+		op := delta.GetOp()
+
+		switch op {
+		case dag.AddVertex:
+		case dag.RemoveVertex:
+			vertexDelta := delta.(*dag.VertexDelta)
+			err = vertexDelta.SetDag(localDag, localDeltaTree, false)
+		case dag.AddEdge:
+		case dag.RemoveEdge:
+			edgeDelta := delta.(*dag.EdgeDelta)
+			err = edgeDelta.SetDag(localDag, localDeltaTree, false)
+		}
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return nil, err
+		}
+
 		delta.SetDeltaTree(localDeltaTree)
 	}
 
@@ -407,7 +456,25 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 	fmt.Println("Applying negative commits to retain desired state for remote")
 	for i := len(mergeCommitDeltas) - 1; i >= 0; i-- {
 		delta := *mergeCommitDeltas[i]
-		delta.SetDag(localDag, localDeltaTree, false)
+		var err error
+		op := delta.GetOp()
+
+		switch op {
+		case dag.AddVertex:
+		case dag.RemoveVertex:
+			vertexDelta := delta.(*dag.VertexDelta)
+			err = vertexDelta.SetDag(localDag, localDeltaTree, false)
+		case dag.AddEdge:
+		case dag.RemoveEdge:
+			edgeDelta := delta.(*dag.EdgeDelta)
+			err = edgeDelta.SetDag(localDag, localDeltaTree, false)
+		}
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return nil, err
+		}
+
 		delta.SetDeltaTree(localDeltaTree)
 
 	}
@@ -416,7 +483,25 @@ func deconflictStates(primaryState *State, secondaryState *State, localLastCommo
 	// Apply all localDeltasToKeep
 	for _, delta := range localDeltasToKeep {
 		delta.InvertOp()
-		delta.SetDag(localDag, localDeltaTree, false)
+		var err error
+		op := delta.GetOp()
+
+		switch op {
+		case dag.AddVertex:
+		case dag.RemoveVertex:
+			vertexDelta := delta.(*dag.VertexDelta)
+			err = vertexDelta.SetDag(localDag, localDeltaTree, false)
+		case dag.AddEdge:
+		case dag.RemoveEdge:
+			edgeDelta := delta.(*dag.EdgeDelta)
+			err = edgeDelta.SetDag(localDag, localDeltaTree, false)
+		}
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return nil, err
+		}
+
 		delta.SetDeltaTree(localDeltaTree)
 	}
 
