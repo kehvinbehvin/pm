@@ -1,0 +1,33 @@
+package common
+
+const (
+	AddVertexAlpha    byte = 1
+	RemoveVertexAlpha byte = 2
+	AddEdgeAlpha      byte = 3
+	RemoveEdgeAlpha   byte = 4
+	AddTrieNode	  byte = 5
+	RemoveTrieNode    byte = 6
+)
+
+type Alpha interface {
+	GetType() byte;
+}
+
+type AlphaList interface {
+	MergeIn(AlphaList)
+	Diff(AlphaList)
+}
+
+type DataStructure interface {
+	Update(Alpha);
+}
+
+type Reconciliator interface {
+	Merge(AlphaList);
+	Diff(AlphaList);
+}
+
+type Reconciler struct {
+	AlphaList AlphaList
+	DataStructure DataStructure
+}
