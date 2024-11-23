@@ -11,9 +11,10 @@ const (
 
 type Alpha interface {
 	GetType() byte;
+	GetId() string;
 }
 
-type AlphaList interface {
+type AlphaHistory interface {
 	MergeIn(AlphaList)
 	Diff(AlphaList)
 }
@@ -22,12 +23,7 @@ type DataStructure interface {
 	Update(Alpha);
 }
 
-type Reconciliator interface {
-	Merge(AlphaList);
-	Diff(AlphaList);
-}
-
-type Reconciler struct {
+type Reconcilable struct {
 	AlphaList AlphaList
 	DataStructure DataStructure
 }

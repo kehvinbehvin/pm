@@ -9,6 +9,17 @@ import (
 	"github/pm/pkg/common"
 )
 
+
+func NewReconcilableDag(storageKey string) common.Reconcilable {
+	dagAlphaList := common.NewAlphaList();
+	dagStorage := NewDag(storageKey);
+
+	return common.Reconcilable{
+		AlphaList: dagAlphaList,
+		DataStructure: dagStorage,
+	}
+}
+
 type Dag struct {
 	Id       string
 	Vertices map[string]*Vertex
