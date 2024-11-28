@@ -280,7 +280,7 @@ func (d *Dag) SaveDag() {
 	}
 }
 
-func LoadDag(fileName string) *Dag {
+func LoadDag(fileName string) *Reconcilable {
 	file, fileErr := os.Open("./.pm/dag/" + fileName)
 
 	if fileErr != nil {

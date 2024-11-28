@@ -2,6 +2,9 @@ package common
 
 import (
 	"errors"
+	"encoding/gob"
+	"fmt"
+	"os"
 )
 
 type AlphaList struct {
@@ -76,6 +79,44 @@ func (r Reconcilable) FastForward(input []Alpha) error {
 	}
 
 	return nil
+}
+
+func (r Reconcilable) SaveReconcilable(filePath string) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		fmt.Printf(err.Error())
+		fmt.Println("Error creating file")
+		return
+	}
+	defer file.Close()
+
+	encoder := gob.NewEncoder(file)
+	encodingErr := encoder.Encode(r)
+	if encodingErr != nil {
+		fmt.Println("Error encoding dag")
+		return
+	}
+}
+
+func LoadReconcilable(filePath string) *Reconcilable {
+	file, fileErr := os.Open(filePath)
+
+	if fileErr != nil {
+		fmt.Println("Error opening binary file")
+		return nil
+	}
+	defer file.Close()
+
+	decoder := gob.NewDecoder(file)
+
+	var loadedReconcilable *Reconcilable
+	decodingErr := decoder.Decode(&loadedReconcilable)
+	if decodingErr != nil {
+		fmt.Println("Error decoding dag")
+		return nil
+	}
+
+	return loadedReconcilable
 }
 
 // type DepNode struct {

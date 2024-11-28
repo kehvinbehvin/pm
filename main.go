@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github/pm/internals/cobra"
+)
+
 func main() {
-	Execute()
+	cobra.Execute()
 }
