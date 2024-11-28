@@ -59,8 +59,8 @@ func init() {
 			if epicErr != nil {
 				fmt.Printf("Error creating epic trie: %v\n", epicErr)
 			}
-			epicTrie := trie.NewTrie("epic")
-			epicTrie.Save()
+			epicTrie := trie.NewReconcilableTrie("epic")
+			epicTrie.SaveReconcilable("./.pm/trie/epic")
 
 			defer epicFile.Close()
 
@@ -68,8 +68,8 @@ func init() {
 			if storyErr != nil {
 				fmt.Printf("Error creating story trie: %v\n", storyErr)
 			}
-			storyTrie := trie.NewTrie("story")
-			storyTrie.Save()
+			storyTrie := trie.NewReconcilableTrie("story")
+			storyTrie.SaveReconcilable("./pm/trie/story")
 
 			defer storyFile.Close()
 
@@ -77,8 +77,8 @@ func init() {
 			if taskErr != nil {
 				fmt.Printf("Error creating task trie: %v\n", taskErr)
 			}
-			taskTrie := trie.NewTrie("task")
-			taskTrie.Save()
+			taskTrie := trie.NewReconcilableTrie("task")
+			taskTrie.SaveReconcilable("./.pm/trie/task")
 
 			defer taskFile.Close()
 
@@ -147,22 +147,22 @@ func init() {
 
 			}
 
-			epicTrie := Load("epic")
-			defer epicTrie.Save()
+			epicTrie := trie.Load("epic")
+			defer epicTrie.SaveReconcilable("./.pm/trie/epic")
 			for _, value := range eValues {
 				// Create a Delete Word Alpha
 				// Update dataStructure
 			}
 
-			storyTrie := Load("story")
-			defer storyTrie.Save()
+			storyTrie := trie.Load("story")
+			defer storyTrie.SaveReconcilable("./.pm/trie/story")
 			for _, value := range sValues {
 				// Create a Delete Word Alpha
 				// Update datastructure
 			}
 
-			taskTrie := Load("task")
-			defer taskTrie.Save()
+			taskTrie := trie.Load("task")
+			defer taskTrie.SaveReconcilable("./.pm/trie/task")
 			for _, value := range tValues {
 				// Create a Delete Word Alpha
 				// Update datastructure
@@ -220,17 +220,17 @@ func init() {
 				}
 			}
 
-			epicTrie := Load("epic")
+			epicTrie := trie.Load("epic")
 			for _, value := range eValues {
 				// Create File
 			}
 
-			storyTrie := Load("story")
+			storyTrie := trie.Load("story")
 			for _, value := range sValues {
 				// Create File
 			}
 
-			taskTrie := Load("task")
+			taskTrie := trie.Load("task")
 			for _, value := range tValues {
 				// Create File
 			}
@@ -324,7 +324,7 @@ func init() {
 		Use:   "epic",
 		Short: "List all epics",
 		Run: func(cmd *cobra.Command, args []string) {
-			epicTrie := trie.Load("epic")
+			epicTrie := trie.Load("epic").DataStructure.(*trie.Trie)
 			allEpics, err := epicTrie.LoadAllWords()
 			if err != nil {
 				return
@@ -338,7 +338,7 @@ func init() {
 		Use:   "story",
 		Short: "List all story",
 		Run: func(cmd *cobra.Command, args []string) {
-			storyTrie := trie.Load("story")
+			storyTrie := trie.Load("story").DataStructure.(*trie.Trie)
 			allEpics, err := storyTrie.LoadAllWords()
 			if err != nil {
 				return
@@ -352,7 +352,7 @@ func init() {
 		Use:   "task",
 		Short: "List all task",
 		Run: func(cmd *cobra.Command, args []string) {
-			taskTrie := trie.Load("task")
+			taskTrie := trie.Load("task").DataStructure.(*trie.Trie)
 			allTasks, err := taskTrie.LoadAllWords()
 			if err != nil {
 				return
@@ -392,7 +392,7 @@ func init() {
 				nodeType = "Epic"
 				childNodeType = "Stories"
 
-				epicTrie := trie.Load("epic")
+				epicTrie := trie.Load("epic").DataStructure.(*trie.Trie)
 				description, err = blob.RetrieveContent(header, epicTrie)
 				if err != nil {
 					return
@@ -404,8 +404,8 @@ func init() {
 				nodeType = "Story"
 				childNodeType = "Tasks"
 
-				storyTrie := trie.Load("story")
-				description, err = RetrieveContent(header, storyTrie)
+				storyTrie := trie.Load("story").DataStructure.(*trie.Trie)
+				description, err = blob.RetrieveContent(header, storyTrie)
 				if err != nil {
 					return
 				}
@@ -414,8 +414,8 @@ func init() {
 				header = tValues[0]
 				nodeType = "Task"
 
-				taskTrie := trie.Load("task")
-				description, err = RetrieveContent(header, taskTrie)
+				taskTrie := trie.Load("task").DataStructure.(*trie.Trie)
+				description, err = blob.RetrieveContent(header, taskTrie)
 				if err != nil {
 					return
 				}
@@ -482,7 +482,7 @@ func init() {
 
 			if epics > 0 {
 				epicTrie := trie.Load("epic")
-				defer epicTrie.Save()
+				defer epicTrie.SaveReconcilable("./.pm/trie/epic")
 
 				updateErr := fileManager.UpdateBlobContent(eValues[0], string(content), epicTrie)
 				if updateErr != nil {
@@ -491,7 +491,7 @@ func init() {
 				}
 			} else if stories > 0 {
 				storyTrie := trie.Load("story")
-				defer storyTrie.Save()
+				defer storyTrie.SaveReconcilable("./.pm/trie/story")
 
 				updateErr := fileManager.UpdateBlobContent(sValues[0], string(content), storyTrie)
 				if updateErr != nil {
@@ -500,7 +500,7 @@ func init() {
 				}
 			} else if tasks > 0 {
 				taskTrie := trie.Load("task")
-				defer taskTrie.Save()
+				defer taskTrie.SaveReconcilable("./.pm/trie/task")
 
 				updateErr := fileManager.UpdateBlobContent(tValues[0], string(content), taskTrie)
 				if updateErr != nil {
@@ -562,7 +562,7 @@ func init() {
 		Short: "Epic suggestions",
 		Run: func(cmd *cobra.Command, args []string) {
 			toComplete := args[0]
-			epicTrie := trie.Load("epic")
+			epicTrie := trie.Load("epic").DataStructure.(*trie.Trie)
 			if epicTrie != nil {
 				suggestions := epicTrie.LoadWordsFromPrefix(toComplete)
 				fmt.Println(strings.Join(suggestions, "\n"))
@@ -575,7 +575,7 @@ func init() {
 		Short: "Story suggestions",
 		Run: func(cmd *cobra.Command, args []string) {
 			toComplete := args[0]
-			storyTrie := trie.Load("story")
+			storyTrie := trie.Load("story").DataStructure.(*trie.Trie)
 			if storyTrie != nil {
 				suggestions := storyTrie.LoadWordsFromPrefix(toComplete)
 				fmt.Println(strings.Join(suggestions, "\n"))
@@ -588,7 +588,7 @@ func init() {
 		Short: "Task suggestions",
 		Run: func(cmd *cobra.Command, args []string) {
 			toComplete := args[0]
-			taskTrie := trie.Load("task")
+			taskTrie := trie.Load("task").DataStructure.(*trie.Trie)
 			if taskTrie != nil {
 				suggestions := taskTrie.LoadWordsFromPrefix(toComplete)
 				fmt.Println(strings.Join(suggestions, "\n"))
