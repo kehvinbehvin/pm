@@ -20,10 +20,7 @@ type AlphaHistory interface {
 }
 
 type DataStructure interface {
-	Update(Alpha);
-}
-
-type Reconcilable struct {
-	AlphaList AlphaList
-	DataStructure DataStructure
+	Update(Alpha) (error);
+	Rewind(Alpha) (error);
+	Validate(Alpha) (bool);
 }

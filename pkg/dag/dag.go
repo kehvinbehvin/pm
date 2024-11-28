@@ -30,23 +30,71 @@ type Vertex struct {
 	Children map[string]*Vertex
 }
 
-func (d *Dag) Update(alpha common.Alpha) {
+func (d *Dag) Update(alpha common.Alpha) (error) {
 	alphaType := alpha.GetType();
+	var error error
 	switch alphaType {
 	case common.AddVertexAlpha:
 		addVertexAlpha := alpha.(*AddVertexAlpha)
-		d.AddVertex(addVertexAlpha.target)
+		error = d.AddVertex(addVertexAlpha.target)
 	case common.RemoveVertexAlpha:
 		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
-		d.AddVertex(removeVertexAlpha.target)
+		error = d.RemoveVertex(removeVertexAlpha.target)
 	case common.AddEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
-		d.AddEdge(addEdgeAlpha.to, addEdgeAlpha.from)
+		error = d.AddEdge(addEdgeAlpha.to, addEdgeAlpha.from)
 	case common.RemoveEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
-		d.RemoveEdge(removeEdgeAlpha.to, removeEdgeAlpha.from)
+		error = d.RemoveEdge(removeEdgeAlpha.to, removeEdgeAlpha.from)
 	}
+
+	return error
 }
+
+
+func (d *Dag) Rewind(alpha common.Alpha) (error) {
+	alphaType := alpha.GetType();
+	var error error
+	switch alphaType {
+	case common.AddVertexAlpha:
+		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
+		error = d.RemoveVertex(removeVertexAlpha.target)
+	case common.RemoveVertexAlpha:
+		addVertexAlpha := alpha.(*AddVertexAlpha)
+		error = d.AddVertex(addVertexAlpha.target)
+	case common.AddEdgeAlpha:
+		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
+		error = d.RemoveEdge(removeEdgeAlpha.to, removeEdgeAlpha.from)
+	case common.RemoveEdgeAlpha:
+		addEdgeAlpha := alpha.(*AddEdgeAlpha)
+		error = d.AddEdge(addEdgeAlpha.to, addEdgeAlpha.from)
+	}
+
+	return error
+}
+
+func (d *Dag) Validate(alpha common.Alpha) (bool) {
+	alphaType := alpha.GetType();
+	var valid bool
+
+	switch alphaType {
+	case common.AddVertexAlpha:
+		addVertexAlpha := alpha.(*AddVertexAlpha)
+		valid = d.HasVertex(addVertexAlpha.target.ID)
+	case common.RemoveVertexAlpha:
+		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
+		valid = !d.HasVertex(removeVertexAlpha.target.ID)
+	case common.AddEdgeAlpha:
+		addEdgeAlpha := alpha.(*AddEdgeAlpha)
+		valid = d.HasEdge(addEdgeAlpha.from, addEdgeAlpha.to)
+	case common.RemoveEdgeAlpha:
+		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
+		valid = d.HasEdge(removeEdgeAlpha.from, removeEdgeAlpha.to)
+	}
+
+	return valid
+}
+
 
 func NewDag(fileName string) *Dag {
 	return &Dag{
@@ -96,12 +144,27 @@ type RemoveEdgeAlpha struct {
 }
 
 
-func (ea *AddEdgeAlpha) GetType() byte {
+func (aea *AddEdgeAlpha) GetType() byte {
 	return common.AddEdgeAlpha
 }
 
-func (ea *RemoveEdgeAlpha) GetType() byte {
+func (aea *AddEdgeAlpha) GetId() string {
+	return aea.to.ID + aea.from.ID + string(common.AddEdgeAlpha)
+}
+
+func (rea *RemoveEdgeAlpha) GetType() byte {
 	return common.RemoveEdgeAlpha
+}
+
+func (rea *RemoveEdgeAlpha) GetId() string {
+	return rea.to.ID + rea.from.ID + string(common.AddEdgeAlpha)
+}
+
+func (d *Dag) HasEdge(from *Vertex, to *Vertex) bool {
+	_, hasParent := d.Vertices[from.ID]
+	_, hasChild := d.Vertices[to.ID]
+
+	return hasParent && hasChild
 }
 
 func (d *Dag) AddEdge(from *Vertex, to *Vertex) error {
@@ -149,8 +212,16 @@ func (ava *AddVertexAlpha) GetType() byte {
 	return common.AddVertexAlpha;
 }
 
+func (ava *AddVertexAlpha) GetId() string {
+	return ava.target.ID
+}
+
 func (rva *RemoveVertexAlpha) GetType() byte {
 	return common.RemoveVertexAlpha
+}
+
+func (rvd *RemoveVertexAlpha) GetId() string {
+	return rvd.target.ID
 }
 
 func (d *Dag) AddVertex(in *Vertex) error {
@@ -180,6 +251,12 @@ func (d *Dag) RemoveVertex(out *Vertex) error {
 	delete(d.Vertices, out.ID)
 	return nil
 }
+
+func (d *Dag) HasVertex(vertexID string) bool {
+	_, exists := d.Vertices[vertexID]
+	return exists 
+}
+
 
 func (d *Dag) RetrieveVertex(vertexID string) *Vertex {
 	vertex, exists := d.Vertices[vertexID]
