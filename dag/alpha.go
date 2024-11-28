@@ -1,15 +1,15 @@
 package dag
 
-type Graph struct {}
+type Graph struct{}
 
-type GraphAlpha struct {}
+type GraphAlpha struct{}
 
 func (G Graph) Merge(other Graph) (bool, error) {
 	return true, nil
 }
 
 func (G Graph) Compare(other Graph) ([]GraphAlpha, error) {
-	var diffs []GraphAlpha;
+	var diffs []GraphAlpha
 
 	return diffs, nil
 }
@@ -22,16 +22,16 @@ func (GA GraphAlpha) Apply() (bool, error) {
 	return true, nil
 }
 
-type LinkedList struct {}
+type LinkedList struct{}
 
-type LinkedListAlpha struct {}
+type LinkedListAlpha struct{}
 
 func (LL LinkedList) Merge(other Graph) (bool, error) {
 	return true, nil
 }
 
 func (LL LinkedList) Compare(other Graph) ([]LinkedListAlpha, error) {
-	var diffs []LinkedListAlpha;
+	var diffs []LinkedListAlpha
 
 	return diffs, nil
 }
@@ -50,7 +50,7 @@ type DataStruct interface {
 
 type CompositeStruct[D DataStruct] struct {
 	Structure D
-	History AlphaLog[D]
+	History   AlphaLog[D]
 }
 
 type Alpha interface {
@@ -69,6 +69,7 @@ type Mergable[D DataStruct] interface {
 type Trackable interface {
 	Apply() Alpha
 }
+
 /**
 Alpha: A unit of change. Generalisable across all data structures.
 DataStruct: A structure that is

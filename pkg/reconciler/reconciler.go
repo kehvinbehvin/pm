@@ -9,41 +9,41 @@ import (
 )
 
 const (
-	IncumbentAhead byte = 1;
-	InBoundAhead byte = 2;
-	Identical byte = 3;
-	Conflict byte = 4;
-	Irreconcilable byte = 5;
+	IncumbentAhead byte = 1
+	InBoundAhead   byte = 2
+	Identical      byte = 3
+	Conflict       byte = 4
+	Irreconcilable byte = 5
 )
 
 type Reconciler struct {
-	reconcilable common.Reconcilable
+	reconcilable    common.Reconcilable
 	lastCommonAlpha common.Alpha
-	inBoundDelta []common.Alpha
-	incumbentDelta []common.Alpha
+	inBoundDelta    []common.Alpha
+	incumbentDelta  []common.Alpha
 }
 
 func (rc *Reconciler) Reconcile(other *common.Reconcilable) byte {
-	incumbentAlphaList := rc.reconcilable.AlphaList;
-	inBoundAlphaList := other.AlphaList;
+	incumbentAlphaList := rc.reconcilable.AlphaList
+	inBoundAlphaList := other.AlphaList
 
-	// Valid Merges 
+	// Valid Merges
 	// InBound ahead of Incumbent
 	// InBound conflic with Invcumbent
 
-	// Invalid Merges 
-	// Incumbent ahead of Inbound 
+	// Invalid Merges
+	// Incumbent ahead of Inbound
 	// Inbound and Incumbent have no common alpha
-	
+
 	// Find common alpha
-	alphaErr := rc.findLastCommonAlpha(incumbentAlphaList, inBoundAlphaList);
+	alphaErr := rc.findLastCommonAlpha(incumbentAlphaList, inBoundAlphaList)
 	if alphaErr != nil {
 		// No common alpha found, cannot merge
 		return Irreconcilable
 	}
 
-	lastIncumbentAlpha := incumbentAlphaList.Alphas[len(incumbentAlphaList.Alphas) - 1].GetId()
-	lastInBoundAlpha := inBoundAlphaList.Alphas[len(inBoundAlphaList.Alphas) - 1].GetId()
+	lastIncumbentAlpha := incumbentAlphaList.Alphas[len(incumbentAlphaList.Alphas)-1].GetId()
+	lastInBoundAlpha := inBoundAlphaList.Alphas[len(inBoundAlphaList.Alphas)-1].GetId()
 
 	identical := rc.areAlphaListsIdentical(lastIncumbentAlpha, lastInBoundAlpha)
 	if identical {
@@ -75,13 +75,13 @@ func (rc *Reconciler) Reconcile(other *common.Reconcilable) byte {
 	return Irreconcilable
 }
 
-func (rc *Reconciler) MergeIn(other *common.Reconcilable) (error) {
+func (rc *Reconciler) MergeIn(other *common.Reconcilable) error {
 	if other == nil {
 		return errors.New("Other reconcilable is empty")
 	}
 
-	reconcilingStrategy := rc.Reconcile(other);
-	error := rc.resolveDeltas(other);
+	reconcilingStrategy := rc.Reconcile(other)
+	error := rc.resolveDeltas(other)
 	if error != nil {
 		return error
 	}
@@ -92,25 +92,25 @@ func (rc *Reconciler) MergeIn(other *common.Reconcilable) (error) {
 		rc.MergeSilently(other)
 	case InBoundAhead:
 		// Perform Fast forward strategy
-		rc.FastForward(other);
+		rc.FastForward(other)
 	case Identical:
 	case IncumbentAhead:
 	case Irreconcilable:
 		// Log and return for (Identical, IncumbentAhead and Irreconcilable)
-		return errors.New("There is nothing to merge");
+		return errors.New("There is nothing to merge")
 	}
 
 	return nil
 }
 
-func (rc *Reconciler) findLastCommonAlpha(incumbent common.AlphaList, inBound common.AlphaList) (error) {
-	incumbentRootAlphaId := incumbent.Alphas[0].GetId();
-	inBoundRootAlphaId := inBound.Alphas[0].GetId();
+func (rc *Reconciler) findLastCommonAlpha(incumbent common.AlphaList, inBound common.AlphaList) error {
+	incumbentRootAlphaId := incumbent.Alphas[0].GetId()
+	inBoundRootAlphaId := inBound.Alphas[0].GetId()
 
 	if inBoundRootAlphaId != incumbentRootAlphaId {
-		return errors.New("[findLastCommonAlpha] No common alphas found");
+		return errors.New("[findLastCommonAlpha] No common alphas found")
 	}
-	
+
 	commonAlpha, searchErr := rc.optimisticSearch(incumbent, inBound)
 	if searchErr != nil {
 		return searchErr
@@ -130,7 +130,7 @@ func (rc *Reconciler) optimisticSearch(incumbent common.AlphaList, inBound commo
 	if len(incumbent.Alphas) > len(inBound.Alphas) {
 		longerList = incumbent.Alphas
 		shorterList = inBound.Alphas
-	} else { 
+	} else {
 		longerList = inBound.Alphas
 		shorterList = incumbent.Alphas
 	}
@@ -138,11 +138,11 @@ func (rc *Reconciler) optimisticSearch(incumbent common.AlphaList, inBound commo
 	// Check if last Alpha of shorter list is in longer list
 	var pointer int
 	pointer = len(shorterList) - 1
-	
+
 	longAlpha := longerList[pointer]
 	shortAlpha := shorterList[pointer]
 
-	if isCommonAlpha(shortAlpha, longAlpha ) {
+	if isCommonAlpha(shortAlpha, longAlpha) {
 		// If 1 last alpha is found in another list, it will be the last common alpha for both
 		return shorterList[pointer], nil
 	}
@@ -151,7 +151,7 @@ func (rc *Reconciler) optimisticSearch(incumbent common.AlphaList, inBound commo
 	// We can perform a binary optimisticSearch
 	alpha, searchErr := binarySearch(pointer, shorterList, longerList)
 	if searchErr != nil {
-		return nil, searchErr;
+		return nil, searchErr
 	}
 
 	return alpha, nil
@@ -180,7 +180,7 @@ func binarySearch(pointer int, shorter []common.Alpha, longer []common.Alpha) (c
 		// Common alpha must be earlier
 		floatPointer := float64(pointer)
 		nextFloatPointer := math.Round(floatPointer / 2)
-		next := int(nextFloatPointer);
+		next := int(nextFloatPointer)
 
 		return binarySearch(next, shorter, longer)
 	} else {
@@ -188,19 +188,19 @@ func binarySearch(pointer int, shorter []common.Alpha, longer []common.Alpha) (c
 		// Safe to assume that this is not the last alpha in the shorterList
 		// Because that case was handled in optimisticSearch and exited early
 		// The only case this can occur is for alphas before the last alpha of the shorterlist
-		nextShorterAlpha := shorter[pointer + 1]
-		nextLongerAlpha := longer[pointer + 1]
+		nextShorterAlpha := shorter[pointer+1]
+		nextLongerAlpha := longer[pointer+1]
 
 		if isCommonAlpha(nextShorterAlpha, nextLongerAlpha) {
 			// Not the last commona alpha
 			shortLength := len(shorter)
-			difference := shortLength - pointer;
-			
+			difference := shortLength - pointer
+
 			floatDifference := float64(difference)
 			nextFloatDifference := math.Round(floatDifference / 2)
-			nextDifference := int(nextFloatDifference);
+			nextDifference := int(nextFloatDifference)
 
-			diff := shortLength + nextDifference;
+			diff := shortLength + nextDifference
 
 			return binarySearch(diff, shorter, longer)
 		} else {
@@ -210,7 +210,7 @@ func binarySearch(pointer int, shorter []common.Alpha, longer []common.Alpha) (c
 	}
 }
 
-func (rc *Reconciler) areAlphaListsIdentical(lastIncumbentAlpha string, lastInBoundAlpha string) bool {	
+func (rc *Reconciler) areAlphaListsIdentical(lastIncumbentAlpha string, lastInBoundAlpha string) bool {
 	return (rc.lastCommonAlpha.GetId() == lastIncumbentAlpha) && (lastInBoundAlpha == rc.lastCommonAlpha.GetId())
 }
 
@@ -227,25 +227,25 @@ func (rc *Reconciler) isInBoundAhead(lastIncumbentAlpha string, lastInBoundAlpha
 }
 
 func isCommonAlpha(shorter common.Alpha, longer common.Alpha) bool {
-    return shorter.GetId() == longer.GetId()
+	return shorter.GetId() == longer.GetId()
 }
 
-func (rc *Reconciler) resolveDeltas(inBound *common.Reconcilable) (error) {
+func (rc *Reconciler) resolveDeltas(inBound *common.Reconcilable) error {
 	var inBoundDelta []common.Alpha
 	var incumbentDelta []common.Alpha
 
 	// TODO: May include logic to calculate the lastCommonAlpha here
 	if rc.lastCommonAlpha == nil {
-		return errors.New("Calculate the last common alpha first before resolving the deltas");
+		return errors.New("Calculate the last common alpha first before resolving the deltas")
 	}
 
-	lastCommonAlphaId := rc.lastCommonAlpha.GetId();
+	lastCommonAlphaId := rc.lastCommonAlpha.GetId()
 
 	inBoundLength := len(inBound.AlphaList.Alphas)
 	incumbentLength := len(rc.reconcilable.AlphaList.Alphas)
 	for i := inBoundLength - 1; i >= 0; i-- {
 		tmpAlpha := inBound.AlphaList.Alphas[i]
-		if (tmpAlpha.GetId() != lastCommonAlphaId) {
+		if tmpAlpha.GetId() != lastCommonAlphaId {
 			inBoundDelta = append(inBoundDelta, tmpAlpha)
 		} else {
 			break
@@ -255,7 +255,7 @@ func (rc *Reconciler) resolveDeltas(inBound *common.Reconcilable) (error) {
 
 	for i := incumbentLength - 1; i >= 0; i-- {
 		tmpAlpha := rc.reconcilable.AlphaList.Alphas[i]
-		if (tmpAlpha.GetId() != lastCommonAlphaId) {
+		if tmpAlpha.GetId() != lastCommonAlphaId {
 			incumbentDelta = append(incumbentDelta, tmpAlpha)
 		} else {
 			break
@@ -263,13 +263,13 @@ func (rc *Reconciler) resolveDeltas(inBound *common.Reconcilable) (error) {
 
 	}
 
-	rc.inBoundDelta = incumbentDelta;
-	rc.incumbentDelta = incumbentDelta;
+	rc.inBoundDelta = incumbentDelta
+	rc.incumbentDelta = incumbentDelta
 
 	return nil
 }
 
-func (rc *Reconciler) MergeSilently(inBound *common.Reconcilable) (error) {
+func (rc *Reconciler) MergeSilently(inBound *common.Reconcilable) error {
 	// Reset incumbent reconcilable
 	error := rc.reconcilable.Reset(rc.lastCommonAlpha)
 	if error != nil {
@@ -283,19 +283,19 @@ func (rc *Reconciler) MergeSilently(inBound *common.Reconcilable) (error) {
 	}
 
 	// Since we take inBound as the source of truth, we will accept all inBound Alphas first
-	// Next, we need to append all the incumbentAlphas. however incumbentAlphas depend on 
+	// Next, we need to append all the incumbentAlphas. however incumbentAlphas depend on
 	// the state of the underlying structure at lastCommonAlpha. Hence depedencies might have been changed
 	// This requires us to check for every alpha in the incumbentDelta for changed dependencies
 	for incumbentIndex := 0; incumbentIndex < len(rc.incumbentDelta); incumbentIndex++ {
 		incumbentAlpha := rc.incumbentDelta[incumbentIndex]
-		
-		validationError := rc.reconcilable.DataStructure.Validate(incumbentAlpha);
-		
-		if (validationError) {
+
+		validationError := rc.reconcilable.DataStructure.Validate(incumbentAlpha)
+
+		if validationError {
 			// log error but continue with merge first and skip this change
 			// this may have a cascading effect on later alphas in the delta
 			fmt.Print("There was a validation error with merging")
-			continue;
+			continue
 		}
 
 		error := rc.reconcilable.Commit(incumbentAlpha)
@@ -305,7 +305,7 @@ func (rc *Reconciler) MergeSilently(inBound *common.Reconcilable) (error) {
 	}
 
 	return nil
-} 
+}
 
 func (rc *Reconciler) FastForward(inBound *common.Reconcilable) {
 	error := rc.reconcilable.FastForward(inBound.AlphaList.Alphas)

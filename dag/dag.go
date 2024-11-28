@@ -76,7 +76,7 @@ func (d *Dag) AddEdge(from *Vertex, to *Vertex) error {
 	return nil
 }
 
-func (d *Dag) hasEdge(from *Vertex, to *Vertex) (bool) {
+func (d *Dag) hasEdge(from *Vertex, to *Vertex) bool {
 	_, hasParent := d.Vertices[from.ID]
 	_, hasChild := d.Vertices[to.ID]
 
@@ -135,7 +135,7 @@ func (d *Dag) RetrieveVertex(vertexID string) *Vertex {
 	return vertex
 }
 
-func (d *Dag) hasVertex(vertexID string) (bool) {
+func (d *Dag) hasVertex(vertexID string) bool {
 	_, exists := d.Vertices[vertexID]
 	return exists
 }

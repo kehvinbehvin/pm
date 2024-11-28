@@ -144,7 +144,7 @@ func GetDeltasAhead(longTree *dag.DeltaTree, lastCommonSeq string) ([]*dag.Delta
 	return deltasToApply, nil
 }
 
-func applyDeltasToLocal(deltas []*dag.Delta, tree *dag.DeltaTree, dag *dag.Dag) (error) {
+func applyDeltasToLocal(deltas []*dag.Delta, tree *dag.DeltaTree, dag *dag.Dag) error {
 	for _, deltaPtr := range deltas {
 		delta := *deltaPtr
 		// Only fastforward the local tree.
@@ -161,7 +161,7 @@ func applyDeltasToLocal(deltas []*dag.Delta, tree *dag.DeltaTree, dag *dag.Dag) 
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -178,7 +178,7 @@ func fastForward(shortTree *dag.DeltaTree, longTree *dag.DeltaTree, lastCommonSe
 			return applyErr
 		}
 	}
-	
+
 	return nil
 }
 

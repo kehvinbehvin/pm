@@ -9,13 +9,12 @@ import (
 	"github/pm/pkg/common"
 )
 
-
 func NewReconcilableDag(storageKey string) common.Reconcilable {
-	dagAlphaList := common.NewAlphaList();
-	dagStorage := NewDag(storageKey);
+	dagAlphaList := common.NewAlphaList()
+	dagStorage := NewDag(storageKey)
 
 	return common.Reconcilable{
-		AlphaList: dagAlphaList,
+		AlphaList:     dagAlphaList,
 		DataStructure: dagStorage,
 	}
 }
@@ -30,8 +29,8 @@ type Vertex struct {
 	Children map[string]*Vertex
 }
 
-func (d *Dag) Update(alpha common.Alpha) (error) {
-	alphaType := alpha.GetType();
+func (d *Dag) Update(alpha common.Alpha) error {
+	alphaType := alpha.GetType()
 	var error error
 	switch alphaType {
 	case common.AddVertexAlpha:
@@ -51,9 +50,8 @@ func (d *Dag) Update(alpha common.Alpha) (error) {
 	return error
 }
 
-
-func (d *Dag) Rewind(alpha common.Alpha) (error) {
-	alphaType := alpha.GetType();
+func (d *Dag) Rewind(alpha common.Alpha) error {
+	alphaType := alpha.GetType()
 	var error error
 	switch alphaType {
 	case common.AddVertexAlpha:
@@ -73,8 +71,8 @@ func (d *Dag) Rewind(alpha common.Alpha) (error) {
 	return error
 }
 
-func (d *Dag) Validate(alpha common.Alpha) (bool) {
-	alphaType := alpha.GetType();
+func (d *Dag) Validate(alpha common.Alpha) bool {
+	alphaType := alpha.GetType()
 	var valid bool
 
 	switch alphaType {
@@ -94,7 +92,6 @@ func (d *Dag) Validate(alpha common.Alpha) (bool) {
 
 	return valid
 }
-
 
 func NewDag(fileName string) *Dag {
 	return &Dag{
@@ -135,14 +132,13 @@ func dfs(from *Vertex, to *Vertex) bool {
 
 type AddEdgeAlpha struct {
 	from *Vertex
-	to *Vertex
+	to   *Vertex
 }
 
 type RemoveEdgeAlpha struct {
 	from *Vertex
-	to *Vertex
+	to   *Vertex
 }
-
 
 func (aea *AddEdgeAlpha) GetType() byte {
 	return common.AddEdgeAlpha
@@ -209,7 +205,7 @@ type RemoveVertexAlpha struct {
 }
 
 func (ava *AddVertexAlpha) GetType() byte {
-	return common.AddVertexAlpha;
+	return common.AddVertexAlpha
 }
 
 func (ava *AddVertexAlpha) GetId() string {
@@ -254,9 +250,8 @@ func (d *Dag) RemoveVertex(out *Vertex) error {
 
 func (d *Dag) HasVertex(vertexID string) bool {
 	_, exists := d.Vertices[vertexID]
-	return exists 
+	return exists
 }
-
 
 func (d *Dag) RetrieveVertex(vertexID string) *Vertex {
 	vertex, exists := d.Vertices[vertexID]
