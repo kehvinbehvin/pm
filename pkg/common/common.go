@@ -1,8 +1,8 @@
 package common
 
 import (
-	"errors"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"os"
 )

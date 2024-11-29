@@ -43,7 +43,7 @@ func NewTrie(id string) *Trie {
 	}
 }
 
-func (t *Trie) Update(alpha common.Alpha) (error) {
+func (t *Trie) Update(alpha common.Alpha) error {
 	alphaType := alpha.GetType()
 	switch alphaType {
 	case common.AddTrieNodeAlpha:
@@ -57,21 +57,21 @@ func (t *Trie) Update(alpha common.Alpha) (error) {
 	return nil
 }
 
-func (t *Trie) Rewind(alpha common.Alpha) (error) {
+func (t *Trie) Rewind(alpha common.Alpha) error {
 	alphaType := alpha.GetType()
 	switch alphaType {
 	case common.AddTrieNodeAlpha:
 		addTrieNodeAlpha := alpha.(AddTrieNodeAlpha)
 		t.RemoveWord(addTrieNodeAlpha.FileName)
 	case common.RemoveTrieNodeAlpha:
-		removeTrieNodeAlpha:= alpha.(RemoveTrieNodeAlpha)
+		removeTrieNodeAlpha := alpha.(RemoveTrieNodeAlpha)
 		t.AddFile(removeTrieNodeAlpha.FileName, removeTrieNodeAlpha.FileLocation)
 	}
 
 	return nil
 }
 
-func (t *Trie) Validate(alpha common.Alpha) (bool) {
+func (t *Trie) Validate(alpha common.Alpha) bool {
 	alphaType := alpha.GetType()
 
 	switch alphaType {
@@ -87,22 +87,22 @@ func (t *Trie) Validate(alpha common.Alpha) (bool) {
 		addTrieNodeAlpha := alpha.(AddTrieNodeAlpha)
 		node, error := t.RetrieveValue(addTrieNodeAlpha.FileName)
 		if error != nil && node == "" {
-			return true 
+			return true
 		}
 
-		return false 
+		return false
 	}
 
-	return false 
+	return false
 }
 
 type AddTrieNodeAlpha struct {
-	FileName string
-        FileLocation string
+	FileName     string
+	FileLocation string
 }
 
 type RemoveTrieNodeAlpha struct {
-	FileName string 
+	FileName     string
 	FileLocation string
 }
 

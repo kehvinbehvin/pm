@@ -1,12 +1,12 @@
 package common
 
 const (
-	AddVertexAlpha    byte = 1
-	RemoveVertexAlpha byte = 2
-	AddEdgeAlpha      byte = 3
-	RemoveEdgeAlpha   byte = 4
-	AddTrieNodeAlpha      byte = 5
-	RemoveTrieNodeAlpha    byte = 6
+	AddVertexAlpha      byte = 1
+	RemoveVertexAlpha   byte = 2
+	AddEdgeAlpha        byte = 3
+	RemoveEdgeAlpha     byte = 4
+	AddTrieNodeAlpha    byte = 5
+	RemoveTrieNodeAlpha byte = 6
 )
 
 type Alpha interface {

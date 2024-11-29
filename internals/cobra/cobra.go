@@ -126,7 +126,7 @@ func init() {
 			if epics > 0 {
 				for _, value := range eValues {
 					// Create a Delete Vertex Alpha
-					existingVertex := pmDag.RetrieveVertex(value);
+					existingVertex := pmDag.RetrieveVertex(value)
 					deleteVertexAlpha := &dag.RemoveVertexAlpha{
 						Target: existingVertex,
 					}
@@ -139,7 +139,7 @@ func init() {
 			if stories > 0 {
 				for _, value := range sValues {
 					// Create a Delete Vertex Alpha
-					existingVertex := pmDag.RetrieveVertex(value);
+					existingVertex := pmDag.RetrieveVertex(value)
 					deleteVertexAlpha := &dag.RemoveVertexAlpha{
 						Target: existingVertex,
 					}
@@ -152,7 +152,7 @@ func init() {
 			if tasks > 0 {
 				for _, value := range tValues {
 					// Create a Delete Vertex Alpha
-					existingVertex := pmDag.RetrieveVertex(value);
+					existingVertex := pmDag.RetrieveVertex(value)
 					deleteVertexAlpha := &dag.RemoveVertexAlpha{
 						Target: existingVertex,
 					}
@@ -180,9 +180,9 @@ func init() {
 				reconcilableEpicTrie.Commit(deleteWordAlpha)
 
 			}
-			
+
 			reconcilableStoryTrie := common.LoadReconcilable("./.pm/trie/story")
-			storyTrie  := reconcilableStoryTrie.DataStructure.(*trie.Trie)
+			storyTrie := reconcilableStoryTrie.DataStructure.(*trie.Trie)
 			defer reconcilableStoryTrie.SaveReconcilable("./.pm/trie/story")
 			for _, value := range sValues {
 				// Create a Delete Word Alpha
@@ -327,7 +327,7 @@ func init() {
 
 					addEdgeAlpha := dag.AddEdgeAlpha{
 						From: epicVertex,
-						To: storyVertex,
+						To:   storyVertex,
 					}
 
 					reconcilable.Commit(&addEdgeAlpha)
@@ -337,7 +337,7 @@ func init() {
 
 						addEdgeAlpha := dag.AddEdgeAlpha{
 							From: storyVertex,
-							To: taskVertex,
+							To:   taskVertex,
 						}
 
 						reconcilable.Commit(&addEdgeAlpha)
@@ -360,7 +360,7 @@ func init() {
 
 						addEdgeAlpha := dag.AddEdgeAlpha{
 							From: epicVertex,
-							To: storyVertex,
+							To:   storyVertex,
 						}
 
 						reconcilable.Commit(&addEdgeAlpha)
