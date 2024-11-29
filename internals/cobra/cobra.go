@@ -14,7 +14,6 @@ import (
 	"github/pm/pkg/dag"
 	"github/pm/pkg/fileManager"
 	"github/pm/pkg/trie"
-	"github/pm/resolver"
 )
 
 var rootCmd = &cobra.Command{
@@ -86,7 +85,7 @@ func init() {
 			if err != nil && !os.IsExist(err) {
 				fmt.Printf("Error creating dag directory: %v\n", err)
 			}
-			pmDag := dag.NewReconcilableDag("./pm/dag/pmDag")
+			pmDag := dag.NewReconcilableDag("pmDag")
 			pmDag.SaveReconcilable("./.pm/dag/pmDag")
 
 			tmpFile, tmpErr := os.Create("./.pm/tmp")
@@ -120,13 +119,19 @@ func init() {
 			stories := len(sValues)
 			tasks := len(tValues)
 
-			pmDag := dag.LoadDag("pmDag")
-			defer pmDag.SaveDag()
+			reconcilable := common.LoadReconcilable("./pm/dag/pmDag")
+			pmDag := reconcilable.DataStructure.(*dag.Dag)
+			defer reconcilable.SaveReconcilable("./pm/dag/pmDag")
 
 			if epics > 0 {
 				for _, value := range eValues {
 					// Create a Delete Vertex Alpha
+					existingVertex := pmDag.RetrieveVertex(value);
+					deleteVertexAlpha := &dag.RemoveVertexAlpha{
+						Target: existingVertex,
+					}
 					// Update datastructure
+					reconcilable.Commit(deleteVertexAlpha)
 				}
 
 			}
@@ -134,7 +139,12 @@ func init() {
 			if stories > 0 {
 				for _, value := range sValues {
 					// Create a Delete Vertex Alpha
+					existingVertex := pmDag.RetrieveVertex(value);
+					deleteVertexAlpha := &dag.RemoveVertexAlpha{
+						Target: existingVertex,
+					}
 					// Update datastructure
+					reconcilable.Commit(deleteVertexAlpha)
 				}
 
 			}
@@ -142,30 +152,69 @@ func init() {
 			if tasks > 0 {
 				for _, value := range tValues {
 					// Create a Delete Vertex Alpha
+					existingVertex := pmDag.RetrieveVertex(value);
+					deleteVertexAlpha := &dag.RemoveVertexAlpha{
+						Target: existingVertex,
+					}
 					// Update datastructure
+					reconcilable.Commit(deleteVertexAlpha)
 				}
 
 			}
 
-			epicTrie := trie.Load("epic")
-			defer epicTrie.SaveReconcilable("./.pm/trie/epic")
+			reconcilableEpicTrie := common.LoadReconcilable("./.pm/trie/epic")
+			epicTrie := reconcilableEpicTrie.DataStructure.(*trie.Trie)
+			defer reconcilableEpicTrie.SaveReconcilable("./.pm/trie/epic")
 			for _, value := range eValues {
 				// Create a Delete Word Alpha
-				// Update dataStructure
-			}
+				word, epicErr := epicTrie.RetrieveValue(value)
+				if word == "" && epicErr != nil {
+					continue
+				}
 
-			storyTrie := trie.Load("story")
-			defer storyTrie.SaveReconcilable("./.pm/trie/story")
+				// Update dataStructure
+				deleteWordAlpha := &trie.RemoveTrieNodeAlpha{
+					FileName: value,
+				}
+
+				reconcilableEpicTrie.Commit(deleteWordAlpha)
+
+			}
+			
+			reconcilableStoryTrie := common.LoadReconcilable("./.pm/trie/story")
+			storyTrie  := reconcilableStoryTrie.DataStructure.(*trie.Trie)
+			defer reconcilableStoryTrie.SaveReconcilable("./.pm/trie/story")
 			for _, value := range sValues {
 				// Create a Delete Word Alpha
-				// Update datastructure
+				word, storyErr := storyTrie.RetrieveValue(value)
+				if word == "" && storyErr != nil {
+					continue
+				}
+
+				// Update dataStructure
+				deleteWordAlpha := &trie.RemoveTrieNodeAlpha{
+					FileName: value,
+				}
+
+				reconcilableStoryTrie.Commit(deleteWordAlpha)
 			}
 
-			taskTrie := trie.Load("task")
-			defer taskTrie.SaveReconcilable("./.pm/trie/task")
+			reconcilableTaskTrie := common.LoadReconcilable("./.pm/trie/task")
+			taskTrie := reconcilableTaskTrie.DataStructure.(*trie.Trie)
+			defer reconcilableTaskTrie.SaveReconcilable("./.pm/trie/task")
 			for _, value := range tValues {
 				// Create a Delete Word Alpha
-				// Update datastructure
+				word, taskErr := taskTrie.RetrieveValue(value)
+				if word == "" && taskErr != nil {
+					continue
+				}
+
+				// Update dataStructure
+				deleteWordAlpha := &trie.RemoveTrieNodeAlpha{
+					FileName: value,
+				}
+
+				reconcilableStoryTrie.Commit(deleteWordAlpha)
 			}
 
 		},
@@ -179,14 +228,19 @@ func init() {
 			stories := len(sValues)
 			tasks := len(tValues)
 
-			pmDag := dag.LoadDag("pmDag")
-			defer pmDag.SaveDag()
+			reconcilable := common.LoadReconcilable("./.pm/dag/pmDag")
+			defer reconcilable.SaveReconcilable("./.pm/dag/pmDag")
 
 			var nodesToSave []*dag.Vertex
 
 			if epics > 0 {
 				for _, value := range eValues {
 					epic := dag.NewVertex(value)
+					alpha := &dag.AddVertexAlpha{
+						Target: epic,
+					}
+
+					reconcilable.Commit(alpha)
 					// Create Add vertex event
 					nodesToSave = append(nodesToSave, epic)
 				}
@@ -196,6 +250,12 @@ func init() {
 			if stories > 0 {
 				for _, value := range sValues {
 					story := dag.NewVertex(value)
+					alpha := &dag.AddVertexAlpha{
+						Target: story,
+					}
+
+					reconcilable.Commit(alpha)
+
 					// Create Add vertex event
 					nodesToSave = append(nodesToSave, story)
 				}
@@ -205,34 +265,35 @@ func init() {
 			if tasks > 0 {
 				for _, value := range tValues {
 					task := dag.NewVertex(value)
+					alpha := &dag.AddVertexAlpha{
+						Target: task,
+					}
+
+					reconcilable.Commit(alpha)
+
 					// Create Add vertex event
 					nodesToSave = append(nodesToSave, task)
 				}
 
 			}
 
-			for _, vs := range nodesToSave {
-				addErr := pmDag.AddVertex(vs)
-				if addErr != nil {
-					fmt.Println(addErr.Error())
-				} else {
-					deltaTree.AddVertexEvent(vs)
-				}
-			}
-
-			epicTrie := trie.Load("epic")
+			epicTrie := common.LoadReconcilable("./.pm/trie/epic")
 			for _, value := range eValues {
 				// Create File
+				fileManager.Commit(value, "", epicTrie)
+
 			}
 
-			storyTrie := trie.Load("story")
+			storyTrie := common.LoadReconcilable("./.pm/trie/story")
 			for _, value := range sValues {
 				// Create File
+				fileManager.Commit(value, "", storyTrie)
 			}
 
-			taskTrie := trie.Load("task")
+			taskTrie := common.LoadReconcilable("./.pm/trie/task")
 			for _, value := range tValues {
 				// Create File
+				fileManager.Commit(value, "", taskTrie)
 			}
 		},
 	}
@@ -245,8 +306,9 @@ func init() {
 			stories := len(sValues)
 			tasks := len(tValues)
 
-			pmDag := dag.LoadDag("pmDag")
-			defer pmDag.SaveDag()
+			reconcilable := common.LoadReconcilable("./.pm/dag/pmDag")
+			pmDag := reconcilable.DataStructure.(*dag.Dag)
+			defer reconcilable.SaveReconcilable("./.pm/dag/pmDag")
 
 			if tasks > 0 {
 				if epics > 1 || stories > 1 {
@@ -263,22 +325,22 @@ func init() {
 					storyValue := sValues[0]
 					storyVertex := pmDag.RetrieveVertex(storyValue)
 
-					edgeErr := pmDag.AddEdge(epicVertex, storyVertex)
-					if edgeErr != nil {
-						fmt.Println(edgeErr.Error())
-					} else {
-						deltaTree.AddEdgeEvent(epicVertex, storyVertex)
+					addEdgeAlpha := dag.AddEdgeAlpha{
+						From: epicVertex,
+						To: storyVertex,
 					}
+
+					reconcilable.Commit(&addEdgeAlpha)
 
 					for _, value := range tValues {
 						taskVertex := pmDag.RetrieveVertex(value)
-						edgeErr := pmDag.AddEdge(storyVertex, taskVertex)
 
-						if edgeErr != nil {
-							fmt.Println(edgeErr.Error())
-						} else {
-							deltaTree.AddEdgeEvent(storyVertex, taskVertex)
+						addEdgeAlpha := dag.AddEdgeAlpha{
+							From: storyVertex,
+							To: taskVertex,
 						}
+
+						reconcilable.Commit(&addEdgeAlpha)
 					}
 				}
 			} else if stories > 0 {
@@ -295,13 +357,13 @@ func init() {
 
 					for _, value := range sValues {
 						storyVertex := pmDag.RetrieveVertex(value)
-						edgeErr := pmDag.AddEdge(epicVertex, storyVertex)
 
-						if edgeErr != nil {
-							fmt.Println(edgeErr.Error())
-						} else {
-							deltaTree.AddEdgeEvent(epicVertex, storyVertex)
+						addEdgeAlpha := dag.AddEdgeAlpha{
+							From: epicVertex,
+							To: storyVertex,
 						}
+
+						reconcilable.Commit(&addEdgeAlpha)
 					}
 				}
 			} else {
@@ -324,7 +386,7 @@ func init() {
 		Use:   "epic",
 		Short: "List all epics",
 		Run: func(cmd *cobra.Command, args []string) {
-			epicTrie := trie.Load("epic").DataStructure.(*trie.Trie)
+			epicTrie := common.LoadReconcilable("./.pm/trie/epic").DataStructure.(*trie.Trie)
 			allEpics, err := epicTrie.LoadAllWords()
 			if err != nil {
 				return
@@ -338,7 +400,7 @@ func init() {
 		Use:   "story",
 		Short: "List all story",
 		Run: func(cmd *cobra.Command, args []string) {
-			storyTrie := trie.Load("story").DataStructure.(*trie.Trie)
+			storyTrie := common.LoadReconcilable("./.pm/trie/story").DataStructure.(*trie.Trie)
 			allEpics, err := storyTrie.LoadAllWords()
 			if err != nil {
 				return
@@ -352,7 +414,7 @@ func init() {
 		Use:   "task",
 		Short: "List all task",
 		Run: func(cmd *cobra.Command, args []string) {
-			taskTrie := trie.Load("task").DataStructure.(*trie.Trie)
+			taskTrie := common.LoadReconcilable("./.pm/trie/task").DataStructure.(*trie.Trie)
 			allTasks, err := taskTrie.LoadAllWords()
 			if err != nil {
 				return
@@ -370,7 +432,8 @@ func init() {
 			epics := len(eValues)
 			stories := len(sValues)
 			tasks := len(tValues)
-			pmDag := dag.LoadDag("./pm/pmDag")
+			reconcilable := common.LoadReconcilable("./pm/dag/pmDag")
+			pmDag := reconcilable.DataStructure.(*dag.Dag)
 
 			total := epics + stories + tasks
 			if total > 1 {
@@ -392,8 +455,8 @@ func init() {
 				nodeType = "Epic"
 				childNodeType = "Stories"
 
-				epicTrie := trie.Load("epic").DataStructure.(*trie.Trie)
-				description, err = blob.RetrieveContent(header, epicTrie)
+				epicTrie := common.LoadReconcilable("./.pm/trie/epic")
+				description, err = fileManager.RetrieveContent(header, epicTrie)
 				if err != nil {
 					return
 				}
@@ -404,8 +467,8 @@ func init() {
 				nodeType = "Story"
 				childNodeType = "Tasks"
 
-				storyTrie := trie.Load("story").DataStructure.(*trie.Trie)
-				description, err = blob.RetrieveContent(header, storyTrie)
+				storyTrie := common.LoadReconcilable("./.pm/trie/story")
+				description, err = fileManager.RetrieveContent(header, storyTrie)
 				if err != nil {
 					return
 				}
@@ -414,8 +477,8 @@ func init() {
 				header = tValues[0]
 				nodeType = "Task"
 
-				taskTrie := trie.Load("task").DataStructure.(*trie.Trie)
-				description, err = blob.RetrieveContent(header, taskTrie)
+				taskTrie := common.LoadReconcilable("./.pm/trie/task")
+				description, err = fileManager.RetrieveContent(header, taskTrie)
 				if err != nil {
 					return
 				}
@@ -481,7 +544,7 @@ func init() {
 			}
 
 			if epics > 0 {
-				epicTrie := trie.Load("epic")
+				epicTrie := common.LoadReconcilable("./.pm/trie/epic")
 				defer epicTrie.SaveReconcilable("./.pm/trie/epic")
 
 				updateErr := fileManager.UpdateBlobContent(eValues[0], string(content), epicTrie)
@@ -490,7 +553,7 @@ func init() {
 					return
 				}
 			} else if stories > 0 {
-				storyTrie := trie.Load("story")
+				storyTrie := common.LoadReconcilable("./.pm/trie/story")
 				defer storyTrie.SaveReconcilable("./.pm/trie/story")
 
 				updateErr := fileManager.UpdateBlobContent(sValues[0], string(content), storyTrie)
@@ -499,7 +562,7 @@ func init() {
 					return
 				}
 			} else if tasks > 0 {
-				taskTrie := trie.Load("task")
+				taskTrie := common.LoadReconcilable("./.pm/trie/task")
 				defer taskTrie.SaveReconcilable("./.pm/trie/task")
 
 				updateErr := fileManager.UpdateBlobContent(tValues[0], string(content), taskTrie)
@@ -562,7 +625,7 @@ func init() {
 		Short: "Epic suggestions",
 		Run: func(cmd *cobra.Command, args []string) {
 			toComplete := args[0]
-			epicTrie := trie.Load("epic").DataStructure.(*trie.Trie)
+			epicTrie := common.LoadReconcilable("./.pm/trie/epic").DataStructure.(*trie.Trie)
 			if epicTrie != nil {
 				suggestions := epicTrie.LoadWordsFromPrefix(toComplete)
 				fmt.Println(strings.Join(suggestions, "\n"))
@@ -575,7 +638,7 @@ func init() {
 		Short: "Story suggestions",
 		Run: func(cmd *cobra.Command, args []string) {
 			toComplete := args[0]
-			storyTrie := trie.Load("story").DataStructure.(*trie.Trie)
+			storyTrie := common.LoadReconcilable("./.pm/trie/story").DataStructure.(*trie.Trie)
 			if storyTrie != nil {
 				suggestions := storyTrie.LoadWordsFromPrefix(toComplete)
 				fmt.Println(strings.Join(suggestions, "\n"))
@@ -588,7 +651,7 @@ func init() {
 		Short: "Task suggestions",
 		Run: func(cmd *cobra.Command, args []string) {
 			toComplete := args[0]
-			taskTrie := trie.Load("task").DataStructure.(*trie.Trie)
+			taskTrie := common.LoadReconcilable("./.pm/trie/task").DataStructure.(*trie.Trie)
 			if taskTrie != nil {
 				suggestions := taskTrie.LoadWordsFromPrefix(toComplete)
 				fmt.Println(strings.Join(suggestions, "\n"))
@@ -600,21 +663,6 @@ func init() {
 		Use:   "pull",
 		Short: "Pull delta",
 		Run: func(cmd *cobra.Command, args []string) {
-			localTree := dag.LoadDelta("./.pm/delta")
-			defer localTree.SaveDelta("./.pm/delta")
-			if localTree == nil {
-				fmt.Printf("Local tree is empty")
-				return
-			}
-
-			remoteTree := dag.LoadRemoteDelta()
-			defer remoteTree.SaveDelta("./.pm/remote/delta")
-			if remoteTree == nil {
-				fmt.Printf("Remote tree is empty")
-				return
-			}
-
-			retrieveFile(localTree, remoteTree)
 		},
 	}
 
@@ -622,21 +670,6 @@ func init() {
 		Use:   "push",
 		Short: "Push delta",
 		Run: func(cmd *cobra.Command, args []string) {
-			localTree := dag.LoadDelta("./.pm/delta")
-			defer localTree.SaveDelta("./.pm/delta")
-			if localTree == nil {
-				fmt.Printf("Local tree is empty")
-				return
-			}
-
-			remoteTree := dag.LoadRemoteDelta()
-			defer remoteTree.SaveDelta("./.pm/remote/delta")
-			if remoteTree == nil {
-				fmt.Printf("Remote tree is empty")
-				return
-			}
-
-			pushDeltas(localTree, remoteTree)
 		},
 	}
 
@@ -644,39 +677,6 @@ func init() {
 		Use:   "test",
 		Short: "Test",
 		Run: func(cmd *cobra.Command, args []string) {
-			deltaTree := dag.LoadDelta("./.pm/delta")
-			defer deltaTree.SaveDelta("./.pm/delta")
-			if deltaTree == nil || len(deltaTree.Seq) == 0 {
-				fmt.Printf("Local tree is empty")
-			} else {
-				for _, value := range deltaTree.Seq {
-					delta := *value
-					fmt.Println(delta)
-				}
-
-			}
-
-			fmt.Println("DONE")
-
-			remoteTree := dag.LoadRemoteDelta()
-			defer remoteTree.SaveDelta("./.pm/remote/delta")
-			if remoteTree == nil || len(remoteTree.Seq) == 0 {
-				fmt.Printf("Remote tree is empty")
-			} else {
-				for _, value := range remoteTree.Seq {
-					delta := *value
-					fmt.Println(delta)
-				}
-
-			}
-
-			fmt.Println("DONE")
-			pmDag := dag.LoadDag("pmDag")
-			defer pmDag.SaveDag()
-			mergingErr := resolver.MergeTrees(deltaTree, remoteTree, pmDag)
-			if mergingErr != nil {
-				fmt.Println("Error mergingTrees", mergingErr.Error())
-			}
 		},
 	}
 

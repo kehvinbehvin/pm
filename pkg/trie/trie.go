@@ -1,10 +1,8 @@
-package trie;
+package trie
 
 import (
-	"encoding/gob"
 	"errors"
 	"fmt"
-	"os"
 
 	"github/pm/pkg/common"
 )
@@ -50,10 +48,10 @@ func (t *Trie) Update(alpha common.Alpha) (error) {
 	switch alphaType {
 	case common.AddTrieNodeAlpha:
 		addTrieNodeAlpha := alpha.(AddTrieNodeAlpha)
-		t.AddFile(addTrieNodeAlpha.fileName, addTrieNodeAlpha.fileLocation)
+		t.AddFile(addTrieNodeAlpha.FileName, addTrieNodeAlpha.FileLocation)
 	case common.RemoveTrieNodeAlpha:
 		removeTrieNodeAlpha := alpha.(RemoveTrieNodeAlpha)
-		t.RemoveWord(removeTrieNodeAlpha.fileName)
+		t.RemoveWord(removeTrieNodeAlpha.FileName)
 	}
 
 	return nil
@@ -64,10 +62,10 @@ func (t *Trie) Rewind(alpha common.Alpha) (error) {
 	switch alphaType {
 	case common.AddTrieNodeAlpha:
 		addTrieNodeAlpha := alpha.(AddTrieNodeAlpha)
-		t.RemoveWord(addTrieNodeAlpha.fileName)
+		t.RemoveWord(addTrieNodeAlpha.FileName)
 	case common.RemoveTrieNodeAlpha:
 		removeTrieNodeAlpha:= alpha.(RemoveTrieNodeAlpha)
-		t.AddFile(removeTrieNodeAlpha.fileName, removeTrieNodeAlpha.fileLocation)
+		t.AddFile(removeTrieNodeAlpha.FileName, removeTrieNodeAlpha.FileLocation)
 	}
 
 	return nil
@@ -79,7 +77,7 @@ func (t *Trie) Validate(alpha common.Alpha) (bool) {
 	switch alphaType {
 	case common.AddTrieNodeAlpha:
 		addTrieNodeAlpha := alpha.(AddTrieNodeAlpha)
-		node, error := t.RetrieveValue(addTrieNodeAlpha.fileName)
+		node, error := t.RetrieveValue(addTrieNodeAlpha.FileName)
 		if error != nil && node == "" {
 			return false
 		}
@@ -87,7 +85,7 @@ func (t *Trie) Validate(alpha common.Alpha) (bool) {
 		return true
 	case common.RemoveTrieNodeAlpha:
 		addTrieNodeAlpha := alpha.(AddTrieNodeAlpha)
-		node, error := t.RetrieveValue(addTrieNodeAlpha.fileName)
+		node, error := t.RetrieveValue(addTrieNodeAlpha.FileName)
 		if error != nil && node == "" {
 			return true 
 		}
@@ -99,13 +97,13 @@ func (t *Trie) Validate(alpha common.Alpha) (bool) {
 }
 
 type AddTrieNodeAlpha struct {
-fileName string
-fileLocation string
+	FileName string
+        FileLocation string
 }
 
 type RemoveTrieNodeAlpha struct {
-fileName string
-fileLocation string
+	FileName string 
+	FileLocation string
 }
 
 func (atna AddTrieNodeAlpha) GetType() byte {
@@ -113,7 +111,7 @@ func (atna AddTrieNodeAlpha) GetType() byte {
 }
 
 func (atna AddTrieNodeAlpha) GetId() string {
-	return atna.fileName + atna.fileLocation + string(common.AddTrieNodeAlpha)
+	return atna.FileName + atna.FileLocation + string(common.AddTrieNodeAlpha)
 }
 
 func (rtna RemoveTrieNodeAlpha) GetType() byte {
@@ -121,7 +119,7 @@ func (rtna RemoveTrieNodeAlpha) GetType() byte {
 }
 
 func (rtna RemoveTrieNodeAlpha) GetId() string {
-	return rtna.fileName + string(common.AddTrieNodeAlpha)
+	return rtna.FileName + string(common.AddTrieNodeAlpha)
 }
 
 func (t *Trie) AddFile(fileName string, fileLocation string) error {
@@ -286,52 +284,4 @@ func (t *Trie) UpdateValue(word string, fileLocation string) error {
 
 	err := errors.New("Cannot update fileLocation")
 	return err
-}
-
-func (t *Trie) Save() {
-	file, err := os.Create("./.pm/trie/" + t.Id)
-	if err != nil {
-		fmt.Printf(err.Error())
-		fmt.Println("Error creating file")
-		return
-	}
-	defer file.Close()
-
-	encoder := gob.NewEncoder(file)
-	encodingErr := encoder.Encode(t)
-	if encodingErr != nil {
-		fmt.Println("Error encoding trie")
-		return
-	}
-}
-
-func Load(fileName string) *common.Reconcilable {
-	path := "./.pm/trie/" + fileName
-	file, fileErr := os.Open(path)
-	if fileErr != nil {
-		return nil
-	}
-	defer file.Close()
-
-	info, err := os.Stat(path)
-	if err != nil {
-		return nil
-	}
-
-	if info.Size() == 0 {
-		newTrie := NewReconcilableTrie(fileName)
-		newTrie.SaveReconcilable(path)
-		return &newTrie
-	}
-
-	decoder := gob.NewDecoder(file)
-
-	var loadedTrie common.Reconcilable
-	decodingErr := decoder.Decode(&loadedTrie)
-	if decodingErr != nil {
-		fmt.Println("Error decoding trie")
-		return nil
-	}
-
-	return &loadedTrie
 }

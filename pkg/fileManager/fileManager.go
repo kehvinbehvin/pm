@@ -1,20 +1,19 @@
 package fileManager
 
 import (
-	"bytes"
-	"compress/zlib"
 	"crypto/sha1"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
-	"github/pm/blob"
-	"github/pm/trie"
+	"github/pm/pkg/blob"
+	"github/pm/pkg/common"
+	"github/pm/pkg/trie"
 )
 
-func UpdateBlobContent(name string, content string, index *trie.Trie) error {
-	defer index.Save()
+func UpdateBlobContent(name string, content string, index *common.Reconcilable) error {
+	defer index.SaveReconcilable("")
 	hash := sha1.Sum([]byte(content))
 	hashStr := fmt.Sprintf("%x", hash[:])
 
@@ -31,8 +30,8 @@ func UpdateBlobContent(name string, content string, index *trie.Trie) error {
 	return nil
 }
 
-func Commit(name string, content string, index *trie.Trie) error {
-	defer index.Save()
+func Commit(name string, content string, index *common.Reconcilable) error {
+	defer index.SaveReconcilable("")
 	hash := sha1.Sum([]byte(content))
 	hashStr := fmt.Sprintf("%x", hash[:])
 
@@ -49,8 +48,9 @@ func Commit(name string, content string, index *trie.Trie) error {
 	return nil
 }
 
-func IndexName(fileName string, hashContent string, index *trie.Trie) error {
-	indexErr := index.addFile(fileName, hashContent)
+func IndexName(fileName string, hashContent string, index *common.Reconcilable) error {
+	trie := index.DataStructure.(*trie.Trie)
+	indexErr := trie.AddFile(fileName, hashContent)
 	if indexErr != nil {
 		return indexErr
 	}
@@ -58,8 +58,9 @@ func IndexName(fileName string, hashContent string, index *trie.Trie) error {
 	return nil
 }
 
-func ReIndex(fileName string, hashContent string, index *trie.Trie) error {
-	indexErr := index.updateValue(fileName, hashContent)
+func ReIndex(fileName string, hashContent string, index *common.Reconcilable) error {
+	trie := index.DataStructure.(*trie.Trie)
+	indexErr := trie.UpdateValue(fileName, hashContent)
 	if indexErr != nil {
 		return indexErr
 	}
@@ -68,9 +69,10 @@ func ReIndex(fileName string, hashContent string, index *trie.Trie) error {
 }
 
 // Delete a blob and remove its index in the Trie
-func DeleteBlob(fileName string, index *trie.Trie) error {
+func DeleteBlob(fileName string, index *common.Reconcilable) error {
+	trie := index.DataStructure.(*trie.Trie)
 	// Retrieve the hash from the Trie for the given file name
-	hash, err := index.retrieveValue(fileName)
+	hash, err := trie.RetrieveValue(fileName)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve hash for file '%s': %v", fileName, err)
 	}
@@ -91,13 +93,14 @@ func DeleteBlob(fileName string, index *trie.Trie) error {
 	}
 
 	// Remove the file name from the Trie index
-	index.removeWord(fileName)
+	trie.RemoveWord(fileName)
 
 	return nil
 }
 
-func RetrieveContent(fileName string, index *trie.Trie) ([]byte, error) {
-	hash, err := index.retrieveValue(fileName)
+func RetrieveContent(fileName string, index *common.Reconcilable) ([]byte, error) {
+	trie := index.DataStructure.(*trie.Trie)
+	hash, err := trie.RetrieveValue(fileName)
 	if err != nil {
 		fmt.Errorf("failed to retrieve hash for file '%s': %v", fileName, err)
 		return []byte(""), err

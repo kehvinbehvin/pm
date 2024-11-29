@@ -1,10 +1,8 @@
 package dag
 
 import (
-	"encoding/gob"
 	"errors"
 	"fmt"
-	"os"
 
 	"github/pm/pkg/common"
 )
@@ -35,16 +33,16 @@ func (d *Dag) Update(alpha common.Alpha) error {
 	switch alphaType {
 	case common.AddVertexAlpha:
 		addVertexAlpha := alpha.(*AddVertexAlpha)
-		error = d.AddVertex(addVertexAlpha.target)
+		error = d.AddVertex(addVertexAlpha.Target)
 	case common.RemoveVertexAlpha:
 		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
-		error = d.RemoveVertex(removeVertexAlpha.target)
+		error = d.RemoveVertex(removeVertexAlpha.Target)
 	case common.AddEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
-		error = d.AddEdge(addEdgeAlpha.to, addEdgeAlpha.from)
+		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From)
 	case common.RemoveEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
-		error = d.RemoveEdge(removeEdgeAlpha.to, removeEdgeAlpha.from)
+		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From)
 	}
 
 	return error
@@ -56,16 +54,16 @@ func (d *Dag) Rewind(alpha common.Alpha) error {
 	switch alphaType {
 	case common.AddVertexAlpha:
 		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
-		error = d.RemoveVertex(removeVertexAlpha.target)
+		error = d.RemoveVertex(removeVertexAlpha.Target)
 	case common.RemoveVertexAlpha:
 		addVertexAlpha := alpha.(*AddVertexAlpha)
-		error = d.AddVertex(addVertexAlpha.target)
+		error = d.AddVertex(addVertexAlpha.Target)
 	case common.AddEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
-		error = d.RemoveEdge(removeEdgeAlpha.to, removeEdgeAlpha.from)
+		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From)
 	case common.RemoveEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
-		error = d.AddEdge(addEdgeAlpha.to, addEdgeAlpha.from)
+		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From)
 	}
 
 	return error
@@ -78,16 +76,16 @@ func (d *Dag) Validate(alpha common.Alpha) bool {
 	switch alphaType {
 	case common.AddVertexAlpha:
 		addVertexAlpha := alpha.(*AddVertexAlpha)
-		valid = d.HasVertex(addVertexAlpha.target.ID)
+		valid = d.HasVertex(addVertexAlpha.Target.ID)
 	case common.RemoveVertexAlpha:
 		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
-		valid = !d.HasVertex(removeVertexAlpha.target.ID)
+		valid = !d.HasVertex(removeVertexAlpha.Target.ID)
 	case common.AddEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
-		valid = d.HasEdge(addEdgeAlpha.from, addEdgeAlpha.to)
+		valid = d.HasEdge(addEdgeAlpha.From, addEdgeAlpha.To)
 	case common.RemoveEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
-		valid = d.HasEdge(removeEdgeAlpha.from, removeEdgeAlpha.to)
+		valid = d.HasEdge(removeEdgeAlpha.From, removeEdgeAlpha.To)
 	}
 
 	return valid
@@ -131,13 +129,13 @@ func dfs(from *Vertex, to *Vertex) bool {
 }
 
 type AddEdgeAlpha struct {
-	from *Vertex
-	to   *Vertex
+	From *Vertex
+	To   *Vertex
 }
 
 type RemoveEdgeAlpha struct {
-	from *Vertex
-	to   *Vertex
+	From *Vertex
+	To   *Vertex
 }
 
 func (aea *AddEdgeAlpha) GetType() byte {
@@ -145,7 +143,7 @@ func (aea *AddEdgeAlpha) GetType() byte {
 }
 
 func (aea *AddEdgeAlpha) GetId() string {
-	return aea.to.ID + aea.from.ID + string(common.AddEdgeAlpha)
+	return aea.To.ID + aea.From.ID + string(common.AddEdgeAlpha)
 }
 
 func (rea *RemoveEdgeAlpha) GetType() byte {
@@ -153,7 +151,7 @@ func (rea *RemoveEdgeAlpha) GetType() byte {
 }
 
 func (rea *RemoveEdgeAlpha) GetId() string {
-	return rea.to.ID + rea.from.ID + string(common.AddEdgeAlpha)
+	return rea.To.ID + rea.From.ID + string(common.AddEdgeAlpha)
 }
 
 func (d *Dag) HasEdge(from *Vertex, to *Vertex) bool {
@@ -197,11 +195,11 @@ func (d *Dag) RemoveEdge(from *Vertex, to *Vertex) error {
 }
 
 type AddVertexAlpha struct {
-	target *Vertex
+	Target *Vertex
 }
 
 type RemoveVertexAlpha struct {
-	target *Vertex
+	Target *Vertex
 }
 
 func (ava *AddVertexAlpha) GetType() byte {
@@ -209,7 +207,7 @@ func (ava *AddVertexAlpha) GetType() byte {
 }
 
 func (ava *AddVertexAlpha) GetId() string {
-	return ava.target.ID
+	return ava.Target.ID
 }
 
 func (rva *RemoveVertexAlpha) GetType() byte {
@@ -217,7 +215,7 @@ func (rva *RemoveVertexAlpha) GetType() byte {
 }
 
 func (rvd *RemoveVertexAlpha) GetId() string {
-	return rvd.target.ID
+	return rvd.Target.ID
 }
 
 func (d *Dag) AddVertex(in *Vertex) error {
@@ -261,42 +259,4 @@ func (d *Dag) RetrieveVertex(vertexID string) *Vertex {
 	}
 
 	return vertex
-}
-
-func (d *Dag) SaveDag() {
-	file, err := os.Create("./.pm/dag/" + d.Id)
-	if err != nil {
-		fmt.Printf(err.Error())
-		fmt.Println("Error creating file")
-		return
-	}
-	defer file.Close()
-
-	encoder := gob.NewEncoder(file)
-	encodingErr := encoder.Encode(d)
-	if encodingErr != nil {
-		fmt.Println("Error encoding dag")
-		return
-	}
-}
-
-func LoadDag(fileName string) *Reconcilable {
-	file, fileErr := os.Open("./.pm/dag/" + fileName)
-
-	if fileErr != nil {
-		fmt.Println("Error opening binary file")
-		return nil
-	}
-	defer file.Close()
-
-	decoder := gob.NewDecoder(file)
-
-	var loadedDag *Dag
-	decodingErr := decoder.Decode(&loadedDag)
-	if decodingErr != nil {
-		fmt.Println("Error decoding dag")
-		return nil
-	}
-
-	return loadedDag
 }
