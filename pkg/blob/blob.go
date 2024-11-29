@@ -27,7 +27,7 @@ func CreateBlob(content string) error {
 
 	contentSize := len(content)
 	if contentSize > compressionThreshold {
-		content, err = compressContent(content)
+		content, err = CompressContent(content)
 	}
 
 	if err != nil {
