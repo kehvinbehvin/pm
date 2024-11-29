@@ -28,6 +28,7 @@ func (al AlphaList) Diff() {
 type Reconcilable struct {
 	AlphaList     AlphaList
 	DataStructure DataStructure
+	FilePath string
 }
 
 // Rewind dataStructure to state at Alpha
@@ -81,8 +82,8 @@ func (r Reconcilable) FastForward(input []Alpha) error {
 	return nil
 }
 
-func (r Reconcilable) SaveReconcilable(filePath string) {
-	file, err := os.Create(filePath)
+func (r Reconcilable) SaveReconcilable() {
+	file, err := os.Create(r.FilePath)
 	if err != nil {
 		fmt.Printf(err.Error())
 		fmt.Println("Error creating file")
@@ -91,6 +92,7 @@ func (r Reconcilable) SaveReconcilable(filePath string) {
 	defer file.Close()
 
 	encoder := gob.NewEncoder(file)
+	gob.Register(r.DataStructure)
 	encodingErr := encoder.Encode(r)
 	if encodingErr != nil {
 		fmt.Println("Error encoding dag")
@@ -108,11 +110,10 @@ func LoadReconcilable(filePath string) *Reconcilable {
 	defer file.Close()
 
 	decoder := gob.NewDecoder(file)
-
 	var loadedReconcilable *Reconcilable
 	decodingErr := decoder.Decode(&loadedReconcilable)
 	if decodingErr != nil {
-		fmt.Println("Error decoding dag")
+		fmt.Println("Error decoding", decodingErr.Error())
 		return nil
 	}
 

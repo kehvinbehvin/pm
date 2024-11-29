@@ -3,6 +3,8 @@ package trie
 import (
 	"errors"
 	"fmt"
+	"os"
+	"encoding/gob"
 
 	"github/pm/pkg/common"
 )
@@ -23,10 +25,12 @@ type Trie struct {
 func NewReconcilableTrie(storageKey string) common.Reconcilable {
 	trieAlphaList := common.NewAlphaList()
 	trieStorage := NewTrie(storageKey)
+	filePath := "./.pm/trie/" + storageKey
 
 	return common.Reconcilable{
 		AlphaList:     trieAlphaList,
 		DataStructure: trieStorage,
+		FilePath: filePath,
 	}
 }
 
@@ -284,4 +288,25 @@ func (t *Trie) UpdateValue(word string, fileLocation string) error {
 
 	err := errors.New("Cannot update fileLocation")
 	return err
+}
+
+func LoadReconcilableTrie(filePath string) *common.Reconcilable {
+	file, fileErr := os.Open(filePath)
+
+	if fileErr != nil {
+		fmt.Println("Error opening binary file")
+		return nil
+	}
+	defer file.Close()
+
+	decoder := gob.NewDecoder(file)
+	gob.Register(&Trie{});
+	var loadedReconcilable *common.Reconcilable
+	decodingErr := decoder.Decode(&loadedReconcilable)
+	if decodingErr != nil {
+		fmt.Println("Error decoding", decodingErr.Error())
+		return nil
+	}
+
+	return loadedReconcilable
 }

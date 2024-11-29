@@ -3,6 +3,8 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"os"
+	"encoding/gob"
 
 	"github/pm/pkg/common"
 )
@@ -10,10 +12,12 @@ import (
 func NewReconcilableDag(storageKey string) common.Reconcilable {
 	dagAlphaList := common.NewAlphaList()
 	dagStorage := NewDag(storageKey)
+	filePath := "./.pm/dag/" + storageKey
 
 	return common.Reconcilable{
 		AlphaList:     dagAlphaList,
 		DataStructure: dagStorage,
+		FilePath: filePath,
 	}
 }
 
@@ -259,4 +263,25 @@ func (d *Dag) RetrieveVertex(vertexID string) *Vertex {
 	}
 
 	return vertex
+}
+
+func LoadReconcilableDag(filePath string) *common.Reconcilable {
+	file, fileErr := os.Open(filePath)
+
+	if fileErr != nil {
+		fmt.Println("Error opening binary file")
+		return nil
+	}
+	defer file.Close()
+
+	gob.Register(&Dag{});
+	decoder := gob.NewDecoder(file)
+	var loadedReconcilable *common.Reconcilable
+	decodingErr := decoder.Decode(&loadedReconcilable)
+	if decodingErr != nil {
+		fmt.Println("Error decoding", decodingErr.Error())
+		return nil
+	}
+
+	return loadedReconcilable
 }

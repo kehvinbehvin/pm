@@ -13,7 +13,7 @@ import (
 )
 
 func UpdateBlobContent(name string, content string, index *common.Reconcilable) error {
-	defer index.SaveReconcilable("")
+	defer index.SaveReconcilable()
 	hash := sha1.Sum([]byte(content))
 	hashStr := fmt.Sprintf("%x", hash[:])
 
@@ -31,7 +31,7 @@ func UpdateBlobContent(name string, content string, index *common.Reconcilable) 
 }
 
 func Commit(name string, content string, index *common.Reconcilable) error {
-	defer index.SaveReconcilable("")
+	defer index.SaveReconcilable()
 	hash := sha1.Sum([]byte(content))
 	hashStr := fmt.Sprintf("%x", hash[:])
 
