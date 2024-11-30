@@ -7,6 +7,8 @@ const (
 	RemoveEdgeAlpha     byte = 4
 	AddTrieNodeAlpha    byte = 5
 	RemoveTrieNodeAlpha byte = 6
+	AddFileAlpha        byte = 7
+	RemoveFileAlpha     byte = 8
 )
 
 type Alpha interface {
