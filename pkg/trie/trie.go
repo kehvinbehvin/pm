@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"encoding/gob"
+	"crypto/sha1"
 
 	"github/pm/pkg/common"
 )
@@ -103,11 +104,13 @@ func (t *Trie) Validate(alpha common.Alpha) bool {
 type AddTrieNodeAlpha struct {
 	FileName     string
 	FileLocation string
+	Hash	     string
 }
 
 type RemoveTrieNodeAlpha struct {
 	FileName     string
 	FileLocation string
+	Hash         string
 }
 
 func (atna AddTrieNodeAlpha) GetType() byte {
@@ -118,6 +121,19 @@ func (atna AddTrieNodeAlpha) GetId() string {
 	return atna.FileName + atna.FileLocation + string(common.AddTrieNodeAlpha)
 }
 
+func (atna AddTrieNodeAlpha) GetHash() string {
+	return atna.Hash
+}
+
+// This is mean to capture the state that the alpha was used to update
+// the underlying datastructure
+func (atna AddTrieNodeAlpha) SetHash(lastAlpha common.Alpha) {
+	prevAlphaHash := lastAlpha.GetHash()
+	currentHash := sha1.Sum([]byte(atna.GetId() + prevAlphaHash))
+	currentHashStr := fmt.Sprintf("%x", currentHash[:])
+	atna.Hash = currentHashStr
+}
+
 func (rtna RemoveTrieNodeAlpha) GetType() byte {
 	return common.RemoveTrieNodeAlpha
 }
@@ -125,6 +141,20 @@ func (rtna RemoveTrieNodeAlpha) GetType() byte {
 func (rtna RemoveTrieNodeAlpha) GetId() string {
 	return rtna.FileName + string(common.AddTrieNodeAlpha)
 }
+
+func (rtna RemoveTrieNodeAlpha) GetHash() string {
+	return rtna.Hash
+}
+
+// This is mean to capture the state that the alpha was used to update
+// the underlying datastructure
+func (rtna RemoveTrieNodeAlpha) SetHash(lastAlpha common.Alpha) {
+	prevAlphaHash := lastAlpha.GetHash()
+	currentHash := sha1.Sum([]byte(rtna.GetId() + prevAlphaHash))
+	currentHashStr := fmt.Sprintf("%x", currentHash[:])
+	rtna.Hash = currentHashStr
+}
+
 
 func (t *Trie) AddFile(fileName string, fileLocation string) error {
 	currentNode := t.Root

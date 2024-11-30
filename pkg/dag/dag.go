@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"encoding/gob"
+	"crypto/sha1"
 
 	"github/pm/pkg/common"
 )
@@ -135,11 +136,13 @@ func dfs(from *Vertex, to *Vertex) bool {
 type AddEdgeAlpha struct {
 	From *Vertex
 	To   *Vertex
+	Hash  string
 }
 
 type RemoveEdgeAlpha struct {
 	From *Vertex
 	To   *Vertex
+	Hash  string
 }
 
 func (aea *AddEdgeAlpha) GetType() byte {
@@ -150,12 +153,38 @@ func (aea *AddEdgeAlpha) GetId() string {
 	return aea.To.ID + aea.From.ID + string(common.AddEdgeAlpha)
 }
 
+func (aea *AddEdgeAlpha) GetHash() string {
+	return aea.Hash
+}
+
+// This is mean to capture the state that the alpha was used to update
+// the underlying datastructure
+func (aea *AddEdgeAlpha) SetHash(lastAlpha common.Alpha) {
+	prevAlphaHash := lastAlpha.GetHash()
+	currentHash := sha1.Sum([]byte(aea.GetId() + prevAlphaHash))
+	currentHashStr := fmt.Sprintf("%x", currentHash[:])
+	aea.Hash = currentHashStr
+}
+
 func (rea *RemoveEdgeAlpha) GetType() byte {
 	return common.RemoveEdgeAlpha
 }
 
 func (rea *RemoveEdgeAlpha) GetId() string {
 	return rea.To.ID + rea.From.ID + string(common.AddEdgeAlpha)
+}
+
+func (rea *RemoveEdgeAlpha) GetHash() string {
+	return rea.Hash
+}
+
+// This is mean to capture the state that the alpha was used to update
+// the underlying datastructure
+func (rea *RemoveEdgeAlpha) SetHash(lastAlpha common.Alpha) {
+	prevAlphaHash := lastAlpha.GetHash()
+	currentHash := sha1.Sum([]byte(rea.GetId() + prevAlphaHash))
+	currentHashStr := fmt.Sprintf("%x", currentHash[:])
+	rea.Hash = currentHashStr
 }
 
 func (d *Dag) HasEdge(from *Vertex, to *Vertex) bool {

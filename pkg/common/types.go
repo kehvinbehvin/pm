@@ -12,6 +12,8 @@ const (
 type Alpha interface {
 	GetType() byte
 	GetId() string
+	GetHash() string
+	SetHash(Alpha)
 }
 
 type AlphaHistory interface {
