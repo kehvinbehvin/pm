@@ -313,8 +313,8 @@ func init() {
 					storyVertex := pmDag.RetrieveVertex(storyValue)
 
 					addEdgeAlpha := dag.AddEdgeAlpha{
-						From: epicVertex,
-						To:   storyVertex,
+						From: storyVertex,
+						To:   epicVertex,
 					}
 
 					reconcilable.Commit(&addEdgeAlpha)
@@ -323,8 +323,8 @@ func init() {
 						taskVertex := pmDag.RetrieveVertex(value)
 
 						addEdgeAlpha := dag.AddEdgeAlpha{
-							From: storyVertex,
-							To:   taskVertex,
+							From: taskVertex,
+							To:   storyVertex,
 						}
 
 						reconcilable.Commit(&addEdgeAlpha)
@@ -346,8 +346,8 @@ func init() {
 						storyVertex := pmDag.RetrieveVertex(value)
 
 						addEdgeAlpha := dag.AddEdgeAlpha{
-							From: epicVertex,
-							To:   storyVertex,
+							From: storyVertex,
+							To:   epicVertex,
 						}
 
 						reconcilable.Commit(&addEdgeAlpha)
