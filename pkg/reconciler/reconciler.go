@@ -23,9 +23,9 @@ type Reconciler struct {
 	incumbentDelta  []common.Alpha
 }
 
-func (rc *Reconciler) Reconcile(other *common.Reconcilable) byte {
+func (rc *Reconciler) Reconcile(other common.AlphaList) byte {
 	incumbentAlphaList := rc.reconcilable.AlphaList
-	inBoundAlphaList := other.AlphaList
+	inBoundAlphaList := other
 
 	// Valid Merges
 	// InBound ahead of Incumbent
@@ -75,11 +75,7 @@ func (rc *Reconciler) Reconcile(other *common.Reconcilable) byte {
 	return Irreconcilable
 }
 
-func (rc *Reconciler) MergeIn(other *common.Reconcilable) error {
-	if other == nil {
-		return errors.New("Other reconcilable is empty")
-	}
-
+func (rc *Reconciler) MergeIn(other common.AlphaList) error {
 	reconcilingStrategy := rc.Reconcile(other)
 	error := rc.resolveDeltas(other)
 	if error != nil {
@@ -230,7 +226,7 @@ func isCommonAlpha(shorter common.Alpha, longer common.Alpha) bool {
 	return shorter.GetId() == longer.GetId()
 }
 
-func (rc *Reconciler) resolveDeltas(inBound *common.Reconcilable) error {
+func (rc *Reconciler) resolveDeltas(inBound common.AlphaList) error {
 	var inBoundDelta []common.Alpha
 	var incumbentDelta []common.Alpha
 
@@ -241,10 +237,10 @@ func (rc *Reconciler) resolveDeltas(inBound *common.Reconcilable) error {
 
 	lastCommonAlphaId := rc.lastCommonAlpha.GetId()
 
-	inBoundLength := len(inBound.AlphaList.Alphas)
+	inBoundLength := len(inBound.Alphas)
 	incumbentLength := len(rc.reconcilable.AlphaList.Alphas)
 	for i := inBoundLength - 1; i >= 0; i-- {
-		tmpAlpha := inBound.AlphaList.Alphas[i]
+		tmpAlpha := inBound.Alphas[i]
 		if tmpAlpha.GetId() != lastCommonAlphaId {
 			inBoundDelta = append(inBoundDelta, tmpAlpha)
 		} else {
@@ -269,7 +265,7 @@ func (rc *Reconciler) resolveDeltas(inBound *common.Reconcilable) error {
 	return nil
 }
 
-func (rc *Reconciler) MergeSilently(inBound *common.Reconcilable) error {
+func (rc *Reconciler) MergeSilently(inBound common.AlphaList) error {
 	// Reset incumbent reconcilable
 	error := rc.reconcilable.Reset(rc.lastCommonAlpha)
 	if error != nil {
@@ -307,8 +303,8 @@ func (rc *Reconciler) MergeSilently(inBound *common.Reconcilable) error {
 	return nil
 }
 
-func (rc *Reconciler) FastForward(inBound *common.Reconcilable) {
-	error := rc.reconcilable.FastForward(inBound.AlphaList.Alphas)
+func (rc *Reconciler) FastForward(inBound common.AlphaList) {
+	error := rc.reconcilable.FastForward(inBound.Alphas)
 	if error != nil {
 		// Log error
 		fmt.Print("There was an error with FastForwarding")
