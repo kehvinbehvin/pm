@@ -229,10 +229,12 @@ func (d *Dag) RemoveEdge(from *Vertex, to *Vertex) error {
 
 type AddVertexAlpha struct {
 	Target *Vertex
+	Hash string
 }
 
 type RemoveVertexAlpha struct {
 	Target *Vertex
+	Hash string
 }
 
 func (ava *AddVertexAlpha) GetType() byte {
@@ -243,6 +245,17 @@ func (ava *AddVertexAlpha) GetId() string {
 	return ava.Target.ID
 }
 
+func (ava *AddVertexAlpha) GetHash() string {
+	return ava.Hash
+}
+
+func (ava *AddVertexAlpha) SetHash(lastAlpha common.Alpha) {
+	prevAlphaHash := lastAlpha.GetHash()
+	currentHash := sha1.Sum([]byte(ava.GetId() + prevAlphaHash))
+	currentHashStr := fmt.Sprintf("%x", currentHash[:])
+	ava.Hash = currentHashStr
+}
+
 func (rva *RemoveVertexAlpha) GetType() byte {
 	return common.RemoveVertexAlpha
 }
@@ -250,6 +263,19 @@ func (rva *RemoveVertexAlpha) GetType() byte {
 func (rvd *RemoveVertexAlpha) GetId() string {
 	return rvd.Target.ID
 }
+
+func (rvd *RemoveVertexAlpha) GetHash() string {
+	return rvd.Hash
+}
+
+func (rvd *RemoveVertexAlpha) SetHash(lastAlpha common.Alpha) {
+	prevAlphaHash := lastAlpha.GetHash()
+	currentHash := sha1.Sum([]byte(rvd.GetId() + prevAlphaHash))
+	currentHashStr := fmt.Sprintf("%x", currentHash[:])
+	rvd.Hash = currentHashStr
+
+}
+
 
 func (d *Dag) AddVertex(in *Vertex) error {
 	_, exists := d.Vertices[in.ID]
