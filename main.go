@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// Access the final state of the model
-	if sm, ok := finalModel.(ui.SelectorModel); ok {
+	if sm, ok := finalModel.(ui.ApplicationModel); ok {
 		epicChoice := sm.Epic
 		storyChoice := sm.Story
 		taskChoice := sm.Task
