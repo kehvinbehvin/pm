@@ -10,6 +10,20 @@ import (
 	"github/pm/pkg/common"
 )
 
+/**
+How to use:
+1. Create a file save in the file system to store the dag
+2. The name of the file is the storage key
+3. Use NewReconcilableDag to create new Dag
+4. Create Add/Remove Vertex/Edge Alphas and call Update on Reconcilable
+5. Save Reconcilable once Update is completed
+
+
+Rewind and Validate are future features for merging strategies
+Not need now
+*/
+
+// Provide the storage key to identify instances of dags
 func NewReconcilableDag(storageKey string) common.Reconcilable {
 	dagAlphaList := common.NewAlphaList()
 	dagStorage := NewDag(storageKey)
@@ -103,6 +117,7 @@ func NewDag(fileName string) *Dag {
 	}
 }
 
+// Id provided must be unique in nature.
 func NewVertex(id string) *Vertex {
 	return &Vertex{
 		ID:       id,
