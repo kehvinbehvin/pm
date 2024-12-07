@@ -137,3 +137,11 @@ Vertex 1
 ## Building
 - go build .
 - sudo mv ./pm /usr/local/bin/pm
+
+
+## Revamp and Rescoping
+- How to launch MVP asap
+
+## MVP Definition
+- 
+
