@@ -3,27 +3,24 @@ package blob
 import (
 	"bytes"
 	"compress/zlib"
-	"crypto/sha1"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 )
 
-const compressionThreshold = 1024 // 1 KB threshold for compression
+const compressionThreshold = 10 * 1024 // 10 KB threshold for compression
 
-func CreateBlob(content string) error {
-	hash := sha1.Sum([]byte(content))
-	hashStr := fmt.Sprintf("%x", hash[:])
-	blobDir := ".pm/blobs/"
-	subDir := blobDir + hashStr[:2]
-	err := os.MkdirAll(subDir, os.ModePerm)
+// Use Human readable fileNames for easier reading and potability
+func CreateBlob(fileName string, content string) error {
+	blobDirectory := filepath.Join(".", ".pm", "blobs")
+	blobFile := filepath.Join(".", ".pm", "blobs", fileName)
+
+	err := os.MkdirAll(blobDirectory, os.ModePerm)
 	if err != nil {
-		fmt.Println("Error creating blob file")
+		fmt.Println("Error creating blob dir")
 		return err
 	}
-
-	blobPath := filepath.Join(subDir, hashStr)
 
 	contentSize := len(content)
 	if contentSize > compressionThreshold {
@@ -35,7 +32,7 @@ func CreateBlob(content string) error {
 		return err
 	}
 
-	err = os.WriteFile(blobPath, []byte(content), 0644)
+	err = os.WriteFile(blobFile, []byte(content), 0644)
 	if err != nil {
 		fmt.Println("Error writing to file")
 		return err
