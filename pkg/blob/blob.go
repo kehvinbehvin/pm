@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"errors"
 )
 
 const compressionThreshold = 10 * 1024 // 10 KB threshold for compression
@@ -36,6 +37,33 @@ func CreateBlob(fileName string, content string) error {
 	if err != nil {
 		fmt.Println("Error writing to file")
 		return err
+	}
+
+	return nil
+}
+
+func checkFileExists(filePath string) bool {
+	_, error := os.Stat(filePath)
+	//return !os.IsNotExist(err)
+	return !errors.Is(error, os.ErrNotExist)
+}
+
+
+func Exists(fileName string) bool {
+	path := filepath.Join(".", ".pm", "./blobs", fileName)
+	return checkFileExists(path)
+}
+
+func DeleteBlob(fileName string) error {
+	path := filepath.Join(".", ".pm", "./blobs", fileName)
+	exists := checkFileExists(path)
+	if !exists {
+		return errors.New("Cannot remove non existent file")
+	}
+
+	deleteErr := os.Remove(path)
+	if deleteErr != nil {
+		return deleteErr
 	}
 
 	return nil

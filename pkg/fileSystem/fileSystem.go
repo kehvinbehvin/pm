@@ -110,6 +110,7 @@ func (fs *FileSystem) getFileTree() (*dag.Dag) {
 
 func (fs *FileSystem) CreateFile(fileName string) (error) {
 	// Create Blob using fileName
+	// TODO: refactor to use reconcilable data structure
 	blobErr := blob.CreateBlob(fileName, "");
 	if blobErr != nil {
 		return blobErr
@@ -141,38 +142,123 @@ func (fs *FileSystem) CreateFile(fileName string) (error) {
 	return nil
 }
 
-func (fs *FileSystem) DeleteFile(fileId string) (error) {
-	// Remove name from fileTypeIndex
+func (fs *FileSystem) DeleteFile(fileName string) (error) {
+	// Remove name from fileTypeInde
+	removeFileIndexAlpha := pmfile.RemoveFileTypeIndexAlpha{
+		FileName: fileName,
+		FileType: "",
+	};
 
-	// Remove Blob using name
+	updateErr := fs.fileTypeIndex.DataStructure.Update(&removeFileIndexAlpha)
+	if updateErr != nil {
+		return updateErr
+	}
+
+
+	// Already handles non-existent blobs
+	deleteErr := blob.DeleteBlob(fileName)
+	if deleteErr != nil {
+		return deleteErr
+	}
+
+	fileTree := fs.getFileTree();
+	vertex := fileTree.RetrieveVertex(fileName)
+	if vertex != nil {
+		return errors.New("File not found in file system")
+	}
 
 	// Remove Vertex from Dag
+	removeVertexAlpha := dag.RemoveVertexAlpha{
+		Target: vertex,
+	}
+
+	updateErr = fs.fileRelationShips.DataStructure.Update(&removeVertexAlpha)
+	if updateErr != nil {
+		return updateErr
+	}
+
 	return nil
 }
 
-func (fs *FileSystem) LinkFile(parentId string, childId string) (error) {
+func (fs *FileSystem) validateFileExists(fileName string) (error) {
 	// Check if Parent and Child exist in File index 
+	fileIndex := fs.getFileIndex()
+	_ , fileErr := fileIndex.RetrieveFileType(fileName)
+	if fileErr != nil {
+		return errors.New("File not in index: File: " + fileName)
+	}
 
 	// Check if Parent and Child blobs exist
+	fileBlob := blob.Exists(fileName)
+	if !fileBlob {
+		return errors.New("File blob not found: File: " + fileName)
+	}
 
 	// Check if Parent and Child vertex exist in the FileTree
+	fileTree := fs.getFileTree();
+	fileVertex := fileTree.RetrieveVertex(fileName)
+	if fileVertex != nil {
+		return errors.New("File Vertext not found: File " + fileName)
+	}
 
-	// Check if Edge exist for Parent and child
-
-	// Add Edge between parent and child vertex
 	return nil
 }
 
-func (fs *FileSystem) UnLinkFile(parentId string, childId string) (error) {
-	// Check if Parent and Child exist in File index
+func (fs *FileSystem) LinkFile(parentName string, childName string) (error) {
+	parentErr := fs.validateFileExists(parentName);
+	if parentErr != nil {
+		return parentErr
+	}
 
-	// Check if Parent and Child blobs exist
+	childErr := fs.validateFileExists(childName);
+	if childErr != nil {
+		return childErr
+	}
 
-	// Check if Parent and Child vertex exist
+	fileTree := fs.getFileTree();
+	parentVertex := fileTree.RetrieveVertex(parentName)
+	childVertex := fileTree.RetrieveVertex(childName)
 
-	// Check if Parent and Child edge exist
+	// Add Edge between parent and child vertex
+	addEdgeAlpha := dag.AddEdgeAlpha{
+		From: parentVertex,
+		To: childVertex,
+	}
 
-	// Remove edge between Parent and Child
+	updateErr := fs.fileRelationShips.DataStructure.Update(&addEdgeAlpha)
+	if updateErr != nil {
+		return updateErr
+	}
+
+	return nil
+}
+
+func (fs *FileSystem) UnLinkFile(parentName string, childName string) (error) {
+	parentErr := fs.validateFileExists(parentName);
+	if parentErr != nil {
+		return parentErr
+	}
+
+	childErr := fs.validateFileExists(childName);
+	if childErr != nil {
+		return childErr
+	}
+
+	fileTree := fs.getFileTree();
+	parentVertex := fileTree.RetrieveVertex(parentName)
+	childVertex := fileTree.RetrieveVertex(childName)
+
+	// Add Edge between parent and child vertex
+	removeEdgeAlpha := dag.RemoveEdgeAlpha{
+		From: parentVertex,
+		To: childVertex,
+	}
+
+	updateErr := fs.fileRelationShips.DataStructure.Update(&removeEdgeAlpha)
+	if updateErr != nil {
+		return updateErr
+	}
+
 	return nil
 }
 
