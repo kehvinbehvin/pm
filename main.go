@@ -2,9 +2,9 @@ package main
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github/pm/internals/ui"
 	"os"
 	"fmt"
+	"github/pm/internals/ui/application"
 )
 
 func main() {
@@ -32,9 +32,9 @@ func main() {
 	// 	fmt.Println("Unexpected model type")
 	// }
 
-	graph := ui.NewGraph();
+	app := application.NewApplication();
 
-	if _, err := tea.NewProgram(graph).Run(); err != nil {
+	if _, err := tea.NewProgram(app).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}

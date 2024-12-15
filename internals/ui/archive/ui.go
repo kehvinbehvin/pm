@@ -1,4 +1,4 @@
-package ui
+package archive
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
