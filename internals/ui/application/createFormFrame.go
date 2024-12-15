@@ -1,60 +1,83 @@
 package application
 
 import (
-	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"fmt"
-	"strings"
 	"errors"
+	"io"
+	"strings"
+	"github.com/charmbracelet/lipgloss"
 )
 
 var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle         = focusedStyle
-	noStyle             = lipgloss.NewStyle()
-	helpStyle           = blurredStyle
-	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-
-	focusedButton = focusedStyle.Render("[ Submit ]")
-	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
+	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
+	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
+	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
+	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
+	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
-
 type CreateFormFrame struct {
-	focusIndex int
-	inputs     []textinput.Model
-	cursorMode cursor.Mode
+	step int
+	title     textinput.Model
+	list      list.Model
+	fileType  string
+}
+
+type item string
+
+func (i item) FilterValue() string { return "" }
+
+type itemDelegate struct{}
+
+func (d itemDelegate) Height() int                             { return 1 }
+func (d itemDelegate) Spacing() int                            { return 0 }
+func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
+func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	i, ok := listItem.(item)
+	if !ok {
+		return
+	}
+
+	str := fmt.Sprintf("%d. %s", index+1, i)
+
+	fn := itemStyle.Render
+	if index == m.Index() {
+		fn = func(s ...string) string {
+			return selectedItemStyle.Render("> " + strings.Join(s, " "))
+		}
+	}
+
+	fmt.Fprint(w, fn(str))
 }
 
 func NewCreateFormFrame() (ApplicationFrame) {
-	m := CreateFormFrame{
-		inputs: make([]textinput.Model, 3),
-		focusIndex: 0,
+	ti := textinput.New()
+	ti.Placeholder = "Title"
+	ti.Focus()
+
+	items := []list.Item{
+		item("PRD"),
+		item("Epic"),
+		item("Story"),
+		item("Task"),
 	}
 
-	var t textinput.Model
-	for i := range m.inputs {
-		t = textinput.New()
-		t.Cursor.Style = cursorStyle
-		t.CharLimit = 32
-
-		switch i {
-		case 0:
-			t.Placeholder = "Title"
-			t.Focus()
-			t.PromptStyle = focusedStyle
-			t.TextStyle = focusedStyle
-		case 1:
-			t.Placeholder = "Description"
-			t.CharLimit = 64
-		case 2:
-			t.Placeholder = "Others"
-			t.CharLimit = 64
-}
-
-		m.inputs[i] = t
+	const defaultWidth = 20
+	l := list.New(items, itemDelegate{}, defaultWidth, 14)
+	l.Title = "What type of file do you want to create"
+	l.SetShowStatusBar(false)
+	l.SetFilteringEnabled(false)
+	l.Styles.Title = titleStyle
+	l.Styles.PaginationStyle = paginationStyle
+	l.Styles.HelpStyle = helpStyle
+	m := CreateFormFrame{
+		step: 0,
+		title: ti,
+		list: l,
+		fileType: "",
 	}
 
 	return &m
@@ -76,74 +99,50 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 		return app, tea.Quit
 	}
 
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c", "esc":
-			return app, tea.Quit
-		case "p":
-			app.History.Pop()
-		case "tab", "shift+tab", "enter", "up", "down":
-			s := msg.String()
-
-			// Did the user press enter while the submit button was focused?
-			// If so, exit.
-			if s == "enter" && createFormFrame.focusIndex == len(createFormFrame.inputs) {
+	switch (createFormFrame.step) {
+	case 0:
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q", "ctrl+c", "esc":
 				return app, tea.Quit
+			case "left":
+				app.History.Pop()
+			case "enter":
+				createFormFrame.step++
 			}
-
-			// Cycle indexes
-			if s == "up" || s == "shift+tab" {
-				createFormFrame.focusIndex--
-			} else {
-				createFormFrame.focusIndex++
-			}
-
-			if createFormFrame.focusIndex > len(createFormFrame.inputs) {
-				createFormFrame.focusIndex = 0
-			} else if createFormFrame.focusIndex < 0 {
-				createFormFrame.focusIndex = len(createFormFrame.inputs)
-			}
-
-			cmds := make([]tea.Cmd, len(createFormFrame.inputs))
-			for i := 0; i <= len(createFormFrame.inputs)-1; i++ {
-				if i == createFormFrame.focusIndex {
-					// Set focused state
-					cmds[i] = createFormFrame.inputs[i].Focus()
-					createFormFrame.inputs[i].PromptStyle = focusedStyle
-					createFormFrame.inputs[i].TextStyle = focusedStyle
-					continue
-				}
-				// Remove focused state
-				createFormFrame.inputs[i].Blur()
-				createFormFrame.inputs[i].PromptStyle = noStyle
-				createFormFrame.inputs[i].TextStyle = noStyle
-			}
-
-			return app, tea.Batch(cmds...)
 		}
+
+		var cmd tea.Cmd
+		createFormFrame.title, cmd = createFormFrame.title.Update(msg)
+
+		return app, cmd
+	case 1:
+	switch msg := msg.(type) {
+		    case tea.WindowSizeMsg:
+		        createFormFrame.list.SetWidth(msg.Width)
+			        return app, nil
+
+			    case tea.KeyMsg:
+		        switch keypress := msg.String(); keypress {
+			        case "q", "ctrl+c":
+				            return app, tea.Quit
+
+				case "enter":
+				i, ok := createFormFrame.list.SelectedItem().(item)
+				if ok {
+				         createFormFrame.fileType = string(i)
+				}
+				      return app, tea.Quit
+			       }
+			    }
+
+		    var cmd tea.Cmd
+		    createFormFrame.list, cmd = createFormFrame.list.Update(msg)
+		    return app, cmd
 	}
 
-	cmd := createFormFrame.updateInputs(msg, app)
-
-	return app, cmd
-}
-
-func (cf CreateFormFrame) updateInputs(msg tea.Msg, app Application) tea.Cmd {
-	createFormFrame, frameErr := cf.getFrame(app);
-	if frameErr != nil {
-		return tea.Quit
-	}
-
-	cmds := make([]tea.Cmd, len(createFormFrame.inputs))
-
-	// Only text inputs with Focus() set will respond, so it's safe to simply
-	// update all of them here without any further logic.
-	for i := range createFormFrame.inputs {
-		createFormFrame.inputs[i], cmds[i] = createFormFrame.inputs[i].Update(msg)
-	}
-
-	return tea.Batch(cmds...)
+	return app, nil 
 }
 
 func (cf CreateFormFrame) View(app Application) (string) {
@@ -152,24 +151,17 @@ func (cf CreateFormFrame) View(app Application) (string) {
 		return ""
 	}
 
-	var b strings.Builder
-
-	for i := range createFormFrame.inputs {
-		b.WriteString(createFormFrame.inputs[i].View())
-		if i < len(createFormFrame.inputs)-1 {
-			b.WriteRune('\n')
-		}
+	if (createFormFrame.step == 0) {
+		return fmt.Sprintf(
+		"Enter the title of your file\n\n%s\n\n%s",
+		createFormFrame.title.View(),
+		"[esc] Quit [left arrow] Back",
+		)
+	} else {
+		return createFormFrame.list.View()
 	}
-
-	button := &blurredButton
-	if createFormFrame.focusIndex == len(createFormFrame.inputs) {
-		button = &focusedButton
-	}
-	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
-
-	return b.String()
 }
 
 func (cf CreateFormFrame) Init() (tea.Cmd) {
-	return textinput.Blink
+	return nil
 }
