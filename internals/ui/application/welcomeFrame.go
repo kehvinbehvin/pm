@@ -13,7 +13,7 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 		case "q", "ctrl+c", "esc":
 			return app, tea.Quit
 		case "c":
-			frame := CreateFormFrame{}
+			frame := NewCreateFormFrame()
 			app.History.Push(frame)
 		}
 	}
@@ -21,7 +21,7 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 	return app, nil
 }
 
-func (wf WelcomeFrame) View() (string) {
+func (wf WelcomeFrame) View(app Application) (string) {
 	return "WelcomeFrame, Press c to create file"
 }
 

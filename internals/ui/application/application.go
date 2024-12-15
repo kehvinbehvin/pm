@@ -8,7 +8,7 @@ func NewApplication() (tea.Model) {
 	stack := NewApplicationStack()
 
 	// Initialise the first frame of the application
-	welcome := WelcomeFrame{} 
+	welcome := &WelcomeFrame{} 
 	stack.Push(welcome)
 
 	return Application{
@@ -36,7 +36,7 @@ func (a Application) View() (string) {
 		return ""
 	}
 
-	return currentFrame.View()
+	return currentFrame.View(a)
 }
 func (a Application) Init() (tea.Cmd) {
 	currentFrame, error := a.History.Peek();
@@ -46,4 +46,3 @@ func (a Application) Init() (tea.Cmd) {
 
 	return currentFrame.Init()
 }
-
