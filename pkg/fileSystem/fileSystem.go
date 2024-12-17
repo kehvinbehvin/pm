@@ -1,20 +1,20 @@
 package filesystem
 
 import (
+	"github/pm/pkg/blob"
 	"github/pm/pkg/common"
 	"github/pm/pkg/dag"
 	pmfile "github/pm/pkg/file"
-	"github/pm/pkg/blob"
 
-	"os"
-	"path/filepath"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 )
 
 type FileSystem struct {
 	fileRelationShips common.Reconcilable
-	fileTypeIndex common.Reconcilable
+	fileTypeIndex     common.Reconcilable
 }
 
 func checkFileExists(filePath string) bool {
@@ -28,7 +28,7 @@ func checkDirExists(dirPath string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (fs *FileSystem) BootDag() (error) {
+func (fs *FileSystem) BootDag() error {
 	dagDirectory := filepath.Join(".", ".pm", "dag")
 	dagFile := filepath.Join(".", ".pm", "dag", "dag")
 
@@ -56,7 +56,7 @@ func (fs *FileSystem) BootDag() (error) {
 	return nil
 }
 
-func (fs *FileSystem) BootFileTypes() (error) {
+func (fs *FileSystem) BootFileTypes() error {
 	fileTypeDirectory := filepath.Join(".", ".pm", "fileTypes")
 	fileTypeFile := filepath.Join(".", ".pm", "fileTypes", "types")
 
@@ -76,17 +76,17 @@ func (fs *FileSystem) BootFileTypes() (error) {
 
 		defer file.Close()
 
-		fs.fileTypeIndex = pmfile.NewReconcilableFileTypeIndex("types");
+		fs.fileTypeIndex = pmfile.NewReconcilableFileTypeIndex("types")
 	} else {
-		fs.fileTypeIndex = *pmfile.LoadReconcilableFileTypeIndex(fileTypeFile);
+		fs.fileTypeIndex = *pmfile.LoadReconcilableFileTypeIndex(fileTypeFile)
 	}
 
 	return nil
 }
 
-func (fs *FileSystem) Boot() (error) {
+func (fs *FileSystem) Boot() error {
 	// Load/Create File fileRelationShips
-	bootDagErr := fs.BootDag();
+	bootDagErr := fs.BootDag()
 	if bootDagErr != nil {
 		return bootDagErr
 	}
@@ -100,18 +100,18 @@ func (fs *FileSystem) Boot() (error) {
 	return nil
 }
 
-func (fs *FileSystem) getFileIndex() (*pmfile.FileTypeIndex) {
+func (fs *FileSystem) getFileIndex() *pmfile.FileTypeIndex {
 	return fs.fileTypeIndex.DataStructure.(*pmfile.FileTypeIndex)
 }
 
-func (fs *FileSystem) getFileTree() (*dag.Dag) {
+func (fs *FileSystem) getFileTree() *dag.Dag {
 	return fs.fileTypeIndex.DataStructure.(*dag.Dag)
 }
 
-func (fs *FileSystem) CreateFile(fileName string) (error) {
+func (fs *FileSystem) CreateFile(fileName string) error {
 	// Create Blob using fileName
 	// TODO: refactor to use reconcilable data structure
-	blobErr := blob.CreateBlob(fileName, "");
+	blobErr := blob.CreateBlob(fileName, "")
 	if blobErr != nil {
 		return blobErr
 	}
@@ -120,14 +120,14 @@ func (fs *FileSystem) CreateFile(fileName string) (error) {
 	addFileIndexAlpha := pmfile.AddFileTypeIndexAlpha{
 		FileName: fileName,
 		FileType: "",
-	};
+	}
 
 	updateErr := fs.fileTypeIndex.DataStructure.Update(&addFileIndexAlpha)
 	if updateErr != nil {
 		return updateErr
 	}
 
-	vertex := dag.NewVertex(fileName);
+	vertex := dag.NewVertex(fileName)
 
 	// Add Vertex in Dag
 	addVertexAlpha := dag.AddVertexAlpha{
@@ -142,18 +142,17 @@ func (fs *FileSystem) CreateFile(fileName string) (error) {
 	return nil
 }
 
-func (fs *FileSystem) DeleteFile(fileName string) (error) {
+func (fs *FileSystem) DeleteFile(fileName string) error {
 	// Remove name from fileTypeInde
 	removeFileIndexAlpha := pmfile.RemoveFileTypeIndexAlpha{
 		FileName: fileName,
 		FileType: "",
-	};
+	}
 
 	updateErr := fs.fileTypeIndex.DataStructure.Update(&removeFileIndexAlpha)
 	if updateErr != nil {
 		return updateErr
 	}
-
 
 	// Already handles non-existent blobs
 	deleteErr := blob.DeleteBlob(fileName)
@@ -161,7 +160,7 @@ func (fs *FileSystem) DeleteFile(fileName string) (error) {
 		return deleteErr
 	}
 
-	fileTree := fs.getFileTree();
+	fileTree := fs.getFileTree()
 	vertex := fileTree.RetrieveVertex(fileName)
 	if vertex != nil {
 		return errors.New("File not found in file system")
@@ -180,10 +179,10 @@ func (fs *FileSystem) DeleteFile(fileName string) (error) {
 	return nil
 }
 
-func (fs *FileSystem) validateFileExists(fileName string) (error) {
-	// Check if Parent and Child exist in File index 
+func (fs *FileSystem) validateFileExists(fileName string) error {
+	// Check if Parent and Child exist in File index
 	fileIndex := fs.getFileIndex()
-	_ , fileErr := fileIndex.RetrieveFileType(fileName)
+	_, fileErr := fileIndex.RetrieveFileType(fileName)
 	if fileErr != nil {
 		return errors.New("File not in index: File: " + fileName)
 	}
@@ -195,7 +194,7 @@ func (fs *FileSystem) validateFileExists(fileName string) (error) {
 	}
 
 	// Check if Parent and Child vertex exist in the FileTree
-	fileTree := fs.getFileTree();
+	fileTree := fs.getFileTree()
 	fileVertex := fileTree.RetrieveVertex(fileName)
 	if fileVertex != nil {
 		return errors.New("File Vertext not found: File " + fileName)
@@ -204,25 +203,25 @@ func (fs *FileSystem) validateFileExists(fileName string) (error) {
 	return nil
 }
 
-func (fs *FileSystem) LinkFile(parentName string, childName string) (error) {
-	parentErr := fs.validateFileExists(parentName);
+func (fs *FileSystem) LinkFile(parentName string, childName string) error {
+	parentErr := fs.validateFileExists(parentName)
 	if parentErr != nil {
 		return parentErr
 	}
 
-	childErr := fs.validateFileExists(childName);
+	childErr := fs.validateFileExists(childName)
 	if childErr != nil {
 		return childErr
 	}
 
-	fileTree := fs.getFileTree();
+	fileTree := fs.getFileTree()
 	parentVertex := fileTree.RetrieveVertex(parentName)
 	childVertex := fileTree.RetrieveVertex(childName)
 
 	// Add Edge between parent and child vertex
 	addEdgeAlpha := dag.AddEdgeAlpha{
 		From: parentVertex,
-		To: childVertex,
+		To:   childVertex,
 	}
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&addEdgeAlpha)
@@ -233,25 +232,25 @@ func (fs *FileSystem) LinkFile(parentName string, childName string) (error) {
 	return nil
 }
 
-func (fs *FileSystem) UnLinkFile(parentName string, childName string) (error) {
-	parentErr := fs.validateFileExists(parentName);
+func (fs *FileSystem) UnLinkFile(parentName string, childName string) error {
+	parentErr := fs.validateFileExists(parentName)
 	if parentErr != nil {
 		return parentErr
 	}
 
-	childErr := fs.validateFileExists(childName);
+	childErr := fs.validateFileExists(childName)
 	if childErr != nil {
 		return childErr
 	}
 
-	fileTree := fs.getFileTree();
+	fileTree := fs.getFileTree()
 	parentVertex := fileTree.RetrieveVertex(parentName)
 	childVertex := fileTree.RetrieveVertex(childName)
 
 	// Add Edge between parent and child vertex
 	removeEdgeAlpha := dag.RemoveEdgeAlpha{
 		From: parentVertex,
-		To: childVertex,
+		To:   childVertex,
 	}
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&removeEdgeAlpha)
@@ -263,7 +262,7 @@ func (fs *FileSystem) UnLinkFile(parentName string, childName string) (error) {
 }
 
 func (fs *FileSystem) ListFileNamesByType(fileType string) ([]string, error) {
-	fileIndex := fs.getFileIndex();
+	fileIndex := fs.getFileIndex()
 	files, fileErr := fileIndex.RetrieveFilesFromType(fileType)
 	if fileErr != nil {
 		return nil, fileErr

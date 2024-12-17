@@ -1,11 +1,11 @@
 package dag
 
 import (
+	"crypto/sha1"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"os"
-	"encoding/gob"
-	"crypto/sha1"
 
 	"github/pm/pkg/common"
 )
@@ -32,7 +32,7 @@ func NewReconcilableDag(storageKey string) common.Reconcilable {
 	return common.Reconcilable{
 		AlphaList:     dagAlphaList,
 		DataStructure: dagStorage,
-		FilePath: filePath,
+		FilePath:      filePath,
 	}
 }
 
@@ -151,13 +151,13 @@ func dfs(from *Vertex, to *Vertex) bool {
 type AddEdgeAlpha struct {
 	From *Vertex
 	To   *Vertex
-	Hash  string
+	Hash string
 }
 
 type RemoveEdgeAlpha struct {
 	From *Vertex
 	To   *Vertex
-	Hash  string
+	Hash string
 }
 
 func (aea *AddEdgeAlpha) GetType() byte {
@@ -244,12 +244,12 @@ func (d *Dag) RemoveEdge(from *Vertex, to *Vertex) error {
 
 type AddVertexAlpha struct {
 	Target *Vertex
-	Hash string
+	Hash   string
 }
 
 type RemoveVertexAlpha struct {
 	Target *Vertex
-	Hash string
+	Hash   string
 }
 
 func (ava *AddVertexAlpha) GetType() byte {
@@ -290,7 +290,6 @@ func (rvd *RemoveVertexAlpha) SetHash(lastAlpha common.Alpha) {
 	rvd.Hash = currentHashStr
 
 }
-
 
 func (d *Dag) AddVertex(in *Vertex) error {
 	_, exists := d.Vertices[in.ID]
@@ -344,7 +343,7 @@ func LoadReconcilableDag(filePath string) *common.Reconcilable {
 	}
 	defer file.Close()
 
-	gob.Register(&Dag{});
+	gob.Register(&Dag{})
 	decoder := gob.NewDecoder(file)
 	var loadedReconcilable *common.Reconcilable
 	decodingErr := decoder.Decode(&loadedReconcilable)

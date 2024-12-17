@@ -28,7 +28,7 @@ func (al AlphaList) Diff() {
 type Reconcilable struct {
 	AlphaList     AlphaList
 	DataStructure DataStructure
-	FilePath string
+	FilePath      string
 }
 
 // Rewind dataStructure to state at Alpha

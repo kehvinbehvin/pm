@@ -4,8 +4,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	// "github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/lipgloss"
 	// "os"
 	"fmt"
 	"strings"
@@ -13,30 +13,29 @@ import (
 
 type item struct {
 	title string
-	desc string
+	desc  string
 }
 
 func (i item) Title() string       { return i.title }
 func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
-
 var (
-	cursorStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	selectedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("99")).Bold(true)
+	cursorStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	selectedStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("99")).Bold(true)
 	unselectedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	menuStyle   = lipgloss.NewStyle().Margin(1, 2)
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	noStyle             = lipgloss.NewStyle()
-	focusedButton = focusedStyle.Render("[ Submit ]")
-	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+	menuStyle       = lipgloss.NewStyle().Margin(1, 2)
+	focusedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	noStyle         = lipgloss.NewStyle()
+	focusedButton   = focusedStyle.Render("[ Submit ]")
+	blurredButton   = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
 )
 
 var (
-	epic = "epic"
+	epic  = "epic"
 	story = "story"
-	task = "task"
+	task  = "task"
 )
 
 type menuOption int
@@ -58,17 +57,17 @@ var menuOptions = []string{
 }
 
 type ApplicationModel struct {
-	epicList list.Model
-	storyList list.Model
-	taskList list.Model
-	quitting bool
-	Epic string
-	Story string
-	Task string
-	mode menuOption
-	cursor  int
+	epicList    list.Model
+	storyList   list.Model
+	taskList    list.Model
+	quitting    bool
+	Epic        string
+	Story       string
+	Task        string
+	mode        menuOption
+	cursor      int
 	createInput []textinput.Model
-	focusIndex int
+	focusIndex  int
 }
 
 var docStyle = lipgloss.NewStyle().Margin(1, 2)
@@ -92,11 +91,11 @@ func (sm ApplicationModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch sm.mode {
 	case Menu:
-	return sm.menuUpdate(msg);
+		return sm.menuUpdate(msg)
 	case Browse:
-	return sm.browseUpdate(msg);
+		return sm.browseUpdate(msg)
 	case Create:
-	return sm.createUpdate(msg);
+		return sm.createUpdate(msg)
 	}
 	return sm, tea.Quit
 }
@@ -125,7 +124,7 @@ func (m ApplicationModel) createUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				m.mode = Menu
-				m.focusIndex = 0;
+				m.focusIndex = 0
 				return m, nil
 			}
 
@@ -180,7 +179,7 @@ func (m ApplicationModel) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (m ApplicationModel) menuUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
-switch msg := msg.(type) {
+	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "up", "k":
@@ -214,15 +213,15 @@ func (sm ApplicationModel) browseUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (sm ApplicationModel) updateEpicList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-	switch keyPress := msg.String(); keyPress {
+		switch keyPress := msg.String(); keyPress {
 		case "enter":
-		if sm.epicList.FilterState() == list.Filtering {				// Allow the list to handle the filtering first
-			break
-		}
+			if sm.epicList.FilterState() == list.Filtering { // Allow the list to handle the filtering first
+				break
+			}
 
-		i, ok := sm.epicList.SelectedItem().(item)
+			i, ok := sm.epicList.SelectedItem().(item)
 			if ok {
-				sm.Epic = i.title;
+				sm.Epic = i.title
 			}
 		}
 	}
@@ -230,20 +229,20 @@ func (sm ApplicationModel) updateEpicList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	sm.epicList, cmd = sm.epicList.Update(msg)
 	return sm, cmd
-} 
+}
 
 func (sm ApplicationModel) updateStoryList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-	switch keyPress := msg.String(); keyPress {
+		switch keyPress := msg.String(); keyPress {
 		case "enter":
-		if sm.storyList.FilterState() == list.Filtering {				// Allow the list to handle the filtering first
-			break
-		}
+			if sm.storyList.FilterState() == list.Filtering { // Allow the list to handle the filtering first
+				break
+			}
 
-		i, ok := sm.storyList.SelectedItem().(item)
+			i, ok := sm.storyList.SelectedItem().(item)
 			if ok {
-				sm.Story = i.title;
+				sm.Story = i.title
 			}
 		}
 	}
@@ -251,19 +250,19 @@ func (sm ApplicationModel) updateStoryList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	sm.storyList, cmd = sm.storyList.Update(msg)
 	return sm, cmd
-} 
+}
 
 func (sm ApplicationModel) updateTaskList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-	switch keyPress := msg.String(); keyPress {
+		switch keyPress := msg.String(); keyPress {
 		case "enter":
-		if sm.taskList.FilterState() == list.Filtering {				// Allow the list to handle the filtering first
-			break
-		}
-		i, ok := sm.taskList.SelectedItem().(item)
+			if sm.taskList.FilterState() == list.Filtering { // Allow the list to handle the filtering first
+				break
+			}
+			i, ok := sm.taskList.SelectedItem().(item)
 			if ok {
-				sm.Task = i.title;
+				sm.Task = i.title
 				return sm, tea.Quit
 			}
 		}
@@ -274,20 +273,20 @@ func (sm ApplicationModel) updateTaskList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return sm, cmd
 }
 
-func (m ApplicationModel) View() (string) {
+func (m ApplicationModel) View() string {
 	switch m.mode {
 	case Menu:
-	return m.MenuView()
+		return m.MenuView()
 	case Browse:
-	return m.BrowseView()
+		return m.BrowseView()
 	case Create:
-	return m.CreateView()
+		return m.CreateView()
 	}
 
 	return docStyle.Render()
 }
 
-func (m ApplicationModel) CreateView() (string) {
+func (m ApplicationModel) CreateView() string {
 	var b strings.Builder
 
 	for i := range m.createInput {
@@ -306,7 +305,7 @@ func (m ApplicationModel) CreateView() (string) {
 	return b.String()
 }
 
-func (m ApplicationModel) MenuView() (string) {
+func (m ApplicationModel) MenuView() string {
 	var menu string
 	for i, option := range menuOptions {
 		cursor := " " // No cursor by default
@@ -325,7 +324,7 @@ func (m ApplicationModel) MenuView() (string) {
 	return fmt.Sprintf("%s\n%s\n%s", "Select an option:", menu)
 }
 
-func (m ApplicationModel) BrowseView() (string) {
+func (m ApplicationModel) BrowseView() string {
 	if m.Epic == "" {
 		return docStyle.Render(m.epicList.View())
 	} else if m.Story == "" {
@@ -339,7 +338,7 @@ func (sm ApplicationModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func NewModel() (tea.Model) {
+func NewModel() tea.Model {
 	epics := []list.Item{
 		item{title: "Raspberry Pi’s", desc: "I have ’em all over my house"},
 		item{title: "Nutella", desc: "It's good on toast"},
@@ -372,26 +371,26 @@ func NewModel() (tea.Model) {
 		item{title: "Terrycloth", desc: "In other words, towel fabric"},
 	}
 
-	epicList :=  list.New(epics, list.NewDefaultDelegate(), 0, 0);
+	epicList := list.New(epics, list.NewDefaultDelegate(), 0, 0)
 	storyList := list.New(stories, list.NewDefaultDelegate(), 0, 0)
 	taskList := list.New(tasks, list.NewDefaultDelegate(), 0, 0)
 
-	titleInput := textinput.New();
+	titleInput := textinput.New()
 	titleInput.Placeholder = "Title here"
 	titleInput.Focus()
 	titleInput.CharLimit = 156
 	titleInput.Width = 20
 
-	descInput := textinput.New();
+	descInput := textinput.New()
 	descInput.Placeholder = "Description here"
 	descInput.CharLimit = 156
 	descInput.Width = 20
 
 	var inputs []textinput.Model
-	inputs = append(inputs, titleInput) 
-	inputs = append(inputs, descInput) 
-	
-	m := ApplicationModel{epicList: epicList, storyList: storyList, taskList: taskList , mode: Menu, createInput: inputs}
+	inputs = append(inputs, titleInput)
+	inputs = append(inputs, descInput)
+
+	m := ApplicationModel{epicList: epicList, storyList: storyList, taskList: taskList, mode: Menu, createInput: inputs}
 	m.epicList.Title = "My Fave epics"
 	m.storyList.Title = "My Fave stories"
 	m.taskList.Title = "My Fave tasks"

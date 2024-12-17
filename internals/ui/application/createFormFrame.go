@@ -1,14 +1,14 @@
 package application
 
 import (
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
-	"fmt"
 	"errors"
+	"fmt"
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"io"
 	"strings"
-	"github.com/charmbracelet/lipgloss"
 )
 
 var (
@@ -19,11 +19,14 @@ var (
 	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
 	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
+
 type CreateFormFrame struct {
-	step int
-	title     textinput.Model
-	list      list.Model
-	fileType  string
+	step     int
+	title    textinput.Model
+	list     list.Model
+	fileType string
+	postActionList list.Model
+	postAction string
 }
 
 type item string
@@ -53,7 +56,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, fn(str))
 }
 
-func NewCreateFormFrame() (ApplicationFrame) {
+func NewCreateFormFrame() ApplicationFrame {
 	ti := textinput.New()
 	ti.Placeholder = "Title"
 	ti.Focus()
@@ -65,7 +68,21 @@ func NewCreateFormFrame() (ApplicationFrame) {
 		item("Task"),
 	}
 
-	const defaultWidth = 20
+	actionItems := []list.Item{
+		item("Edit file"),
+		item("Create file"),
+		item("Menu"),
+	}
+
+	const defaultWidth = 50
+	al := list.New(actionItems, itemDelegate{}, defaultWidth, 14)
+	al.Title = "What do you want to do next"
+	al.SetShowStatusBar(false)
+	al.SetFilteringEnabled(false)
+	al.Styles.Title = titleStyle
+	al.Styles.PaginationStyle = paginationStyle
+	al.Styles.HelpStyle = helpStyle
+
 	l := list.New(items, itemDelegate{}, defaultWidth, 14)
 	l.Title = "What type of file do you want to create"
 	l.SetShowStatusBar(false)
@@ -74,17 +91,18 @@ func NewCreateFormFrame() (ApplicationFrame) {
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
 	m := CreateFormFrame{
-		step: 0,
-		title: ti,
-		list: l,
+		step:     0,
+		title:    ti,
+		list:     l,
 		fileType: "",
+		postActionList: al,
 	}
 
 	return &m
 }
 
 func (cf CreateFormFrame) getFrame(app Application) (*CreateFormFrame, error) {
-	frame, error := app.History.Peek();
+	frame, error := app.History.Peek()
 	if error != nil {
 		return &CreateFormFrame{}, errors.New("Cannot get self")
 	}
@@ -94,12 +112,12 @@ func (cf CreateFormFrame) getFrame(app Application) (*CreateFormFrame, error) {
 }
 
 func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) {
-	createFormFrame, frameErr := cf.getFrame(app);
+	createFormFrame, frameErr := cf.getFrame(app)
 	if frameErr != nil {
 		return app, tea.Quit
 	}
 
-	switch (createFormFrame.step) {
+	switch createFormFrame.step {
 	case 0:
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
@@ -118,50 +136,92 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 
 		return app, cmd
 	case 1:
-	switch msg := msg.(type) {
-		    case tea.WindowSizeMsg:
-		        createFormFrame.list.SetWidth(msg.Width)
-			        return app, nil
+		switch msg := msg.(type) {
+		case tea.WindowSizeMsg:
+			createFormFrame.list.SetWidth(msg.Width)
+			return app, nil
 
-			    case tea.KeyMsg:
-		        switch keypress := msg.String(); keypress {
-			        case "q", "ctrl+c":
-				            return app, tea.Quit
+		case tea.KeyMsg:
+			switch keypress := msg.String(); keypress {
+			case "q", "ctrl+c":
+				return app, tea.Quit
 
-				case "enter":
+			case "enter":
 				i, ok := createFormFrame.list.SelectedItem().(item)
 				if ok {
-				         createFormFrame.fileType = string(i)
+					createFormFrame.fileType = string(i)
 				}
-				      return app, tea.Quit
-			       }
-			    }
 
-		    var cmd tea.Cmd
-		    createFormFrame.list, cmd = createFormFrame.list.Update(msg)
-		    return app, cmd
+				// Create file here
+				createFormFrame.step = 2
+			}
+		}
+
+		var cmd tea.Cmd
+		createFormFrame.list, cmd = createFormFrame.list.Update(msg)
+		return app, cmd
+	case 2:
+		switch msg := msg.(type) {
+		case tea.WindowSizeMsg:
+			createFormFrame.list.SetWidth(msg.Width)
+			return app, nil
+
+		case tea.KeyMsg:
+			switch keypress := msg.String(); keypress {
+			case "q", "ctrl+c":
+				return app, tea.Quit
+
+			case "enter":
+				i, ok := createFormFrame.postActionList.SelectedItem().(item)
+				if ok {
+					createFormFrame.postAction = string(i)
+					switch (createFormFrame.postAction) {
+					case "Edit file":
+						app.History.Pop()
+						frame := EditFileFrame{}	
+						app.History.Push(frame)
+					case "Create file":
+						app.History.Pop()
+						frame := NewCreateFormFrame()
+						app.History.Push(frame)
+					case "Menu":
+						app.History.Pop()
+						frame := WelcomeFrame{}
+						app.History.Push(frame);
+					}
+				}
+
+			}
+		}
+
+		var cmd tea.Cmd
+		createFormFrame.postActionList, cmd = createFormFrame.postActionList.Update(msg)
+		return app, cmd
+
 	}
 
-	return app, nil 
+	return app, nil
 }
 
-func (cf CreateFormFrame) View(app Application) (string) {
-	createFormFrame, frameErr := cf.getFrame(app);
+func (cf CreateFormFrame) View(app Application) string {
+	createFormFrame, frameErr := cf.getFrame(app)
 	if frameErr != nil {
 		return ""
 	}
 
-	if (createFormFrame.step == 0) {
+	if createFormFrame.step == 0 {
 		return fmt.Sprintf(
-		"Enter the title of your file\n\n%s\n\n%s",
-		createFormFrame.title.View(),
-		"[esc] Quit [left arrow] Back",
+			"Enter the title of your file\n\n%s\n\n%s",
+			createFormFrame.title.View(),
+			"[esc] Quit [left arrow] Back",
 		)
-	} else {
+	} else if (createFormFrame.step == 1) {
 		return createFormFrame.list.View()
+	} else {
+		return createFormFrame.postActionList.View()
 	}
 }
 
-func (cf CreateFormFrame) Init() (tea.Cmd) {
+func (cf CreateFormFrame) Init() tea.Cmd {
 	return nil
 }

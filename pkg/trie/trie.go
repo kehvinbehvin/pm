@@ -1,11 +1,11 @@
 package trie
 
 import (
+	"crypto/sha1"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"os"
-	"encoding/gob"
-	"crypto/sha1"
 
 	"github/pm/pkg/common"
 )
@@ -31,7 +31,7 @@ func NewReconcilableTrie(storageKey string) common.Reconcilable {
 	return common.Reconcilable{
 		AlphaList:     trieAlphaList,
 		DataStructure: trieStorage,
-		FilePath: filePath,
+		FilePath:      filePath,
 	}
 }
 
@@ -104,7 +104,7 @@ func (t *Trie) Validate(alpha common.Alpha) bool {
 type AddTrieNodeAlpha struct {
 	FileName     string
 	FileLocation string
-	Hash	     string
+	Hash         string
 }
 
 type RemoveTrieNodeAlpha struct {
@@ -154,7 +154,6 @@ func (rtna RemoveTrieNodeAlpha) SetHash(lastAlpha common.Alpha) {
 	currentHashStr := fmt.Sprintf("%x", currentHash[:])
 	rtna.Hash = currentHashStr
 }
-
 
 func (t *Trie) AddFile(fileName string, fileLocation string) error {
 	currentNode := t.Root
@@ -330,7 +329,7 @@ func LoadReconcilableTrie(filePath string) *common.Reconcilable {
 	defer file.Close()
 
 	decoder := gob.NewDecoder(file)
-	gob.Register(&Trie{});
+	gob.Register(&Trie{})
 	var loadedReconcilable *common.Reconcilable
 	decodingErr := decoder.Decode(&loadedReconcilable)
 	if decodingErr != nil {

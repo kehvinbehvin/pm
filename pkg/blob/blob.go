@@ -3,11 +3,11 @@ package blob
 import (
 	"bytes"
 	"compress/zlib"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"errors"
 )
 
 const compressionThreshold = 10 * 1024 // 10 KB threshold for compression
@@ -47,7 +47,6 @@ func checkFileExists(filePath string) bool {
 	//return !os.IsNotExist(err)
 	return !errors.Is(error, os.ErrNotExist)
 }
-
 
 func Exists(fileName string) bool {
 	path := filepath.Join(".", ".pm", "./blobs", fileName)

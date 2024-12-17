@@ -4,7 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type WelcomeFrame struct {}
+type WelcomeFrame struct{}
 
 func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -21,10 +21,10 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 	return app, nil
 }
 
-func (wf WelcomeFrame) View(app Application) (string) {
+func (wf WelcomeFrame) View(app Application) string {
 	return "WelcomeFrame, Press c to create file"
 }
 
-func (wf WelcomeFrame) Init() (tea.Cmd) {
+func (wf WelcomeFrame) Init() tea.Cmd {
 	return nil
 }

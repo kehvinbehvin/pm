@@ -1,14 +1,14 @@
 package main
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
-	"os"
 	"fmt"
+	tea "github.com/charmbracelet/bubbletea"
 	"github/pm/internals/ui/application"
+	"os"
 )
 
 func main() {
-		// Create the initial model
+	// Create the initial model
 	// m := ui.NewModel()
 	//
 	// // Run the Bubble Tea program
@@ -32,7 +32,7 @@ func main() {
 	// 	fmt.Println("Unexpected model type")
 	// }
 
-	app := application.NewApplication();
+	app := application.NewApplication()
 
 	if _, err := tea.NewProgram(app).Run(); err != nil {
 		fmt.Println("Error running program:", err)
