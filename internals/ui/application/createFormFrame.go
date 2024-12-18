@@ -152,6 +152,7 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 					createFormFrame.fileType = string(i)
 				}
 
+				app.Fs.CreateFile(createFormFrame.title.Value(), createFormFrame.fileType)
 				// Create file here
 				createFormFrame.step = 2
 			}
@@ -190,7 +191,6 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 						app.History.Push(frame);
 					}
 				}
-
 			}
 		}
 

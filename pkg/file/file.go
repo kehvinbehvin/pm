@@ -22,8 +22,8 @@ Conclusion: Bucket them using a map that writes
 */
 
 type FileTypeIndex struct {
-	typeToFile map[string]map[string]string
-	fileToType map[string]string
+	TypeToFile map[string]map[string]string
+	FileToType map[string]string
 }
 
 func NewReconcilableFileTypeIndex(storageKey string) common.Reconcilable {
@@ -52,13 +52,13 @@ func NewFileTypeIndex() *FileTypeIndex {
 	files := map[string]string{}
 
 	return &FileTypeIndex{
-		typeToFile: fileTypes,
-		fileToType: files,
+		TypeToFile: fileTypes,
+		FileToType: files,
 	}
 }
 
 func (ft *FileTypeIndex) AddFileToIndex(fileName string, fileType string) error {
-	value, ok := ft.typeToFile[fileType]
+	value, ok := ft.TypeToFile[fileType]
 	if !ok {
 		return errors.New("File type not found, file not indexed")
 	}
@@ -70,18 +70,18 @@ func (ft *FileTypeIndex) AddFileToIndex(fileName string, fileType string) error 
 
 	value[fileName] = ""
 
-	_, ok = ft.fileToType[fileName]
+	_, ok = ft.FileToType[fileName]
 	if ok {
 		return errors.New("File already exists, cannot create new file")
 	}
 
-	ft.fileToType[fileName] = fileType
+	ft.FileToType[fileName] = fileType
 
 	return nil
 }
 
 func (ft *FileTypeIndex) RemoveFileFromIndex(fileName string, fileType string) error {
-	value, ok := ft.typeToFile[fileType]
+	value, ok := ft.TypeToFile[fileType]
 	if !ok {
 		return errors.New("File type not found, cannot remove from non existent file type. Type: " + fileType)
 	}
@@ -93,18 +93,18 @@ func (ft *FileTypeIndex) RemoveFileFromIndex(fileName string, fileType string) e
 
 	delete(value, fileName)
 
-	_, ok = ft.fileToType[fileName]
+	_, ok = ft.FileToType[fileName]
 	if !ok {
 		return errors.New("File not found in index, cannot remove non existent file. Name: " + fileName)
 	}
 
-	delete(ft.fileToType, fileName)
+	delete(ft.FileToType, fileName)
 
 	return nil
 }
 
 func (ft *FileTypeIndex) RetrieveFilesFromType(fileType string) ([]string, error) {
-	value, ok := ft.typeToFile[fileType]
+	value, ok := ft.TypeToFile[fileType]
 	if !ok {
 		return nil, errors.New("File type not found, cannot remove from non existent file type. Type: " + fileType)
 	}
@@ -120,7 +120,7 @@ func (ft *FileTypeIndex) RetrieveFilesFromType(fileType string) ([]string, error
 }
 
 func (ft *FileTypeIndex) RetrieveFileType(fileName string) (string, error) {
-	value, ok := ft.fileToType[fileName]
+	value, ok := ft.FileToType[fileName]
 	if !ok {
 		return "", errors.New("File not found in index. FileName: " + fileName)
 	}
@@ -210,22 +210,22 @@ func (ft *FileTypeIndex) Validate(alpha common.Alpha) bool {
 
 // TODO: refactor into common utility function in the future
 // TODO: refacotr into a parser that can read plain text file
-func LoadReconcilableFileTypeIndex(filePath string) *common.Reconcilable {
+func LoadReconcilableFileTypeIndex(filePath string) common.Reconcilable {
 	file, fileErr := os.Open(filePath)
 
 	if fileErr != nil {
 		fmt.Println("Error opening binary file")
-		return nil
+		return common.Reconcilable{}
 	}
 	defer file.Close()
 
 	gob.Register(&FileTypeIndex{})
 	decoder := gob.NewDecoder(file)
-	var loadedReconcilable *common.Reconcilable
+	var loadedReconcilable common.Reconcilable
 	decodingErr := decoder.Decode(&loadedReconcilable)
 	if decodingErr != nil {
 		fmt.Println("Error decoding", decodingErr.Error())
-		return nil
+		return common.Reconcilable{}
 	}
 
 	return loadedReconcilable

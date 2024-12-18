@@ -2,9 +2,10 @@ package application
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github/pm/pkg/filesystem"
 )
 
-func NewApplication() tea.Model {
+func NewApplication(fs *filesystem.FileSystem) tea.Model {
 	stack := NewApplicationStack()
 
 	// Initialise the first frame of the application
@@ -13,11 +14,13 @@ func NewApplication() tea.Model {
 
 	return Application{
 		History: stack,
+		Fs: fs,
 	}
 }
 
 type Application struct {
 	History *ApplicationStack
+	Fs *filesystem.FileSystem
 }
 
 func (a Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

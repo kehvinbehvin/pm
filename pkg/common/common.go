@@ -95,7 +95,7 @@ func (r Reconcilable) SaveReconcilable() {
 	gob.Register(r.DataStructure)
 	encodingErr := encoder.Encode(r)
 	if encodingErr != nil {
-		fmt.Println("Error encoding dag")
+		fmt.Println("Error encoding dag", encodingErr.Error())
 		return
 	}
 }

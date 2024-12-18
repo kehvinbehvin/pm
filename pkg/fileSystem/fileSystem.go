@@ -3,7 +3,7 @@ package filesystem
 import (
 	"github/pm/pkg/blob"
 	"github/pm/pkg/common"
-	"github/pm/pkg/dag"
+	dag "github/pm/pkg/dag"
 	pmfile "github/pm/pkg/file"
 
 	"errors"
@@ -15,6 +15,10 @@ import (
 type FileSystem struct {
 	fileRelationShips common.Reconcilable
 	fileTypeIndex     common.Reconcilable
+}
+
+func NewFileSystem() (*FileSystem) {
+	return &FileSystem{}
 }
 
 func checkFileExists(filePath string) bool {
@@ -49,8 +53,11 @@ func (fs *FileSystem) BootDag() error {
 
 		// TODO: Refactor to pass in path file
 		fs.fileRelationShips = dag.NewReconcilableDag("dag")
+		defer fs.fileRelationShips.SaveReconcilable()
 	} else {
-		fs.fileRelationShips = *dag.LoadReconcilableDag(dagFile)
+		reconcilable := dag.LoadReconcilableDag(dagFile)
+		fs.fileRelationShips = reconcilable
+		defer fs.fileRelationShips.SaveReconcilable()
 	}
 
 	return nil
@@ -77,8 +84,11 @@ func (fs *FileSystem) BootFileTypes() error {
 		defer file.Close()
 
 		fs.fileTypeIndex = pmfile.NewReconcilableFileTypeIndex("types")
+		defer fs.fileTypeIndex.SaveReconcilable()
 	} else {
-		fs.fileTypeIndex = *pmfile.LoadReconcilableFileTypeIndex(fileTypeFile)
+		fileTypeIndex := pmfile.LoadReconcilableFileTypeIndex(fileTypeFile)
+		fs.fileTypeIndex = fileTypeIndex
+		defer fs.fileTypeIndex.SaveReconcilable()
 	}
 
 	return nil
@@ -108,7 +118,7 @@ func (fs *FileSystem) getFileTree() *dag.Dag {
 	return fs.fileTypeIndex.DataStructure.(*dag.Dag)
 }
 
-func (fs *FileSystem) CreateFile(fileName string) error {
+func (fs *FileSystem) CreateFile(fileName string, fileType string) error {
 	// Create Blob using fileName
 	// TODO: refactor to use reconcilable data structure
 	blobErr := blob.CreateBlob(fileName, "")
@@ -119,7 +129,7 @@ func (fs *FileSystem) CreateFile(fileName string) error {
 	// Add name to FileIndex
 	addFileIndexAlpha := pmfile.AddFileTypeIndexAlpha{
 		FileName: fileName,
-		FileType: "",
+		FileType: fileType,
 	}
 
 	updateErr := fs.fileTypeIndex.DataStructure.Update(&addFileIndexAlpha)
