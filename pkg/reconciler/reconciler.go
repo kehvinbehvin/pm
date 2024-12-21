@@ -290,7 +290,7 @@ func (rc *Reconciler) MergeSilently(inBound common.AlphaList) error {
 		if validationError {
 			// log error but continue with merge first and skip this change
 			// this may have a cascading effect on later alphas in the delta
-			fmt.Print("There was a validation error with merging")
+			log.Print("There was a validation error with merging")
 			continue
 		}
 
@@ -307,6 +307,6 @@ func (rc *Reconciler) FastForward(inBound common.AlphaList) {
 	error := rc.reconcilable.FastForward(inBound.Alphas)
 	if error != nil {
 		// Log error
-		fmt.Print("There was an error with FastForwarding")
+		log.Print("There was an error with FastForwarding")
 	}
 }

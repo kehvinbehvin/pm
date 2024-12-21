@@ -8,7 +8,6 @@ import (
 
 	"sort"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"log"
@@ -54,7 +53,7 @@ func (fs *FileSystem) BootDag() error {
 	if !checkFileExists(dagFile) {
 		file, fileErr := os.Create(dagFile)
 		if fileErr != nil {
-			fmt.Printf("Error creating tmp file: %v\n", fileErr)
+			log.Printf("Error creating tmp file: %v\n", fileErr)
 		}
 
 		defer file.Close()
@@ -86,7 +85,7 @@ func (fs *FileSystem) BootFileTypes() error {
 		fileType := filepath.Join(fileTypeFile)
 		file, fileErr := os.Create(fileType)
 		if fileErr != nil {
-			fmt.Printf("Error creating tmp file: %v\n", fileErr)
+			log.Printf("Error creating tmp file: %v\n", fileErr)
 		}
 
 		defer file.Close()

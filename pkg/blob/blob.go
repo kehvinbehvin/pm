@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"log"
 )
 
 const compressionThreshold = 10 * 1024 // 10 KB threshold for compression
@@ -19,7 +20,7 @@ func CreateBlob(fileName string, content string) error {
 
 	err := os.MkdirAll(blobDirectory, os.ModePerm)
 	if err != nil {
-		fmt.Println("Error creating blob dir")
+		log.Println("Error creating blob dir")
 		return err
 	}
 
@@ -29,13 +30,13 @@ func CreateBlob(fileName string, content string) error {
 	}
 
 	if err != nil {
-		fmt.Println("Error compressing content")
+		log.Println("Error compressing content")
 		return err
 	}
 
 	err = os.WriteFile(blobFile, []byte(content), 0644)
 	if err != nil {
-		fmt.Println("Error writing to file")
+		log.Println("Error writing to file")
 		return err
 	}
 
@@ -123,7 +124,7 @@ func RemoveIfEmpty(dirPath string) error {
 		if err != nil {
 			return fmt.Errorf("failed to remove directory: %v", err)
 		}
-		fmt.Printf("Directory %s was empty and has been deleted.\n", dirPath)
+		log.Printf("Directory %s was empty and has been deleted.\n", dirPath)
 	}
 
 	return nil

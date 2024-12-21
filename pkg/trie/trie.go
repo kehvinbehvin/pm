@@ -186,14 +186,14 @@ func (t *Trie) AddFile(fileName string, fileLocation string) error {
 func (t *Trie) RemoveWord(word string) {
 	baseTrie := t.WalkWord(word)
 	if baseTrie == nil {
-		fmt.Println("Cannot remove non-existant word")
+		log.Println("Cannot remove non-existant word")
 		return
 	}
 
 	if baseTrie.IsEnd {
 		baseTrie.IsEnd = false
 	} else {
-		fmt.Println("Word does not exist")
+		log.Println("Word does not exist")
 		return
 	}
 
@@ -235,7 +235,7 @@ func (t *Trie) LoadWordsFromPrefix(prefix string) []string {
 	baseTrie := t.WalkWord(prefix)
 
 	if baseTrie == nil {
-		fmt.Println("No words from prefix")
+		log.Println("No words from prefix")
 		return words
 	}
 
@@ -323,7 +323,7 @@ func LoadReconcilableTrie(filePath string) *common.Reconcilable {
 	file, fileErr := os.Open(filePath)
 
 	if fileErr != nil {
-		fmt.Println("Error opening binary file")
+		log.Println("Error opening binary file")
 		return nil
 	}
 	defer file.Close()
@@ -333,7 +333,7 @@ func LoadReconcilableTrie(filePath string) *common.Reconcilable {
 	var loadedReconcilable *common.Reconcilable
 	decodingErr := decoder.Decode(&loadedReconcilable)
 	if decodingErr != nil {
-		fmt.Println("Error decoding", decodingErr.Error())
+		log.Println("Error decoding", decodingErr.Error())
 		return nil
 	}
 

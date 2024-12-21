@@ -16,14 +16,14 @@ func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	keyPath := "/Users/kevin/.ssh/local/pm-server/local_rsa"
 	privateKey, err := os.ReadFile(keyPath)
 	if err != nil {
-		fmt.Printf(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 
 	// Create the signer for the private key
 	signer, err := ssh.ParsePrivateKey(privateKey)
 	if err != nil {
-		fmt.Printf(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 
@@ -39,7 +39,7 @@ func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	// Connect to SSH server
 	conn, err := ssh.Dial("tcp", "localhost:2222", config)
 	if err != nil {
-		fmt.Println("Error connecting")
+		log.Println("Error connecting")
 		return
 	}
 	defer conn.Close()
@@ -47,7 +47,7 @@ func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	// Create a session for running the command
 	session, err := conn.NewSession()
 	if err != nil {
-		fmt.Println("Error creating new session")
+		log.Println("Error creating new session")
 		return
 	}
 	defer session.Close()
@@ -57,7 +57,7 @@ func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	if len(remoteTree.Seq) != 0 {
 		lastRemoteDeltaPtr := remoteTree.Seq[remoteTree.Pointer]
 		if lastRemoteDeltaPtr == nil {
-			fmt.Println("Cannot find last delta on remote")
+			log.Println("Cannot find last delta on remote")
 			return
 		}
 		lastRemoteDelta := *lastRemoteDeltaPtr
@@ -69,13 +69,13 @@ func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 
 	stdOut, pipeErr := session.StdoutPipe()
 	if pipeErr != nil {
-		fmt.Println("Pipe err")
+		log.Println("Pipe err")
 		return
 	}
 
 	err = session.Run(cmd)
 	if err != nil {
-		fmt.Printf("Failed to run command: %v", err)
+		log.Printf("Failed to run command: %v", err)
 	}
 
 	// Initialize decoding from the SSH session input (s)
@@ -88,8 +88,8 @@ func retrieveFile(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	// Decode the incoming data into a slice of Deltas (or whatever structure is expected)
 	var deltasToApply []dag.Delta
 	if err := decoder.Decode(&deltasToApply); err != nil {
-		fmt.Println("Error Decoding", err.Error())
-		fmt.Println("Could not decode remote deltas")
+		log.Println("Error Decoding", err.Error())
+		log.Println("Could not decode remote deltas")
 		return
 	}
 
@@ -104,14 +104,14 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	keyPath := "/Users/kevin/.ssh/local/pm-server/local_rsa"
 	privateKey, err := os.ReadFile(keyPath)
 	if err != nil {
-		fmt.Printf(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 
 	// Create the signer for the private key
 	signer, err := ssh.ParsePrivateKey(privateKey)
 	if err != nil {
-		fmt.Printf(err.Error())
+		log.Printf(err.Error())
 		return
 	}
 
@@ -127,7 +127,7 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	// Connect to SSH server
 	conn, err := ssh.Dial("tcp", "localhost:2222", config)
 	if err != nil {
-		fmt.Println("Error connecting")
+		log.Println("Error connecting")
 		return
 	}
 	defer conn.Close()
@@ -135,7 +135,7 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	// Create a session for running the command
 	session, err := conn.NewSession()
 	if err != nil {
-		fmt.Println("Error creating new session")
+		log.Println("Error creating new session")
 		return
 	}
 	defer session.Close()
@@ -160,12 +160,12 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 	// If remote is ahead or is there is a deviation, we should abort
 	lastCommonHash, longerTree, _, lcsType, lcsErr := resolver.CalculateLcs(localTree, remoteTree)
 	if lcsErr != nil {
-		fmt.Println("LCS Err")
+		log.Println("LCS Err")
 		return
 	}
 
 	if lcsType != dag.LocalAhead {
-		fmt.Println("LCS not localahead")
+		log.Println("LCS not localahead")
 		return
 	}
 	var deltasToPush []*dag.Delta
@@ -176,7 +176,7 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 
 	deltasAhead, AheadErr := resolver.GetDeltasAhead(longerTree, lastCommonHash)
 	if AheadErr != nil {
-		fmt.Println("Deltas ahead error")
+		log.Println("Deltas ahead error")
 		return
 	}
 
@@ -184,7 +184,7 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 
 	cmd := "put delta" // Example command to save data to a file
 	if err := session.Start(cmd); err != nil {
-		fmt.Printf("Failed to start command: %v", err)
+		log.Printf("Failed to start command: %v", err)
 	}
 
 	if srcStat.Size() > 0 {
@@ -194,10 +194,10 @@ func pushDeltas(localTree *dag.DeltaTree, remoteTree *dag.DeltaTree) {
 		encoder := gob.NewEncoder(w)
 		encodingErr := encoder.Encode(deltasToPush)
 		if encodingErr != nil {
-			fmt.Printf(encodingErr.Error())
-			fmt.Println("Error encoding delta")
+			log.Printf(encodingErr.Error())
+			log.Println("Error encoding delta")
 			return
 		}
-		fmt.Println("Deltas pushed")
+		log.Println("Deltas pushed")
 	}
 }

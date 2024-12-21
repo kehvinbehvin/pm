@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
-	tea "github.com/charmbracelet/bubbletea"
 	"github/pm/internals/ui/application"
-	"os"
+	"github/pm/pkg/filesystem"
 	"log"
+	"os"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func setupLogger() {
@@ -32,7 +33,7 @@ func main() {
 	// finalModel, err := p.Run()
 	//
 	// if err != nil {
-	// 	fmt.Println("Error running program:", err)
+	// 	log.Println("Error running program:", err)
 	// 	os.Exit(1)
 	// }
 	//
@@ -41,11 +42,11 @@ func main() {
 	// 	epicChoice := sm.Epic
 	// 	storyChoice := sm.Story
 	// 	taskChoice := sm.Task
-	// 	fmt.Println("Selected Epic:", epicChoice)
-	// 	fmt.Println("Selected Story:", storyChoice)
-	// 	fmt.Println("Selected Task:", taskChoice)
+	// 	log.Println("Selected Epic:", epicChoice)
+	// 	log.Println("Selected Story:", storyChoice)
+	// 	log.Println("Selected Task:", taskChoice)
 	// } else {
-	// 	fmt.Println("Unexpected model type")
+	// 	log.Println("Unexpected model type")
 	// }
 	setupLogger()
 	fs := filesystem.NewFileSystem()
@@ -53,7 +54,7 @@ func main() {
 	app := application.NewApplication(fs)
 
 	if _, err := tea.NewProgram(app).Run(); err != nil {
-		fmt.Println("Error running program:", err)
+		log.Println("Error running program:", err)
 		os.Exit(1)
 	}
 

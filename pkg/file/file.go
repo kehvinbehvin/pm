@@ -216,7 +216,7 @@ func LoadReconcilableFileTypeIndex(filePath string) common.Reconcilable {
 	file, fileErr := os.Open(filePath)
 
 	if fileErr != nil {
-		fmt.Println("Error opening binary file")
+		log.Println("Error opening binary file")
 		return common.Reconcilable{}
 	}
 	defer file.Close()
@@ -226,7 +226,7 @@ func LoadReconcilableFileTypeIndex(filePath string) common.Reconcilable {
 	var loadedReconcilable common.Reconcilable
 	decodingErr := decoder.Decode(&loadedReconcilable)
 	if decodingErr != nil {
-		fmt.Println("Error decoding", decodingErr.Error())
+		log.Println("Error decoding", decodingErr.Error())
 		return common.Reconcilable{}
 	}
 

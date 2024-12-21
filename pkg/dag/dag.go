@@ -248,7 +248,7 @@ func (d *Dag) AddEdge(from *Vertex, to *Vertex) error {
 func (d *Dag) RemoveEdge(from *Vertex, to *Vertex) error {
 	_, hasToEdge := from.Children[to.ID]
 	if !hasToEdge {
-		fmt.Println("Vertex does not exist")
+		log.Println("Vertex does not exist")
 		return errors.New("Vertex does not exist")
 	}
 
@@ -318,7 +318,7 @@ func (d *Dag) AddVertex(in *Vertex) error {
 func (d *Dag) RemoveVertex(out *Vertex) error {
 	_, exists := d.Vertices[out.ID]
 	if !exists {
-		fmt.Println("Deleting non existent vertex")
+		log.Println("Deleting non existent vertex")
 		return errors.New("Deleting non existent vertex")
 	}
 
@@ -352,7 +352,7 @@ func LoadReconcilableDag(filePath string) common.Reconcilable {
 	file, fileErr := os.Open(filePath)
 
 	if fileErr != nil {
-		fmt.Println("Error opening binary file")
+		log.Println("Error opening binary file")
 		return common.Reconcilable{}
 	}
 	defer file.Close()
@@ -362,7 +362,7 @@ func LoadReconcilableDag(filePath string) common.Reconcilable {
 	var loadedReconcilable common.Reconcilable
 	decodingErr := decoder.Decode(&loadedReconcilable)
 	if decodingErr != nil {
-		fmt.Println("Error decoding", decodingErr.Error())
+		log.Println("Error decoding", decodingErr.Error())
 		return common.Reconcilable{}
 	}
 

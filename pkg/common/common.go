@@ -3,7 +3,7 @@ package common
 import (
 	"encoding/gob"
 	"errors"
-	"fmt"
+	"log"
 	"os"
 )
 
@@ -85,8 +85,8 @@ func (r Reconcilable) FastForward(input []Alpha) error {
 func (r Reconcilable) SaveReconcilable() {
 	file, err := os.Create(r.FilePath)
 	if err != nil {
-		fmt.Printf(err.Error())
-		fmt.Println("Error creating file")
+		log.Printf(err.Error())
+		log.Println("Error creating file")
 		return
 	}
 	defer file.Close()
@@ -95,7 +95,7 @@ func (r Reconcilable) SaveReconcilable() {
 	gob.Register(r.DataStructure)
 	encodingErr := encoder.Encode(r)
 	if encodingErr != nil {
-		fmt.Println("Error encoding dag", encodingErr.Error())
+		log.Println("Error encoding dag", encodingErr.Error())
 		return
 	}
 }
@@ -104,7 +104,7 @@ func LoadReconcilable(filePath string) *Reconcilable {
 	file, fileErr := os.Open(filePath)
 
 	if fileErr != nil {
-		fmt.Println("Error opening binary file")
+		log.Println("Error opening binary file")
 		return nil
 	}
 	defer file.Close()
@@ -113,7 +113,7 @@ func LoadReconcilable(filePath string) *Reconcilable {
 	var loadedReconcilable *Reconcilable
 	decodingErr := decoder.Decode(&loadedReconcilable)
 	if decodingErr != nil {
-		fmt.Println("Error decoding", decodingErr.Error())
+		log.Println("Error decoding", decodingErr.Error())
 		return nil
 	}
 
