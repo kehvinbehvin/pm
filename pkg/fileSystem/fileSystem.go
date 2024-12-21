@@ -283,3 +283,16 @@ func (fs *FileSystem) ListFileNamesByType(fileType string) ([]string, error) {
 
 	return files, nil
 }
+
+func (fs *FileSystem) ListChildIssues(fileName string) ([]string, error) {
+	dag := fs.fileRelationShips.DataStructure.(*dag.Dag)
+	vertex := dag.RetrieveVertex(fileName)
+	children := vertex.Children
+	
+	var childIssues []string
+	for _, child := range children {
+		childIssues = append(childIssues, child.ID)
+	}
+
+	return childIssues, nil
+}

@@ -2,8 +2,9 @@ package application
 
 import (
 	"errors"
-	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type BrowseFrame struct{
@@ -61,6 +62,11 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 			return app, tea.Quit
 		case "left":
 			app.History.Pop()
+		case "enter":
+			selectedItem := browseFrame.epics.SelectedItem().(item) 
+			issueId := string(selectedItem)
+			childFrame := NewChildIssueFrame(app, issueId)
+			app.History.Push(childFrame)
 		}
 	}
 
