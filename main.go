@@ -55,6 +55,7 @@ func main() {
 
 	if _, err := tea.NewProgram(app).Run(); err != nil {
 		log.Println("Error running program:", err)
+		fs.ShutDown()
 		os.Exit(1)
 	}
 
