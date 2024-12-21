@@ -21,7 +21,7 @@ func (ed EditFileFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd
 }
 
 func (ed EditFileFrame) View(app Application) string {
-	return "Edit fileFrame"
+	return "Edit fileFrame\n [<-] Back"
 }
 
 func (ed EditFileFrame) Init() tea.Cmd {

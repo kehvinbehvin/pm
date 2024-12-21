@@ -6,6 +6,7 @@ import (
 	dag "github/pm/pkg/dag"
 	pmfile "github/pm/pkg/file"
 
+	"sort"
 	"errors"
 	"fmt"
 	"os"
@@ -277,6 +278,8 @@ func (fs *FileSystem) ListFileNamesByType(fileType string) ([]string, error) {
 	if fileErr != nil {
 		return nil, fileErr
 	}
+
+	sort.Strings(files)
 
 	return files, nil
 }

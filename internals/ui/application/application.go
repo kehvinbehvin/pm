@@ -10,6 +10,7 @@ func NewApplication() tea.Model {
 
 	fs := filesystem.NewFileSystem()
 	fs.Boot()
+
 	// Initialise the first frame of the application
 	welcome := &WelcomeFrame{}
 	stack.Push(welcome)
