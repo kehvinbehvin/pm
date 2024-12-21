@@ -34,6 +34,12 @@ func checkDirExists(dirPath string) bool {
 	return !os.IsNotExist(err)
 }
 
+func (fs *FileSystem) ShutDown() error {
+	fs.fileRelationShips.SaveReconcilable()
+	fs.fileTypeIndex.SaveReconcilable()
+	return nil
+}
+
 func (fs *FileSystem) BootDag() error {
 	dagDirectory := filepath.Join(".", ".pm", "dag")
 	dagFile := filepath.Join(".", ".pm", "dag", "dag")

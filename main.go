@@ -48,10 +48,14 @@ func main() {
 	// 	fmt.Println("Unexpected model type")
 	// }
 	setupLogger()
-	app := application.NewApplication()
+	fs := filesystem.NewFileSystem()
+	fs.Boot();
+	app := application.NewApplication(fs)
 
 	if _, err := tea.NewProgram(app).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
+
+	fs.ShutDown()
 }
