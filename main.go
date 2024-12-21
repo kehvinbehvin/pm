@@ -2,7 +2,7 @@ package main
 
 import (
 	"github/pm/internals/ui/application"
-	"github/pm/pkg/filesystem"
+	"github/pm/pkg/fileSystem"
 	"log"
 	"os"
 
@@ -49,7 +49,7 @@ func main() {
 	// 	log.Println("Unexpected model type")
 	// }
 	setupLogger()
-	fs := filesystem.NewFileSystem()
+	fs := fileSystem.NewFileSystem()
 	fs.Boot();
 	app := application.NewApplication(fs)
 

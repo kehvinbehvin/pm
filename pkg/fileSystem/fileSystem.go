@@ -1,4 +1,4 @@
-package filesystem
+package fileSystem
 
 import (
 	"github/pm/pkg/blob"
@@ -6,6 +6,7 @@ import (
 	dag "github/pm/pkg/dag"
 	pmfile "github/pm/pkg/file"
 
+	"os/exec"
 	"sort"
 	"errors"
 	"os"
@@ -155,6 +156,40 @@ func (fs *FileSystem) CreateFile(fileName string, fileType string) error {
 	updateErr = fs.fileRelationShips.DataStructure.Update(&addVertexAlpha)
 	if updateErr != nil {
 		return updateErr
+	}
+
+	return nil
+}
+
+func (FileSystem) EditFile(fileName string) {
+	filePath := filepath.Join(".", ".pm", "./blobs", fileName + ".md")
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		// Fallback to a default editor if $EDITOR is not set
+		editor = "vim"
+	}
+	
+	// Open the file in the editor
+	err := openEditor(editor, filePath)
+	if err != nil {
+		return
+	}
+}
+
+func openEditor(editor string, filePath string) error {
+	// Create an exec command to open the file in the editor
+	cmd := exec.Command(editor, filePath)
+
+	// Set the command to use the same standard input, output, and error streams as the Go process
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Run the command and wait for it to finish
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Error creating tmp file: %v\n", err)
+		return nil
 	}
 
 	return nil

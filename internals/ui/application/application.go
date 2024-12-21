@@ -2,10 +2,10 @@ package application
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github/pm/pkg/filesystem"
+	"github/pm/pkg/fileSystem"
 )
 
-func NewApplication(fs *filesystem.FileSystem) tea.Model {
+func NewApplication(fs *fileSystem.FileSystem) tea.Model {
 	stack := NewApplicationStack()
 	
 	welcome := &WelcomeFrame{}
@@ -19,7 +19,7 @@ func NewApplication(fs *filesystem.FileSystem) tea.Model {
 
 type Application struct {
 	History *ApplicationStack
-	Fs *filesystem.FileSystem
+	Fs *fileSystem.FileSystem
 }
 
 func (a Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

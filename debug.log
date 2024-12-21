@@ -5,3 +5,44 @@ LOG: 2024/12/21 23:27:02 dag.go:58: addVertexAlpha: Vertex(id: World, children: 
 LOG: 2024/12/21 23:27:02 fileSystem.go:233: Parent: Hello; Child: World
 LOG: 2024/12/21 23:27:02 dag.go:69: addEdgeAlpha: Vertex(id: World, children: [])
 LOG: 2024/12/21 23:27:02 dag.go:70: addEdgeAlpha: Vertex(id: Hello, children: [])
+LOG: 2024/12/21 23:44:32 fileSystem.go:129: Filename: Test 2 created
+LOG: 2024/12/21 23:44:32 dag.go:58: addVertexAlpha: Vertex(id: Test 2, children: [])
+LOG: 2024/12/21 23:44:37 fileSystem.go:129: Filename: Test 3 created
+LOG: 2024/12/21 23:44:37 dag.go:58: addVertexAlpha: Vertex(id: Test 3, children: [])
+LOG: 2024/12/21 23:44:42 fileSystem.go:129: Filename: Test 4 created
+LOG: 2024/12/21 23:44:42 dag.go:58: addVertexAlpha: Vertex(id: Test 4, children: [])
+LOG: 2024/12/21 23:44:48 fileSystem.go:129: Filename: Epic 2 created
+LOG: 2024/12/21 23:44:48 dag.go:58: addVertexAlpha: Vertex(id: Epic 2, children: [])
+LOG: 2024/12/21 23:44:54 fileSystem.go:129: Filename: Epic 3 created
+LOG: 2024/12/21 23:44:54 dag.go:58: addVertexAlpha: Vertex(id: Epic 3, children: [])
+LOG: 2024/12/22 01:17:02 fileSystem.go:130: Filename: Hello created
+LOG: 2024/12/22 01:17:02 dag.go:58: addVertexAlpha: Vertex(id: Hello, children: [])
+LOG: 2024/12/22 01:17:06 fileSystem.go:130: Filename: World created
+LOG: 2024/12/22 01:17:06 dag.go:58: addVertexAlpha: Vertex(id: World, children: [])
+LOG: 2024/12/22 01:17:06 fileSystem.go:268: Parent: Hello; Child: World
+LOG: 2024/12/22 01:17:06 fileSystem.go:247: File not in blobs
+LOG: 2024/12/22 01:17:06 fileSystem.go:271: Parent cannot be found
+LOG: 2024/12/22 01:17:09 fileSystem.go:130: Filename: Kevin created
+LOG: 2024/12/22 01:17:09 dag.go:58: addVertexAlpha: Vertex(id: Kevin, children: [])
+LOG: 2024/12/22 01:17:09 fileSystem.go:268: Parent: World; Child: Kevin
+LOG: 2024/12/22 01:17:09 fileSystem.go:247: File not in blobs
+LOG: 2024/12/22 01:17:09 fileSystem.go:271: Parent cannot be found
+LOG: 2024/12/22 01:17:12 fileSystem.go:130: Filename: Ho created
+LOG: 2024/12/22 01:17:12 dag.go:58: addVertexAlpha: Vertex(id: Ho, children: [])
+LOG: 2024/12/22 01:17:12 fileSystem.go:268: Parent: Kevin; Child: Ho
+LOG: 2024/12/22 01:17:12 fileSystem.go:247: File not in blobs
+LOG: 2024/12/22 01:17:12 fileSystem.go:271: Parent cannot be found
+LOG: 2024/12/22 01:24:16 fileSystem.go:130: Filename: Hello created
+LOG: 2024/12/22 01:24:16 dag.go:58: addVertexAlpha: Vertex(id: Hello, children: [])
+LOG: 2024/12/22 01:24:20 fileSystem.go:130: Filename: World created
+LOG: 2024/12/22 01:24:20 dag.go:58: addVertexAlpha: Vertex(id: World, children: [])
+LOG: 2024/12/22 01:24:20 fileSystem.go:268: Parent: Hello; Child: World
+LOG: 2024/12/22 01:24:20 fileSystem.go:247: File not in blobs
+LOG: 2024/12/22 01:24:20 fileSystem.go:271: Parent cannot be found
+LOG: 2024/12/22 01:28:54 fileSystem.go:130: Filename: Hello created
+LOG: 2024/12/22 01:28:54 dag.go:58: addVertexAlpha: Vertex(id: Hello, children: [])
+LOG: 2024/12/22 01:28:57 fileSystem.go:130: Filename: World created
+LOG: 2024/12/22 01:28:57 dag.go:58: addVertexAlpha: Vertex(id: World, children: [])
+LOG: 2024/12/22 01:28:57 fileSystem.go:268: Parent: Hello; Child: World
+LOG: 2024/12/22 01:28:57 dag.go:69: addEdgeAlpha: Vertex(id: World, children: [])
+LOG: 2024/12/22 01:28:57 dag.go:70: addEdgeAlpha: Vertex(id: Hello, children: [])

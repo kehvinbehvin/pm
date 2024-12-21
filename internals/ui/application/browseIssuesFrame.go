@@ -67,6 +67,10 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 			issueId := string(selectedItem)
 			childFrame := NewChildIssueFrame(app, issueId)
 			app.History.Push(childFrame)
+		case "e":
+			selectedItem := browseFrame.epics.SelectedItem().(item)
+			issueId := string(selectedItem)
+			app.Fs.EditFile(issueId)
 		}
 	}
 

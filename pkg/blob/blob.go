@@ -15,6 +15,7 @@ const compressionThreshold = 10 * 1024 // 10 KB threshold for compression
 
 // Use Human readable fileNames for easier reading and potability
 func CreateBlob(fileName string, content string) error {
+	fileName = fileName + ".md"
 	blobDirectory := filepath.Join(".", ".pm", "blobs")
 	blobFile := filepath.Join(".", ".pm", "blobs", fileName)
 
@@ -50,11 +51,13 @@ func checkFileExists(filePath string) bool {
 }
 
 func Exists(fileName string) bool {
+	fileName = fileName + ".md"
 	path := filepath.Join(".", ".pm", "./blobs", fileName)
 	return checkFileExists(path)
 }
 
 func DeleteBlob(fileName string) error {
+	fileName = fileName + ".md"
 	path := filepath.Join(".", ".pm", "./blobs", fileName)
 	exists := checkFileExists(path)
 	if !exists {
