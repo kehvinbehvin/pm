@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"log"
 )
 
 type FileSystem struct {
@@ -116,10 +117,11 @@ func (fs *FileSystem) getFileIndex() *pmfile.FileTypeIndex {
 }
 
 func (fs *FileSystem) getFileTree() *dag.Dag {
-	return fs.fileTypeIndex.DataStructure.(*dag.Dag)
+	return fs.fileRelationShips.DataStructure.(*dag.Dag)
 }
 
 func (fs *FileSystem) CreateFile(fileName string, fileType string) error {
+  log.Println("Filename: " + fileName + " created");
 	// Create Blob using fileName
 	// TODO: refactor to use reconcilable data structure
 	blobErr := blob.CreateBlob(fileName, "")
@@ -195,33 +197,44 @@ func (fs *FileSystem) validateFileExists(fileName string) error {
 	fileIndex := fs.getFileIndex()
 	_, fileErr := fileIndex.RetrieveFileType(fileName)
 	if fileErr != nil {
+		log.Println("File not in index")
 		return errors.New("File not in index: File: " + fileName)
 	}
 
 	// Check if Parent and Child blobs exist
 	fileBlob := blob.Exists(fileName)
 	if !fileBlob {
+		log.Println("File not in blobs")
 		return errors.New("File blob not found: File: " + fileName)
 	}
 
 	// Check if Parent and Child vertex exist in the FileTree
 	fileTree := fs.getFileTree()
 	fileVertex := fileTree.RetrieveVertex(fileName)
-	if fileVertex != nil {
-		return errors.New("File Vertext not found: File " + fileName)
+	if fileVertex == nil {
+		log.Println("File not in tree")
+		return errors.New("File Vertex not found: File " + fileName)
 	}
 
 	return nil
 }
 
 func (fs *FileSystem) LinkFile(parentName string, childName string) error {
+
+	if parentName == "" || childName == "" {
+		return nil
+	}
+
+	log.Println("Parent: " + parentName + "; Child: " + childName);
 	parentErr := fs.validateFileExists(parentName)
 	if parentErr != nil {
+		log.Println("Parent cannot be found");
 		return parentErr
 	}
 
 	childErr := fs.validateFileExists(childName)
 	if childErr != nil {
+		log.Println("Child cannot be found");
 		return childErr
 	}
 
@@ -231,8 +244,8 @@ func (fs *FileSystem) LinkFile(parentName string, childName string) error {
 
 	// Add Edge between parent and child vertex
 	addEdgeAlpha := dag.AddEdgeAlpha{
-		From: parentVertex,
-		To:   childVertex,
+		From: childVertex,
+		To:   parentVertex,
 	}
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&addEdgeAlpha)

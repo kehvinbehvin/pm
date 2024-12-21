@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	"github/pm/pkg/common"
@@ -122,6 +123,7 @@ func (ft *FileTypeIndex) RetrieveFilesFromType(fileType string) ([]string, error
 func (ft *FileTypeIndex) RetrieveFileType(fileName string) (string, error) {
 	value, ok := ft.FileToType[fileName]
 	if !ok {
+		log.Println("Error finding this file: " + fileName)
 		return "", errors.New("File not found in index. FileName: " + fileName)
 	}
 

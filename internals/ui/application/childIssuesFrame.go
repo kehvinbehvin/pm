@@ -15,7 +15,7 @@ func NewChildIssueFrame(app Application, fileName string) ApplicationFrame {
 	var issueItems []list.Item
 	issues, err := app.Fs.ListChildIssues(fileName)
 	if err != nil {
-		return WelcomeFrame{}
+		app.History.Pop();
 	}
 
 	for _, issue := range issues {

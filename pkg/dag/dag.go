@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	"github/pm/pkg/common"
@@ -53,16 +54,29 @@ func (d *Dag) Update(alpha common.Alpha) error {
 	case common.AddVertexAlpha:
 		addVertexAlpha := alpha.(*AddVertexAlpha)
 		error = d.AddVertex(addVertexAlpha.Target)
+		if error == nil {
+			log.Println("addVertexAlpha: " + addVertexAlpha.Target.String());
+		}
 	case common.RemoveVertexAlpha:
 		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
 		error = d.RemoveVertex(removeVertexAlpha.Target)
+		if error == nil {
+			log.Println("removeVertexAlpha: " + removeVertexAlpha.Target.String());
+		}
+
 	case common.AddEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
+		log.Println("addEdgeAlpha: " + addEdgeAlpha.From.String());
+		log.Println("addEdgeAlpha: " + addEdgeAlpha.To.String());
 		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From)
 	case common.RemoveEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
+		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.From.String());
+		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.To.String());
+
 		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From)
 	}
+
 
 	return error
 }
@@ -327,7 +341,7 @@ func (d *Dag) HasVertex(vertexID string) bool {
 func (d *Dag) RetrieveVertex(vertexID string) *Vertex {
 	vertex, exists := d.Vertices[vertexID]
 	if !exists {
-		fmt.Println("Non existent vertex", vertexID)
+		log.Println("Non existent vertex", vertexID)
 		return nil
 	}
 

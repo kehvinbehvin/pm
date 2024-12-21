@@ -13,7 +13,7 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 		case "q", "ctrl+c", "esc":
 			return app, tea.Quit
 		case "c":
-			frame := NewCreateFormFrame()
+			frame := NewCreateFormFrame("")
 			app.History.Push(frame)
 		case "p":
 			frame := NewBrowseFrame(app, "prd")
@@ -27,7 +27,6 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 		case "t":
 			frame := NewBrowseFrame(app, "task")
 			app.History.Push(frame)
-
 		}
 	}
 

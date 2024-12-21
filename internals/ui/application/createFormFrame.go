@@ -27,6 +27,7 @@ type CreateFormFrame struct {
 	fileType string
 	postActionList list.Model
 	postAction string
+	parent string
 }
 
 type item string
@@ -56,7 +57,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, fn(str))
 }
 
-func NewCreateFormFrame() ApplicationFrame {
+func NewCreateFormFrame(parent string) ApplicationFrame {
 	ti := textinput.New()
 	ti.Placeholder = "Title"
 	ti.Focus()
@@ -71,6 +72,7 @@ func NewCreateFormFrame() ApplicationFrame {
 	actionItems := []list.Item{
 		item("Edit file"),
 		item("Create file"),
+		item("Create child issue"),
 		item("Menu"),
 	}
 
@@ -96,6 +98,7 @@ func NewCreateFormFrame() ApplicationFrame {
 		list:     l,
 		fileType: "",
 		postActionList: al,
+		parent: parent,
 	}
 
 	return &m
@@ -153,6 +156,7 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 				}
 
 				app.Fs.CreateFile(createFormFrame.title.Value(), createFormFrame.fileType)
+				app.Fs.LinkFile(createFormFrame.parent, createFormFrame.title.Value())
 				// Create file here
 				createFormFrame.step = 2
 			}
@@ -183,7 +187,11 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 						app.History.Push(frame)
 					case "Create file":
 						app.History.Pop()
-						frame := NewCreateFormFrame()
+						frame := NewCreateFormFrame("")
+						app.History.Push(frame)
+					case "Create child issue":
+						app.History.Pop()
+						frame := NewCreateFormFrame(createFormFrame.title.Value())
 						app.History.Push(frame)
 					case "Menu":
 						app.History.Pop()

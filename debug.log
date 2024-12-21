@@ -1,0 +1,26 @@
+LOG: 2024/12/21 17:39:29 fileSystem.go:124: Filename: Hello created
+LOG: 2024/12/21 17:39:29 dag.go:58: addVertexAlpha: Vertex(id: Hello, children: [])
+LOG: 2024/12/21 17:39:33 fileSystem.go:124: Filename: World created
+LOG: 2024/12/21 17:39:33 dag.go:58: addVertexAlpha: Vertex(id: World, children: [])
+LOG: 2024/12/21 17:39:33 fileSystem.go:228: Parent: Hello; Child: World
+LOG: 2024/12/21 17:39:33 dag.go:69: addEdgeAlpha: Vertex(id: Hello, children: [])
+LOG: 2024/12/21 17:39:33 dag.go:70: addEdgeAlpha: Vertex(id: World, children: [])
+LOG: 2024/12/21 17:40:54 fileSystem.go:124: Filename: Bye created
+LOG: 2024/12/21 17:40:54 dag.go:58: addVertexAlpha: Vertex(id: Bye, children: [])
+LOG: 2024/12/21 17:40:57 fileSystem.go:124: Filename: Kevin created
+LOG: 2024/12/21 17:40:57 dag.go:58: addVertexAlpha: Vertex(id: Kevin, children: [])
+LOG: 2024/12/21 17:40:57 fileSystem.go:228: Parent: Bye; Child: Kevin
+LOG: 2024/12/21 17:40:57 dag.go:69: addEdgeAlpha: Vertex(id: Kevin, children: [])
+LOG: 2024/12/21 17:40:57 dag.go:70: addEdgeAlpha: Vertex(id: Bye, children: [])
+LOG: 2024/12/21 17:41:10 fileSystem.go:124: Filename: Ali created
+LOG: 2024/12/21 17:41:10 dag.go:58: addVertexAlpha: Vertex(id: Ali, children: [])
+LOG: 2024/12/21 17:41:14 fileSystem.go:124: Filename: Loves created
+LOG: 2024/12/21 17:41:14 dag.go:58: addVertexAlpha: Vertex(id: Loves, children: [])
+LOG: 2024/12/21 17:41:14 fileSystem.go:228: Parent: Ali; Child: Loves
+LOG: 2024/12/21 17:41:14 dag.go:69: addEdgeAlpha: Vertex(id: Loves, children: [])
+LOG: 2024/12/21 17:41:14 dag.go:70: addEdgeAlpha: Vertex(id: Ali, children: [])
+LOG: 2024/12/21 17:41:17 fileSystem.go:124: Filename: Me created
+LOG: 2024/12/21 17:41:17 dag.go:58: addVertexAlpha: Vertex(id: Me, children: [])
+LOG: 2024/12/21 17:41:17 fileSystem.go:228: Parent: Loves; Child: Me
+LOG: 2024/12/21 17:41:17 dag.go:69: addEdgeAlpha: Vertex(id: Me, children: [])
+LOG: 2024/12/21 17:41:17 dag.go:70: addEdgeAlpha: Vertex(id: Loves, children: [])
