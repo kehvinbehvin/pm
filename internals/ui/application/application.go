@@ -5,9 +5,11 @@ import (
 	"github/pm/pkg/filesystem"
 )
 
-func NewApplication(fs *filesystem.FileSystem) tea.Model {
+func NewApplication() tea.Model {
 	stack := NewApplicationStack()
 
+	fs := filesystem.NewFileSystem()
+	fs.Boot()
 	// Initialise the first frame of the application
 	welcome := &WelcomeFrame{}
 	stack.Push(welcome)

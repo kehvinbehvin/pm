@@ -5,8 +5,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github/pm/internals/ui/application"
 	"os"
-
-	"github/pm/pkg/filesystem"
 )
 
 func main() {
@@ -33,10 +31,7 @@ func main() {
 	// } else {
 	// 	fmt.Println("Unexpected model type")
 	// }
-	fs := filesystem.NewFileSystem()
-	fs.Boot()
-
-	app := application.NewApplication(fs)
+	app := application.NewApplication()
 
 	if _, err := tea.NewProgram(app).Run(); err != nil {
 		fmt.Println("Error running program:", err)
