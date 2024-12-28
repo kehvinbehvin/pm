@@ -3,6 +3,9 @@ package application
 import (
 	"errors"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -24,7 +27,8 @@ func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
 
 	const defaultWidth = 50
 	l := list.New(epicItems, itemDelegate{}, defaultWidth, 14)
-	l.Title = "What type of file do you want to create"
+	caser := cases.Title(language.English)
+	l.Title = caser.String(fileType) + " listing"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
