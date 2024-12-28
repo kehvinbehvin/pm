@@ -47,10 +47,10 @@ type Vertex struct {
 	Children []*DirectedEdge // A Vertex can have multiple types of edges connected to it
 }
 
+// Cannot store parent address because encoding/gob does not allow recursive data structures
 type DirectedEdge struct {
 	Label       string // Allows us to add meaning to the edge
-	To          *Vertex
-	From        *Vertex
+	To        *Vertex
 }
 
 func (d *Dag) Update(alpha common.Alpha) error {
@@ -144,10 +144,9 @@ func NewVertex(id string) *Vertex {
 	}
 }
 
-func NewDirectedEdge(to *Vertex, from *Vertex, label string) *DirectedEdge {
+func NewDirectedEdge(to *Vertex, label string) *DirectedEdge {
 	return &DirectedEdge{
 		To: to,
-		From: from,
 		Label: label,
 	}
 }
@@ -280,7 +279,7 @@ func (d *Dag) AddEdge(from *Vertex, to *Vertex, label string) error {
 		return errors.New("Cannot add edge as it will create a cycle")
 	}
 
-	directedEdge := NewDirectedEdge(to, from, label)
+	directedEdge := NewDirectedEdge(to, label)
 
 	from.Children = append(from.Children, directedEdge)
 	return nil
