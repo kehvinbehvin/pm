@@ -34,7 +34,7 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 }
 
 func (wf WelcomeFrame) View(app Application) string {
-	return "[q] Quit; [c] Create Issue;\n[p] prd; [e] epic; [s] story; [t] task"
+	return "[c] Create issue\n[p] List prds\n[e] List epics\n[s] List stories\n[t] List tasks\n[q] Quit"
 }
 
 func (wf WelcomeFrame) Init() tea.Cmd {
