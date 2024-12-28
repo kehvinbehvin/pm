@@ -92,7 +92,7 @@ func NewCreateFormFrame(parent string) ApplicationFrame {
 	al.SetFilteringEnabled(false)
 	al.Styles.Title = titleStyle
 	al.Styles.PaginationStyle = paginationStyle
-	al.Styles.HelpStyle = helpStyle
+	al.SetShowHelp(false)
 
 	l := list.New(items, itemDelegate{}, defaultWidth, 14)
 	l.Title = "What type of file do you want to create"
@@ -100,7 +100,7 @@ func NewCreateFormFrame(parent string) ApplicationFrame {
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
-	l.Styles.HelpStyle = helpStyle
+	l.SetShowHelp(false)
 	m := CreateFormFrame{
 		step:     0,
 		title:    ti,
@@ -227,15 +227,22 @@ func (cf CreateFormFrame) View(app Application) string {
 	}
 
 	if createFormFrame.step == 0 {
-		return fmt.Sprintf(
-			"Enter the title of your file\n\n%s\n\n%s",
-			createFormFrame.title.View(),
-			"[esc] Quit [left arrow] Back",
-		)
+		title := "Issue Title"
+		helptext := "\n[←] Back"
+		marginStyle := lipgloss.NewStyle().Margin(1, 2)
+
+		return marginStyle.Render(title) + "\n" + createFormFrame.title.View() + marginStyle.Render(helptext)
 	} else if (createFormFrame.step == 1) {
-		return createFormFrame.list.View()
+		helptext := "\n[q] Quit ● [enter] Enter"
+		marginStyle := lipgloss.NewStyle().Margin(1, 2)
+
+		return createFormFrame.list.View() + marginStyle.Render(helptext)
 	} else {
-		return createFormFrame.postActionList.View()
+		helptext := "\n[q] Quit ● [enter] Enter"
+		marginStyle := lipgloss.NewStyle().Margin(1, 2)
+
+		return createFormFrame.postActionList.View() + marginStyle.Render(helptext)
+
 	}
 }
 
