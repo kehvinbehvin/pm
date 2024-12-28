@@ -71,6 +71,20 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 			selectedItem := browseFrame.epics.SelectedItem().(item)
 			issueId := string(selectedItem)
 			app.Fs.EditFile(issueId)
+		case "v":
+			selectedItem := browseFrame.epics.SelectedItem().(item)
+			issueId := string(selectedItem)
+			content, contentErr := app.Fs.RetrieveFileContents(issueId)
+			if contentErr != nil {
+				return nil, tea.Quit
+			}
+
+			mdFrame, frameErr := NewViewMarkdownFrame(content)
+			if frameErr != nil {
+				return nil, tea.Quit
+			}
+
+			app.History.Push(mdFrame)
 		}
 	}
 

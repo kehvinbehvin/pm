@@ -259,6 +259,10 @@ func (fs *FileSystem) validateFileExists(fileName string) error {
 	return nil
 }
 
+func (fs *FileSystem) RetrieveFileContents(fileName string) (string, error) {
+	return blob.ReturnBlobContent(fileName)
+}
+
 func (fs *FileSystem) LinkFile(parentName string, childName string) error {
 
 	if parentName == "" || childName == "" {

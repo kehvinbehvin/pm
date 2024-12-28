@@ -56,6 +56,22 @@ func Exists(fileName string) bool {
 	return checkFileExists(path)
 }
 
+func ReturnBlobContent(fileName string) (string, error) {
+	fileName = fileName + ".md"
+	path := filepath.Join(".", ".pm", "./blobs", fileName)
+	exists := checkFileExists(path)
+	if !exists {
+		return "", errors.New("Cannot remove non existent file")
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
+}
+
 func DeleteBlob(fileName string) error {
 	fileName = fileName + ".md"
 	path := filepath.Join(".", ".pm", "./blobs", fileName)
