@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"log"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -84,11 +85,13 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 			selectedItem := browseFrame.epics.SelectedItem().(item)
 			issueId := string(selectedItem)
 			content, contentErr := app.Fs.RetrieveFileContents(issueId)
+			log.Println("Loaded content");
 			if contentErr != nil {
 				return nil, tea.Quit
 			}
 
-			mdFrame, frameErr := NewViewMarkdownFrame(content)
+			mdFrame, frameErr := NewViewMarkdownFrame(content, app)
+			log.Println("Created MD Frame");
 			if frameErr != nil {
 				return nil, tea.Quit
 			}

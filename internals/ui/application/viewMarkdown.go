@@ -2,47 +2,26 @@ package application
 
 import (
 	"errors"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/glamour"
+	"log"
 )
 
 type ViewMarkdownFrame struct{
-	viewport viewport.Model
 	content string
 }
 
-func NewViewMarkdownFrame(content string) (*ViewMarkdownFrame, error) {
-	const width = 78
-
-	vp := viewport.New(width, 20)
-	vp.Style = lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("62")).
-		PaddingRight(2)
-	
-	const glamourGutter = 2
-	glamourRenderWidth := width - vp.Style.GetHorizontalFrameSize() - glamourGutter
-
-	renderer, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(glamourRenderWidth),
-	)
-
+func NewViewMarkdownFrame(content string, app Application) (*ViewMarkdownFrame, error) {
+	str, err := app.Renderer.Render(content)
 	if err != nil {
 		return nil, err
 	}
 
-	str, err := renderer.Render(content)
-	if err != nil {
-		return nil, err
-	}
+	log.Println("Rendered content");
+	app.ViewPort.SetContent(str)
 
-	vp.SetContent(str)
-
+	log.Println("Created viewport");
 	return &ViewMarkdownFrame{
-		viewport: vp,
 		content: content,
 	}, nil
 }
@@ -64,12 +43,11 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 		return app, tea.Quit
 	}
 
-
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// Update the viewport size when the terminal is resized
-		viewMarkdownFrame.viewport.Width = msg.Width
-		viewMarkdownFrame.viewport.Height = msg.Height
+		app.ViewPort.Width = msg.Width
+		app.ViewPort.Height = msg.Height
 		
 		renderer, err := glamour.NewTermRenderer(
 			glamour.WithAutoStyle(),
@@ -81,7 +59,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 		if err != nil {
 			return app, tea.Quit
 		} else {
-			viewMarkdownFrame.viewport.SetContent(rendered)
+			app.ViewPort.SetContent(rendered)
 		}
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -91,7 +69,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			app.History.Pop()
 		default:
 			var cmd tea.Cmd
-			viewMarkdownFrame.viewport, cmd = viewMarkdownFrame.viewport.Update(msg)
+			*app.ViewPort, cmd = app.ViewPort.Update(msg)
 			return app, cmd
 		}
 	default:
@@ -102,7 +80,8 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 }
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
-	return vmdf.viewport.View()
+	log.Println("Viewing Markdown");
+	return app.ViewPort.View()
 }
 
 func (vmdf *ViewMarkdownFrame) Init() tea.Cmd {

@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"log"
 )
 
 type ApplicationStack struct {
@@ -15,6 +16,7 @@ func NewApplicationStack() *ApplicationStack {
 }
 
 func (af *ApplicationStack) Push(frame ApplicationFrame) error {
+	log.Println("New frame pushed");
 	af.stack = append(af.stack, frame)
 	return nil
 }

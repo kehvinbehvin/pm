@@ -51,7 +51,11 @@ func main() {
 	setupLogger()
 	fs := fileSystem.NewFileSystem()
 	fs.Boot();
-	app := application.NewApplication(fs)
+
+	app, appErr := application.NewApplication(fs)
+	if appErr != nil {
+		os.Exit(1)
+	}
 
 	if _, err := tea.NewProgram(app).Run(); err != nil {
 		log.Println("Error running program:", err)

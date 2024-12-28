@@ -83,7 +83,7 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 				return nil, tea.Quit
 			}
 
-			mdFrame, frameErr := NewViewMarkdownFrame(content)
+			mdFrame, frameErr := NewViewMarkdownFrame(content, app)
 			if frameErr != nil {
 				return nil, tea.Quit
 			}
