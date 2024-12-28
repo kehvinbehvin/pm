@@ -44,7 +44,13 @@ type Dag struct {
 
 type Vertex struct {
 	ID       string
-	Children map[string]*Vertex
+	Children []*DirectedEdge // A Vertex can have multiple types of edges connected to it
+}
+
+type DirectedEdge struct {
+	Label       string // Allows us to add meaning to the edge
+	To          *Vertex
+	From        *Vertex
 }
 
 func (d *Dag) Update(alpha common.Alpha) error {
@@ -68,13 +74,12 @@ func (d *Dag) Update(alpha common.Alpha) error {
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
 		log.Println("addEdgeAlpha: " + addEdgeAlpha.From.String());
 		log.Println("addEdgeAlpha: " + addEdgeAlpha.To.String());
-		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From)
+		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From, addEdgeAlpha.Label)
 	case common.RemoveEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
 		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.From.String());
 		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.To.String());
-
-		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From)
+		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From, removeEdgeAlpha.Label)
 	}
 
 
@@ -93,10 +98,10 @@ func (d *Dag) Rewind(alpha common.Alpha) error {
 		error = d.AddVertex(addVertexAlpha.Target)
 	case common.AddEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
-		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From)
+		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From, removeEdgeAlpha.Label)
 	case common.RemoveEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
-		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From)
+		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From, addEdgeAlpha.Label)
 	}
 
 	return error
@@ -115,10 +120,10 @@ func (d *Dag) Validate(alpha common.Alpha) bool {
 		valid = !d.HasVertex(removeVertexAlpha.Target.ID)
 	case common.AddEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
-		valid = d.HasEdge(addEdgeAlpha.From, addEdgeAlpha.To)
+		valid = d.canAddEdge(addEdgeAlpha.From, addEdgeAlpha.To)
 	case common.RemoveEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
-		valid = d.HasEdge(removeEdgeAlpha.From, removeEdgeAlpha.To)
+		valid = d.canAddEdge(removeEdgeAlpha.From, removeEdgeAlpha.To)
 	}
 
 	return valid
@@ -135,26 +140,46 @@ func NewDag(fileName string) *Dag {
 func NewVertex(id string) *Vertex {
 	return &Vertex{
 		ID:       id,
-		Children: make(map[string]*Vertex),
+		Children: make([]*DirectedEdge, 0),
+	}
+}
+
+func NewDirectedEdge(to *Vertex, from *Vertex, label string) *DirectedEdge {
+	return &DirectedEdge{
+		To: to,
+		From: from,
+		Label: label,
 	}
 }
 
 func (v *Vertex) String() string {
 	var childrenIDs []string
-	for childID := range v.Children {
-		childrenIDs = append(childrenIDs, childID)
+	var childrenRelationships []string
+
+	for _, edgePointer := range v.Children {
+		relationship := edgePointer.Label
+		childrenRelationships = append(childrenRelationships, relationship)
+
+		child := edgePointer.To.ID
+		childrenIDs = append(childrenIDs, child)
 	}
 
-	return fmt.Sprintf("Vertex(id: %s, children: %v)", v.ID, childrenIDs)
+	return fmt.Sprintf("Vertex(id: %s, children: %v, relationships: %v)", v.ID, childrenIDs, childrenRelationships)
 }
 
-func dfs(from *Vertex, to *Vertex) bool {
+func dfs(from *Vertex, to *Vertex, label string) bool {
 	if from.ID == to.ID {
 		return true
 	}
 
 	for _, value := range to.Children {
-		if dfs(from, value) {
+		childLabel := value.Label
+		if childLabel != label {
+			continue
+		}
+
+		next := value.To
+		if dfs(from, next, label) {
 			return true
 		}
 	}
@@ -166,12 +191,14 @@ type AddEdgeAlpha struct {
 	From *Vertex
 	To   *Vertex
 	Hash string
+	Label string
 }
 
 type RemoveEdgeAlpha struct {
 	From *Vertex
 	To   *Vertex
 	Hash string
+	Label string
 }
 
 func (aea *AddEdgeAlpha) GetType() byte {
@@ -216,43 +243,76 @@ func (rea *RemoveEdgeAlpha) SetHash(lastAlpha common.Alpha) {
 	rea.Hash = currentHashStr
 }
 
-func (d *Dag) HasEdge(from *Vertex, to *Vertex) bool {
+func (d *Dag) canAddEdge(from *Vertex, to *Vertex) bool {
 	_, hasParent := d.Vertices[from.ID]
 	_, hasChild := d.Vertices[to.ID]
 
 	return hasParent && hasChild
 }
 
-func (d *Dag) AddEdge(from *Vertex, to *Vertex) error {
-	parent, hasParent := d.Vertices[from.ID]
-	_, hasChild := d.Vertices[to.ID]
+func (d *Dag) isExistingEdge(from *Vertex, to *Vertex, label string) (bool) {
+	parent := d.Vertices[from.ID]
+	for _, edgePointer := range parent.Children {
+		if edgePointer.Label != label {
+			continue
+		}
 
-	if !hasParent || !hasChild {
+		child := edgePointer.To.ID
+		if child == to.ID {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (d *Dag) AddEdge(from *Vertex, to *Vertex, label string) error {
+	if !d.canAddEdge(from, to) {
 		return errors.New("From or to Vertex does not exist")
 	}
 
-	_, hasChildEdge := parent.Children[to.ID]
-	if hasChildEdge {
-		return errors.New("Child Edge already exist")
+	if d.isExistingEdge(from, to, label) {
+		return errors.New("Edge for this label already exists")
 	}
 
-	hasCycle := dfs(from, to)
+	hasCycle := dfs(from, to, label)
 	if hasCycle {
 		return errors.New("Cannot add edge as it will create a cycle")
 	}
 
-	from.Children[to.ID] = to
+	directedEdge := NewDirectedEdge(to, from, label)
+
+	from.Children = append(from.Children, directedEdge)
 	return nil
 }
 
-func (d *Dag) RemoveEdge(from *Vertex, to *Vertex) error {
-	_, hasToEdge := from.Children[to.ID]
-	if !hasToEdge {
-		log.Println("Vertex does not exist")
-		return errors.New("Vertex does not exist")
+func (d *Dag) deleteEdge(from *Vertex, to *Vertex, label string) (error) {
+	for index, child := range from.Children {
+		if (child.Label != label) {
+			continue
+		}
+
+		if (child.To.ID != to.ID) {
+			continue
+		}
+
+		from.Children = append(from.Children[:index], from.Children[index + 1:]...)
+		return nil
 	}
 
-	delete(from.Children, to.ID)
+	return errors.New("Cannot delete non-existent edge")
+}
+
+func (d *Dag) RemoveEdge(from *Vertex, to *Vertex, label string) error {
+	if !d.isExistingEdge(from, to, label) {
+		return errors.New("Cannot delete non-existent edge")
+	}
+
+	deleteErr := d.deleteEdge(from, to, label)
+	if deleteErr != nil {
+		return deleteErr
+	}
+
 	return nil
 }
 
@@ -323,7 +383,10 @@ func (d *Dag) RemoveVertex(out *Vertex) error {
 	}
 
 	for _, value := range out.Children {
-		removeErr := d.RemoveEdge(out, value)
+		valueLabel := value.Label
+		value := value.To
+
+		removeErr := d.RemoveEdge(out, value, valueLabel)
 		if removeErr != nil {
 			return removeErr
 		}
