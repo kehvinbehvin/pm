@@ -3,12 +3,14 @@ package application
 import (
 	"errors"
 	"fmt"
+	"io"
+	"strings"
+
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"io"
-	"strings"
 )
 
 var (
@@ -36,6 +38,12 @@ func (i item) FilterValue() string { return "" }
 
 type itemDelegate struct{}
 
+func (d itemDelegate) ShortHelp() []key.Binding {
+	return []key.Binding{}
+}
+func (d itemDelegate) FullHelp() [][]key.Binding {
+	return [][]key.Binding{}
+}
 func (d itemDelegate) Height() int                             { return 1 }
 func (d itemDelegate) Spacing() int                            { return 0 }
 func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
@@ -77,7 +85,8 @@ func NewCreateFormFrame(parent string) ApplicationFrame {
 	}
 
 	const defaultWidth = 50
-	al := list.New(actionItems, itemDelegate{}, defaultWidth, 14)
+	delegate := itemDelegate{}
+	al := list.New(actionItems, delegate, defaultWidth, 14)
 	al.Title = "What do you want to do next"
 	al.SetShowStatusBar(false)
 	al.SetFilteringEnabled(false)

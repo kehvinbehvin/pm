@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type BrowseFrame struct{
@@ -24,17 +25,21 @@ func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
 	for _, epic := range epics {
 		epicItems = append(epicItems, item(epic))
 	}
+	
+	delegate := itemDelegate{}
 
 	const defaultWidth = 50
-	l := list.New(epicItems, itemDelegate{}, defaultWidth, 14)
+	l := list.New(epicItems, delegate, defaultWidth, 14)
 	caser := cases.Title(language.English)
 	l.Title = caser.String(fileType) + " listing"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
-	l.Styles.HelpStyle = helpStyle
+	l.SetShowHelp(false)
 
+	maxHeight := 10 // Maximum height of the list
+	l.SetHeight(min(len(epicItems), maxHeight))
 	bf := BrowseFrame{
 		epics: l,
 	}
@@ -98,7 +103,9 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 }
 
 func (bf BrowseFrame) View(app Application) string {	
-	return bf.epics.View()
+	helptext := "\n[q] Quit ● [←] Back ● [e] Edit ● [v] View"
+	marginStyle := lipgloss.NewStyle().Margin(1, 2)
+	return bf.epics.View() + marginStyle.Render(helptext)
 }
 
 func (bf BrowseFrame) Init() tea.Cmd {
