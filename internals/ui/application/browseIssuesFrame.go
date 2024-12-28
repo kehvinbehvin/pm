@@ -38,8 +38,8 @@ func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
 	l.Styles.PaginationStyle = paginationStyle
 	l.SetShowHelp(false)
 
-	maxHeight := 10 // Maximum height of the list
-	l.SetHeight(min(len(epicItems), maxHeight))
+	maxHeight := 9 // Maximum height of the list
+	l.SetHeight(min(len(epicItems) + 4, maxHeight))
 	bf := BrowseFrame{
 		epics: l,
 	}
