@@ -14,6 +14,9 @@ import (
 	"log"
 )
 
+const FILE_RELATIONSHIP_DEPENDENCY = "DEPENDENCY"
+const FILE_RELATIONSHIPS_HIERARCHY = "HIERARCHY"
+
 type FileSystem struct {
 	fileRelationShips common.Reconcilable
 	fileTypeIndex     common.Reconcilable
@@ -263,13 +266,20 @@ func (fs *FileSystem) RetrieveFileContents(fileName string) (string, error) {
 	return blob.ReturnBlobContent(fileName)
 }
 
-func (fs *FileSystem) LinkFile(parentName string, childName string) error {
+func (fs *FileSystem) LinkHierarchy(parentName string, childName string) error {
+	return fs.LinkFile(parentName, childName, FILE_RELATIONSHIPS_HIERARCHY)
+}
 
-	if parentName == "" || childName == "" {
+func (fs *FileSystem) LinkDependency(parentName string, childName string) error {
+	return fs.LinkFile(parentName, childName, FILE_RELATIONSHIP_DEPENDENCY)
+}
+
+func (fs *FileSystem) LinkFile(parentName string, childName string, relationship string) error {
+	if parentName == "" || childName == "" || relationship == "" {
 		return nil
 	}
 
-	log.Println("Parent: " + parentName + "; Child: " + childName);
+	log.Println("Parent: " + parentName + "; Child: " + childName + "; Relationship: " + relationship);
 	parentErr := fs.validateFileExists(parentName)
 	if parentErr != nil {
 		log.Println("Parent cannot be found");
@@ -290,6 +300,7 @@ func (fs *FileSystem) LinkFile(parentName string, childName string) error {
 	addEdgeAlpha := dag.AddEdgeAlpha{
 		From: childVertex,
 		To:   parentVertex,
+		Label: relationship,
 	}
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&addEdgeAlpha)
@@ -300,7 +311,20 @@ func (fs *FileSystem) LinkFile(parentName string, childName string) error {
 	return nil
 }
 
-func (fs *FileSystem) UnLinkFile(parentName string, childName string) error {
+func (fs *FileSystem) UnLinkHierarchy(parentName string, childName string) error {
+	return fs.UnLinkFile(parentName, childName, FILE_RELATIONSHIPS_HIERARCHY)
+}
+
+func (fs *FileSystem) UnLinkDependency(parentName string, childName string) error {
+	return fs.UnLinkFile(parentName, childName, FILE_RELATIONSHIP_DEPENDENCY)
+}
+
+func (fs *FileSystem) UnLinkFile(parentName string, childName string, relationship string) error {
+	if parentName == "" || childName == "" || relationship == "" {
+		return nil
+	}
+
+	log.Println("Parent: " + parentName + "; Child: " + childName + "; Relationship: " + relationship);
 	parentErr := fs.validateFileExists(parentName)
 	if parentErr != nil {
 		return parentErr
@@ -319,6 +343,7 @@ func (fs *FileSystem) UnLinkFile(parentName string, childName string) error {
 	removeEdgeAlpha := dag.RemoveEdgeAlpha{
 		From: parentVertex,
 		To:   childVertex,
+		Label: relationship,
 	}
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&removeEdgeAlpha)
@@ -341,14 +366,26 @@ func (fs *FileSystem) ListFileNamesByType(fileType string) ([]string, error) {
 	return files, nil
 }
 
-func (fs *FileSystem) ListChildIssues(fileName string) ([]string, error) {
+func (fs *FileSystem) ListRelatedHierarchy(fileName string) ([]string, error) {
+	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
+}
+
+func (fs *FileSystem) ListRelatedDependency(fileName string) ([]string, error) {
+	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
+}
+
+func (fs *FileSystem) ListRelatedIssues(fileName string, fileRelationship string) ([]string, error) {
 	dag := fs.fileRelationShips.DataStructure.(*dag.Dag)
 	vertex := dag.RetrieveVertex(fileName)
 	children := vertex.Children
 	
 	var childIssues []string
 	for _, child := range children {
-		childIssues = append(childIssues, child.ID)
+		if (fileRelationship != child.Label) {
+			continue
+		}
+
+		childIssues = append(childIssues, child.To.ID)
 	}
 
 	return childIssues, nil
