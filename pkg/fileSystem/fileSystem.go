@@ -267,14 +267,14 @@ func (fs *FileSystem) RetrieveFileContents(fileName string) (string, error) {
 }
 
 func (fs *FileSystem) LinkHierarchy(parentName string, childName string) error {
-	return fs.LinkFile(parentName, childName, FILE_RELATIONSHIPS_HIERARCHY)
+	return fs.linkFile(parentName, childName, FILE_RELATIONSHIPS_HIERARCHY)
 }
 
 func (fs *FileSystem) LinkDependency(parentName string, childName string) error {
-	return fs.LinkFile(parentName, childName, FILE_RELATIONSHIP_DEPENDENCY)
+	return fs.linkFile(parentName, childName, FILE_RELATIONSHIP_DEPENDENCY)
 }
 
-func (fs *FileSystem) LinkFile(parentName string, childName string, relationship string) error {
+func (fs *FileSystem) linkFile(parentName string, childName string, relationship string) error {
 	if parentName == "" || childName == "" || relationship == "" {
 		return nil
 	}
@@ -312,14 +312,14 @@ func (fs *FileSystem) LinkFile(parentName string, childName string, relationship
 }
 
 func (fs *FileSystem) UnLinkHierarchy(parentName string, childName string) error {
-	return fs.UnLinkFile(parentName, childName, FILE_RELATIONSHIPS_HIERARCHY)
+	return fs.unLinkFile(parentName, childName, FILE_RELATIONSHIPS_HIERARCHY)
 }
 
 func (fs *FileSystem) UnLinkDependency(parentName string, childName string) error {
-	return fs.UnLinkFile(parentName, childName, FILE_RELATIONSHIP_DEPENDENCY)
+	return fs.unLinkFile(parentName, childName, FILE_RELATIONSHIP_DEPENDENCY)
 }
 
-func (fs *FileSystem) UnLinkFile(parentName string, childName string, relationship string) error {
+func (fs *FileSystem) unLinkFile(parentName string, childName string, relationship string) error {
 	if parentName == "" || childName == "" || relationship == "" {
 		return nil
 	}
@@ -367,14 +367,14 @@ func (fs *FileSystem) ListFileNamesByType(fileType string) ([]string, error) {
 }
 
 func (fs *FileSystem) ListRelatedHierarchy(fileName string) ([]string, error) {
-	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
+	return fs.listRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
 }
 
 func (fs *FileSystem) ListRelatedDependency(fileName string) ([]string, error) {
-	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
+	return fs.listRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
 }
 
-func (fs *FileSystem) ListRelatedIssues(fileName string, fileRelationship string) ([]string, error) {
+func (fs *FileSystem) listRelatedIssues(fileName string, fileRelationship string) ([]string, error) {
 	dag := fs.fileRelationShips.DataStructure.(*dag.Dag)
 	vertex := dag.RetrieveVertex(fileName)
 	children := vertex.Children
