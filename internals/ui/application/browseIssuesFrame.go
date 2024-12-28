@@ -72,15 +72,11 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 			return app, tea.Quit
 		case "left":
 			app.History.Pop()
-		case "enter":
+		case "c":
 			selectedItem := browseFrame.epics.SelectedItem().(item) 
 			issueId := string(selectedItem)
 			childFrame := NewChildIssueFrame(app, issueId)
 			app.History.Push(childFrame)
-		case "e":
-			selectedItem := browseFrame.epics.SelectedItem().(item)
-			issueId := string(selectedItem)
-			app.Fs.EditFile(issueId)
 		case "v":
 			selectedItem := browseFrame.epics.SelectedItem().(item)
 			issueId := string(selectedItem)
@@ -90,7 +86,7 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 				return nil, tea.Quit
 			}
 
-			mdFrame, frameErr := NewViewMarkdownFrame(content, app)
+			mdFrame, frameErr := NewViewMarkdownFrame(issueId,content, app)
 			log.Println("Created MD Frame");
 			if frameErr != nil {
 				return nil, tea.Quit
@@ -106,7 +102,7 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 }
 
 func (bf BrowseFrame) View(app Application) string {	
-	helptext := "[e] Edit ● [v] View ● [enter] Children\n[q] Quit ● [←] Back "
+	helptext := "[v] View ● [enter] Children\n[q] Quit ● [←] Back "
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 	return bf.epics.View() + marginStyle.Render(helptext)
 }

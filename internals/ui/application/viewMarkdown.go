@@ -3,15 +3,17 @@ package application
 import (
 	"errors"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/glamour"
 	"log"
 )
 
 type ViewMarkdownFrame struct{
 	content string
+	fileName string
 }
 
-func NewViewMarkdownFrame(content string, app Application) (*ViewMarkdownFrame, error) {
+func NewViewMarkdownFrame(fileName string, content string, app Application) (*ViewMarkdownFrame, error) {
 	str, err := app.Renderer.Render(content)
 	if err != nil {
 		return nil, err
@@ -22,6 +24,7 @@ func NewViewMarkdownFrame(content string, app Application) (*ViewMarkdownFrame, 
 
 	log.Println("Created viewport");
 	return &ViewMarkdownFrame{
+		fileName: fileName,
 		content: content,
 	}, nil
 }
@@ -67,10 +70,16 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			return app, tea.Quit
 		case "left":
 			app.History.Pop()
+		case "e":
+			app.Fs.EditFile(viewMarkdownFrame.fileName)
+
+			// Push back to previous page
+			// Issue with terminal resizing after editor process hands back control
+			app.History.Pop()
 		default:
 			var cmd tea.Cmd
 			*app.ViewPort, cmd = app.ViewPort.Update(msg)
-			return app, cmd
+			return app, tea.Batch(tea.ClearScreen, cmd)
 		}
 	default:
 		return app, nil
@@ -81,7 +90,10 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
 	log.Println("Viewing Markdown");
-	return app.ViewPort.View()
+	helptext := "\n[q] Quit ● [←] Back ● [e] Edit"
+	marginStyle := lipgloss.NewStyle().Margin(1, 2)
+
+	return app.ViewPort.View() + marginStyle.Render(helptext)
 }
 
 func (vmdf *ViewMarkdownFrame) Init() tea.Cmd {
