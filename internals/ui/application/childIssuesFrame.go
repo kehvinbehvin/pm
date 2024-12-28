@@ -14,7 +14,7 @@ type ChildIssueFrame struct {
 
 func NewChildIssueFrame(app Application, fileName string) ApplicationFrame {
 	var issueItems []list.Item
-	issues, err := app.Fs.ListChildIssues(fileName)
+	issues, err := app.Fs.ListRelatedHierarchy(fileName)
 	if err != nil {
 		app.History.Pop();
 	}

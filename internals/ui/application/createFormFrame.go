@@ -165,7 +165,7 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 				}
 
 				app.Fs.CreateFile(createFormFrame.title.Value(), createFormFrame.fileType)
-				app.Fs.LinkFile(createFormFrame.parent, createFormFrame.title.Value())
+				app.Fs.LinkHierarchy(createFormFrame.parent, createFormFrame.title.Value())
 				// Create file here
 				createFormFrame.step = 2
 			}
