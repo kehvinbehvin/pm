@@ -36,7 +36,7 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 
 func (wf WelcomeFrame) View(app Application) string {
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
-	return marginStyle.Render("[c] Create issue\n[p] List prds\n[e] List epics\n[s] List stories\n[t] List tasks\n[q] Quit")
+	return marginStyle.Render("Browser\n\n[c] Create issue\n[p] List prds\n[e] List epics\n[s] List stories\n[t] List tasks\n[q] Quit")
 }
 
 func (wf WelcomeFrame) Init() tea.Cmd {
