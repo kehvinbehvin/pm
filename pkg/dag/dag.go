@@ -74,12 +74,12 @@ func (d *Dag) Update(alpha common.Alpha) error {
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
 		log.Println("addEdgeAlpha: " + addEdgeAlpha.From.String());
 		log.Println("addEdgeAlpha: " + addEdgeAlpha.To.String());
-		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From, addEdgeAlpha.Label)
+		error = d.AddEdge(addEdgeAlpha.From, addEdgeAlpha.To, addEdgeAlpha.Label)
 	case common.RemoveEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
 		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.From.String());
 		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.To.String());
-		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From, removeEdgeAlpha.Label)
+		error = d.RemoveEdge(removeEdgeAlpha.From, removeEdgeAlpha.To, removeEdgeAlpha.Label)
 	}
 
 
@@ -98,10 +98,10 @@ func (d *Dag) Rewind(alpha common.Alpha) error {
 		error = d.AddVertex(addVertexAlpha.Target)
 	case common.AddEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
-		error = d.RemoveEdge(removeEdgeAlpha.To, removeEdgeAlpha.From, removeEdgeAlpha.Label)
+		error = d.RemoveEdge(removeEdgeAlpha.From, removeEdgeAlpha.To, removeEdgeAlpha.Label)
 	case common.RemoveEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
-		error = d.AddEdge(addEdgeAlpha.To, addEdgeAlpha.From, addEdgeAlpha.Label)
+		error = d.AddEdge(addEdgeAlpha.From, addEdgeAlpha.To, addEdgeAlpha.Label)
 	}
 
 	return error

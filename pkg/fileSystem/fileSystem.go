@@ -298,8 +298,8 @@ func (fs *FileSystem) linkFile(parentName string, childName string, relationship
 
 	// Add Edge between parent and child vertex
 	addEdgeAlpha := dag.AddEdgeAlpha{
-		From: childVertex,
-		To:   parentVertex,
+		From: parentVertex,
+		To:   childVertex,
 		Label: relationship,
 	}
 
