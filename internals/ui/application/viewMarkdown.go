@@ -12,7 +12,7 @@ type ViewMarkdownFrame struct{
 	content string
 	fileName string
 }
-
+// TODO: Need to handle window sizing.
 func NewViewMarkdownFrame(fileName string, content string, app Application) (*ViewMarkdownFrame, error) {
 	str, err := app.Renderer.Render(content)
 	if err != nil {
