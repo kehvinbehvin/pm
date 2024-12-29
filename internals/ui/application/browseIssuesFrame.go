@@ -114,6 +114,6 @@ func (bf BrowseFrame) View(app Application) string {
 	return bf.epics.View() + marginStyle.Render(helptext)
 }
 
-func (bf BrowseFrame) Init() tea.Cmd {
+func (bf BrowseFrame) Init(app Application) tea.Cmd {
 	return nil
 }

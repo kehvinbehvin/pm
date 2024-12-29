@@ -354,6 +354,20 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 	return nil
 }
 
+func (fs *FileSystem) ListAllFilesWithTypes() (map[string][]string, error) {
+	fileIndex := fs.getFileIndex()
+	files, fileErr := fileIndex.RetrieveAllFilesWithTypes()
+	if fileErr != nil {
+		return nil, fileErr
+	}
+
+	for _, v := range files {
+		sort.Strings(v)
+	}
+
+	return files, nil
+}
+
 func (fs *FileSystem) ListFileNamesByType(fileType string) ([]string, error) {
 	fileIndex := fs.getFileIndex()
 	files, fileErr := fileIndex.RetrieveFilesFromType(fileType)

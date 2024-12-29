@@ -39,6 +39,6 @@ func (wf WelcomeFrame) View(app Application) string {
 	return marginStyle.Render("Browser\n\n[c] Create issue\n[p] List prds\n[e] List epics\n[s] List stories\n[t] List tasks\n[q] Quit")
 }
 
-func (wf WelcomeFrame) Init() tea.Cmd {
+func (wf WelcomeFrame) Init(app Application) tea.Cmd {
 	return nil
 }

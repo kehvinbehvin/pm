@@ -105,8 +105,9 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 			app.History.Push(mdFrame)
 		}
 	}
-
-	return app, nil
+	var cmd tea.Cmd
+	browseFrame.children, cmd = browseFrame.children.Update(msg)
+	return app, cmd
 }
 
 func (cif ChildIssueFrame) View(app Application) string {
@@ -116,6 +117,6 @@ func (cif ChildIssueFrame) View(app Application) string {
 	return cif.children.View() + marginStyle.Render(helptext)
 }
 
-func (cif ChildIssueFrame) Init() tea.Cmd {
+func (cif ChildIssueFrame) Init(app Application) tea.Cmd {
 	return nil
 }

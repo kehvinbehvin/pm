@@ -24,6 +24,6 @@ func (ed EditFileFrame) View(app Application) string {
 	return "Edit fileFrame\n [<-] Back"
 }
 
-func (ed EditFileFrame) Init() tea.Cmd {
+func (ed EditFileFrame) Init(app Application) tea.Cmd {
 	return nil
 }

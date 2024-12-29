@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"strings"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/glamour"
@@ -11,6 +12,7 @@ import (
 type ViewMarkdownFrame struct{
 	content string
 	fileName string
+	subStack *ApplicationStack
 }
 // TODO: Need to handle window sizing.
 func NewViewMarkdownFrame(fileName string, content string, app Application) (*ViewMarkdownFrame, error) {
@@ -23,9 +25,12 @@ func NewViewMarkdownFrame(fileName string, content string, app Application) (*Vi
 	app.ViewPort.SetContent(str)
 
 	log.Println("Created viewport");
+
+	stack := NewApplicationStack()
 	return &ViewMarkdownFrame{
 		fileName: fileName,
 		content: content,
+		subStack: stack,
 	}, nil
 }
 
@@ -45,6 +50,26 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 	if frameErr != nil {
 		return app, tea.Quit
 	}
+
+	if viewMarkdownFrame.subStack.Size() != 0 {
+		frame, frameErr := viewMarkdownFrame.subStack.Peek();
+		if frameErr != nil {
+			return app, tea.Quit
+		}
+
+		globalSelectFrame := frame.(*GlobalSelectionFrame)
+		selectedItem := globalSelectFrame.selectedItem
+		
+		if selectedItem != "" {
+			index := strings.Index(selectedItem, "]")
+			fileName := strings.TrimSpace(selectedItem[index + 1:])
+			log.Println("ViewMarkDownFrame: Selected Item " + fileName)
+			app.Fs.LinkHierarchy(viewMarkdownFrame.fileName, fileName)
+		}
+	}
+
+	// Continue operation
+	
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -76,6 +101,16 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			// Push back to previous page
 			// Issue with terminal resizing after editor process hands back control
 			app.History.Pop()
+			vmdf.subStack.ClearStack()
+		case "l":
+			// Push fileName to a global search of all issues which exlcudes itself
+			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app)
+			if frameErr != nil {
+				return app, tea.Quit 
+			}
+
+			app.History.Push(globalSearchFrame)
+			viewMarkdownFrame.subStack.Push(globalSearchFrame)
 		default:
 			var cmd tea.Cmd
 			*app.ViewPort, cmd = app.ViewPort.Update(msg)
@@ -90,12 +125,12 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
 	log.Println("Viewing Markdown");
-	helptext := "\n[q] Quit ● [←] Back ● [e] Edit"
+	helptext := "\n[q] Quit ● [←] Back ● [l] Link children"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return app.ViewPort.View() + marginStyle.Render(helptext)
 }
 
-func (vmdf *ViewMarkdownFrame) Init() tea.Cmd {
+func (vmdf *ViewMarkdownFrame) Init(app Application) tea.Cmd {
 	return nil
 }

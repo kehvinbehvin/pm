@@ -30,6 +30,8 @@ type CreateFormFrame struct {
 	postActionList list.Model
 	postAction string
 	parent string
+	error bool
+	errorMessage string
 }
 
 type item string
@@ -139,7 +141,18 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 			case "left":
 				app.History.Pop()
 			case "enter":
+				i := createFormFrame.title.Value()
+				leftBracket := strings.Index(string(i), "[")
+				rightBracket := strings.Index(string(i), "]")
+				if leftBracket != -1 || rightBracket != -1 {
+					createFormFrame.error = true
+					createFormFrame.errorMessage = "Cannot use reserved characters : []"
+					return app, nil
+				}
+
 				createFormFrame.step++
+				createFormFrame.error = false
+				createFormFrame.errorMessage = ""
 			}
 		}
 
@@ -159,7 +172,7 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 				return app, tea.Quit
 
 			case "enter":
-				i, ok := createFormFrame.list.SelectedItem().(item)
+				i, ok := createFormFrame.list.SelectedItem().(item)	
 				if ok {
 					createFormFrame.fileType = string(i)
 				}
@@ -186,7 +199,7 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 				return app, tea.Quit
 
 			case "enter":
-				i, ok := createFormFrame.postActionList.SelectedItem().(item)
+				i, ok := createFormFrame.postActionList.SelectedItem().(item)	
 				if ok {
 					createFormFrame.postAction = string(i)
 					switch (createFormFrame.postAction) {
@@ -230,6 +243,11 @@ func (cf CreateFormFrame) View(app Application) string {
 		title := "Issue Title"
 		helptext := "\n[←] Back"
 		marginStyle := lipgloss.NewStyle().Margin(1, 2)
+		
+		if createFormFrame.error && createFormFrame.errorMessage != "" {
+			errorText := "\n " + createFormFrame.errorMessage
+			return marginStyle.Render(title) + "\n" + createFormFrame.title.View() + marginStyle.Render(errorText) + marginStyle.Render(helptext)
+		}
 
 		return marginStyle.Render(title) + "\n" + createFormFrame.title.View() + marginStyle.Render(helptext)
 	} else if (createFormFrame.step == 1) {
@@ -246,6 +264,6 @@ func (cf CreateFormFrame) View(app Application) string {
 	}
 }
 
-func (cf CreateFormFrame) Init() tea.Cmd {
+func (cf CreateFormFrame) Init(app Application) tea.Cmd {
 	return nil
 }

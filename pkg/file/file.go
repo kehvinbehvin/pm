@@ -40,14 +40,19 @@ func NewReconcilableFileTypeIndex(storageKey string) common.Reconcilable {
 
 }
 
+const FILE_TYPE_PRD = "prd"
+const FILE_TYPE_EPIC = "epic"
+const FILE_TYPE_STORY = "story"
+const FILE_TYPE_TASK = "task"
+
 // For mvp, system declares file types
 // TODO: refactor into constants
 func NewFileTypeIndex() *FileTypeIndex {
 	fileTypes := map[string]map[string]string{
-		"prd":   {},
-		"epic":  {},
-		"story": {},
-		"task":  {},
+		FILE_TYPE_PRD:   {},
+		FILE_TYPE_EPIC:  {},
+		FILE_TYPE_STORY: {},
+		FILE_TYPE_TASK:  {},
 	}
 
 	files := map[string]string{}
@@ -102,6 +107,20 @@ func (ft *FileTypeIndex) RemoveFileFromIndex(fileName string, fileType string) e
 	delete(ft.FileToType, fileName)
 
 	return nil
+}
+
+func (ft *FileTypeIndex) RetrieveAllFilesWithTypes() (map[string][]string, error) {
+	var output map[string][]string
+	output = make(map[string][]string, 0)
+
+	for k, _ := range ft.TypeToFile {
+		output[k] = make([]string, 0)
+		for names , _ := range ft.TypeToFile[k] {
+			output[k] = append(output[k], names)
+		}
+	}
+
+	return output, nil
 }
 
 func (ft *FileTypeIndex) RetrieveFilesFromType(fileType string) ([]string, error) {

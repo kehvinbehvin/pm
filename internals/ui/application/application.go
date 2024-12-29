@@ -74,5 +74,5 @@ func (a Application) Init() tea.Cmd {
 		return nil
 	}
 
-	return currentFrame.Init()
+	return currentFrame.Init(a)
 }

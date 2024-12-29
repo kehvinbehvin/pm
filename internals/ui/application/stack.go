@@ -36,6 +36,11 @@ func (af *ApplicationStack) Pop() (ApplicationFrame, error) {
 	return frame, nil
 }
 
+func (af *ApplicationStack) ClearStack() (error) {
+	af.stack = nil
+	return nil
+}
+
 func (af *ApplicationStack) Peek() (ApplicationFrame, error) {
 	length := len(af.stack)
 	if length < 1 {
@@ -43,4 +48,8 @@ func (af *ApplicationStack) Peek() (ApplicationFrame, error) {
 	}
 
 	return af.stack[length-1], nil
+}
+
+func (af *ApplicationStack) Size() (int) {
+	return len(af.stack)
 }
