@@ -13,6 +13,9 @@ type ViewMarkdownFrame struct{
 	content string
 	fileName string
 	subStack *ApplicationStack
+	selectedItem string
+	linkChild bool
+	linkDep bool
 }
 // TODO: Need to handle window sizing.
 func NewViewMarkdownFrame(fileName string, content string, app Application) (*ViewMarkdownFrame, error) {
@@ -51,6 +54,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 		return app, tea.Quit
 	}
 
+	// Register search results
 	if viewMarkdownFrame.subStack.Size() != 0 {
 		frame, frameErr := viewMarkdownFrame.subStack.Peek();
 		if frameErr != nil {
@@ -63,14 +67,23 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 		if selectedItem != "" {
 			index := strings.Index(selectedItem, "]")
 			fileName := strings.TrimSpace(selectedItem[index + 1:])
-			log.Println("ViewMarkDownFrame: Selected Item " + fileName)
-			app.Fs.LinkHierarchy(viewMarkdownFrame.fileName, fileName)
+			viewMarkdownFrame.selectedItem = fileName
 		}
+		
+		viewMarkdownFrame.subStack.Pop()
+	}
+
+	if viewMarkdownFrame.linkChild && viewMarkdownFrame.selectedItem != "" {
+		app.Fs.LinkHierarchy(viewMarkdownFrame.fileName, viewMarkdownFrame.selectedItem)
+		viewMarkdownFrame.linkChild = false
+		viewMarkdownFrame.selectedItem = ""
+	} else if viewMarkdownFrame.linkDep {
+		app.Fs.LinkDependency(viewMarkdownFrame.fileName, viewMarkdownFrame.selectedItem)
+		viewMarkdownFrame.linkDep = false
+		viewMarkdownFrame.selectedItem = ""
 	}
 
 	// Continue operation
-	
-
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// Update the viewport size when the terminal is resized
@@ -111,6 +124,17 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 			app.History.Push(globalSearchFrame)
 			viewMarkdownFrame.subStack.Push(globalSearchFrame)
+			viewMarkdownFrame.linkChild = true
+		case "d":
+			// Push fileName to a global search of all issues which exlcudes itself
+			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app)
+			if frameErr != nil {
+				return app, tea.Quit 
+			}
+
+			app.History.Push(globalSearchFrame)
+			viewMarkdownFrame.subStack.Push(globalSearchFrame)
+			viewMarkdownFrame.linkDep = true
 		default:
 			var cmd tea.Cmd
 			*app.ViewPort, cmd = app.ViewPort.Update(msg)
@@ -125,7 +149,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
 	log.Println("Viewing Markdown");
-	helptext := "\n[q] Quit ● [←] Back ● [l] Link children"
+	helptext := "\n[q] Quit ● [←] Back\n[l] Link children ● [d] Link dependecies"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return app.ViewPort.View() + marginStyle.Render(helptext)
