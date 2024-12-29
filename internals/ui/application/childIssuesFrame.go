@@ -96,7 +96,7 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 }
 
 func (cif ChildIssueFrame) View(app Application) string {
-	helptext := "[e] Edit ● [v] View ● [enter] Children\n[q] Quit ● [←] Back "
+	helptext := "[v] View ● [c] Children ● [e] Edit\n[q] Quit ● [←] Back "
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return cif.children.View() + marginStyle.Render(helptext)
