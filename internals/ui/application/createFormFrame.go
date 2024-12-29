@@ -84,7 +84,7 @@ func NewCreateFormFrame(parent string) ApplicationFrame {
 		item("Menu"),
 	}
 
-	const defaultWidth = 50
+	const defaultWidth = 100
 	delegate := itemDelegate{}
 	al := list.New(actionItems, delegate, defaultWidth, 14)
 	al.Title = "What do you want to do next"

@@ -367,14 +367,14 @@ func (fs *FileSystem) ListFileNamesByType(fileType string) ([]string, error) {
 }
 
 func (fs *FileSystem) ListRelatedHierarchy(fileName string) ([]string, error) {
-	return fs.listRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
+	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
 }
 
 func (fs *FileSystem) ListRelatedDependency(fileName string) ([]string, error) {
-	return fs.listRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
+	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
 }
 
-func (fs *FileSystem) listRelatedIssues(fileName string, fileRelationship string) ([]string, error) {
+func (fs *FileSystem) ListRelatedIssues(fileName string, fileRelationship string) ([]string, error) {
 	dag := fs.fileRelationShips.DataStructure.(*dag.Dag)
 	vertex := dag.RetrieveVertex(fileName)
 	children := vertex.Children

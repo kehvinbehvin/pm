@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"github/pm/pkg/fileSystem"
 	"log"
 
 	"golang.org/x/text/cases"
@@ -72,10 +73,16 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 			return app, tea.Quit
 		case "left":
 			app.History.Pop()
+		case "d":
+			selectedItem := browseFrame.epics.SelectedItem().(item) 
+			issueId := string(selectedItem)
+			childFrame := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY)
+			app.History.Push(childFrame)
+
 		case "c":
 			selectedItem := browseFrame.epics.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame := NewChildIssueFrame(app, issueId)
+			childFrame := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY)
 			app.History.Push(childFrame)
 		case "v":
 			selectedItem := browseFrame.epics.SelectedItem().(item)
@@ -102,7 +109,7 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 }
 
 func (bf BrowseFrame) View(app Application) string {	
-	helptext := "[v] View ● [c] Children\n[q] Quit ● [←] Back "
+	helptext := "[v] View ● [c] Child issues ● [d] Dependenciees\n[q] Quit ● [←] Back "
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 	return bf.epics.View() + marginStyle.Render(helptext)
 }

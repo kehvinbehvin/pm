@@ -2,19 +2,20 @@ package application
 
 import (
 	"errors"
+	"github/pm/pkg/fileSystem"
 
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/bubbles/list"
 )
 
 type ChildIssueFrame struct {
 	children list.Model
 }
 
-func NewChildIssueFrame(app Application, fileName string) ApplicationFrame {
+func NewChildIssueFrame(app Application, fileName string, childRelationship string) ApplicationFrame {
 	var issueItems []list.Item
-	issues, err := app.Fs.ListRelatedHierarchy(fileName)
+	issues, err := app.Fs.ListRelatedIssues(fileName, childRelationship)
 	if err != nil {
 		app.History.Pop();
 	}
@@ -23,9 +24,17 @@ func NewChildIssueFrame(app Application, fileName string) ApplicationFrame {
 		issueItems = append(issueItems, item(issue))
 	}
 
+	var pageTitle string;
+	switch(childRelationship) {
+	case fileSystem.FILE_RELATIONSHIP_DEPENDENCY:
+		pageTitle = "Blocking"
+	case fileSystem.FILE_RELATIONSHIPS_HIERARCHY:
+		pageTitle = "Child"
+	}
+
 	const defaultWidth = 50
 	l := list.New(issueItems, itemDelegate{}, defaultWidth, 14)
-	l.Title = "[" + fileName + "] child issues"
+	l.Title = "[" + fileName + "] " + pageTitle + " issues"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
@@ -66,10 +75,15 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 			return app, tea.Quit
 		case "left":
 			app.History.Pop()
-		case "enter":
+		case "c":
 			selectedItem := browseFrame.children.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame := NewChildIssueFrame(app, issueId)
+			childFrame := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY)
+			app.History.Push(childFrame)
+		case "d":
+			selectedItem := browseFrame.children.SelectedItem().(item) 
+			issueId := string(selectedItem)
+			childFrame := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY)
 			app.History.Push(childFrame)
 		case "e":
 			selectedItem := browseFrame.children.SelectedItem().(item)
@@ -96,7 +110,7 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 }
 
 func (cif ChildIssueFrame) View(app Application) string {
-	helptext := "[v] View ● [c] Children ● [e] Edit\n[q] Quit ● [←] Back "
+	helptext := "[v] View ● [c] Child issues ● [d] Depdencies ● [e] Edit\n[q] Quit ● [←] Back "
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return cif.children.View() + marginStyle.Render(helptext)
