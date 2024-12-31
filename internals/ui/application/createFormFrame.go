@@ -86,12 +86,15 @@ func NewCreateFormFrame(app Application, parent string) (ApplicationFrame, error
 		}
 
 		fileTypeHierarchy := []string{"epic", "story", "task"}
+		pick := false;
 		for _, fileType := range fileTypeHierarchy {
-			if fileType != parentFileType {
-				continue
+			if pick {
+				items = append(items, item(fileType))
 			}
 
-			items = append(items, item(fileType))
+			if fileType == parentFileType {
+				pick = true
+			}	
 		}
 	}
 
@@ -233,6 +236,10 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 						app.History.Push(frame)
 					case "Create child issue":
 						app.History.Pop()
+						if createFormFrame.fileType == "task" {
+							return app, nil
+						}
+
 						frame, frameErr := NewCreateFormFrame(app, createFormFrame.title.Value())
 						if frameErr != nil {
 							return app, tea.Quit
@@ -282,6 +289,14 @@ func (cf CreateFormFrame) View(app Application) string {
 	} else {
 		helptext := "\n[q] Quit ● [enter] Enter"
 		marginStyle := lipgloss.NewStyle().Margin(1, 2)
+
+		if createFormFrame.fileType == "task" {
+			createFormFrame.postActionList.SetItems([]list.Item{
+				item("Edit file"),
+				item("Create file"),
+				item("Menu"),
+			})
+		}
 
 		return createFormFrame.postActionList.View() + marginStyle.Render(helptext)
 
