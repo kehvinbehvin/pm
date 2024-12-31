@@ -40,7 +40,6 @@ func NewReconcilableFileTypeIndex(storageKey string) common.Reconcilable {
 
 }
 
-const FILE_TYPE_PRD = "prd"
 const FILE_TYPE_EPIC = "epic"
 const FILE_TYPE_STORY = "story"
 const FILE_TYPE_TASK = "task"
@@ -49,7 +48,6 @@ const FILE_TYPE_TASK = "task"
 // TODO: refactor into constants
 func NewFileTypeIndex() *FileTypeIndex {
 	fileTypes := map[string]map[string]string{
-		FILE_TYPE_PRD:   {},
 		FILE_TYPE_EPIC:  {},
 		FILE_TYPE_STORY: {},
 		FILE_TYPE_TASK:  {},
