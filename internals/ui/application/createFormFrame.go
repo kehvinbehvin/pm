@@ -73,7 +73,6 @@ func NewCreateFormFrame(parent string) ApplicationFrame {
 	ti.Focus()
 
 	items := []list.Item{
-		item("prd"),
 		item("epic"),
 		item("story"),
 		item("task"),
