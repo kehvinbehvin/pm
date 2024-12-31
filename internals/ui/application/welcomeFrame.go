@@ -14,7 +14,11 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 		case "q", "ctrl+c", "esc":
 			return app, tea.Quit
 		case "c":
-			frame := NewCreateFormFrame("")
+			frame, frameErr := NewCreateFormFrame(app, "")
+			if frameErr != nil {
+				return app, tea.Quit
+			}
+
 			app.History.Push(frame)
 		case "e":
 			frame := NewBrowseFrame(app, "epic")

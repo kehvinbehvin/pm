@@ -404,3 +404,13 @@ func (fs *FileSystem) ListRelatedIssues(fileName string, fileRelationship string
 
 	return childIssues, nil
 }
+
+func (fs *FileSystem) GetFileType(fileName string) (string, error) {
+	fileIndex := fs.getFileIndex()
+	fileType, typeErr := fileIndex.RetrieveFileType(fileName)
+	if typeErr != nil {
+		return "", typeErr
+	}
+
+	return fileType, nil
+}

@@ -67,15 +67,32 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, fn(str))
 }
 
-func NewCreateFormFrame(parent string) ApplicationFrame {
+func NewCreateFormFrame(app Application, parent string) (ApplicationFrame, error) {
 	ti := textinput.New()
 	ti.Placeholder = "Title"
 	ti.Focus()
 
-	items := []list.Item{
-		item("epic"),
-		item("story"),
-		item("task"),
+	var items []list.Item
+	if parent == "" {
+		items = []list.Item{
+			item("epic"),
+			item("story"),
+			item("task"),
+		}
+	} else {
+		parentFileType, fileTypeErr := app.Fs.GetFileType(parent)
+		if fileTypeErr != nil {
+			return CreateFormFrame{}, fileTypeErr
+		}
+
+		fileTypeHierarchy := []string{"epic", "story", "task"}
+		for _, fileType := range fileTypeHierarchy {
+			if fileType != parentFileType {
+				continue
+			}
+
+			items = append(items, item(fileType))
+		}
 	}
 
 	actionItems := []list.Item{
@@ -111,7 +128,7 @@ func NewCreateFormFrame(parent string) ApplicationFrame {
 		parent: parent,
 	}
 
-	return &m
+	return &m, nil
 }
 
 func (cf CreateFormFrame) getFrame(app Application) (*CreateFormFrame, error) {
@@ -208,11 +225,19 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 						app.History.Push(frame)
 					case "Create file":
 						app.History.Pop()
-						frame := NewCreateFormFrame("")
+						frame, frameErr := NewCreateFormFrame(app, "")
+						if frameErr != nil {
+							return app, tea.Quit
+						}
+
 						app.History.Push(frame)
 					case "Create child issue":
 						app.History.Pop()
-						frame := NewCreateFormFrame(createFormFrame.title.Value())
+						frame, frameErr := NewCreateFormFrame(app, createFormFrame.title.Value())
+						if frameErr != nil {
+							return app, tea.Quit
+						}
+
 						app.History.Push(frame)
 					case "Menu":
 						app.History.Pop()

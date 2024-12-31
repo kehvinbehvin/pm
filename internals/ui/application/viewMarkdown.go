@@ -115,6 +115,13 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			// Issue with terminal resizing after editor process hands back control
 			app.History.Pop()
 			vmdf.subStack.ClearStack()
+		case "c":
+			createFormFrame, frameErr := NewCreateFormFrame(app, viewMarkdownFrame.fileName)
+			if frameErr != nil {
+				return app, tea.Quit
+			}
+
+			app.History.Push(createFormFrame)
 		case "l":
 			// Push fileName to a global search of all issues which exlcudes itself
 			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app)
@@ -149,7 +156,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
 	log.Println("Viewing Markdown");
-	helptext := "\n[q] Quit ● [←] Back\n[l] Link children ● [d] Link dependecies"
+	helptext := "\n[q] Quit ● [←] Back\n[l] Link children ● [d] Link dependecies\n[c] Create child issue"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return app.ViewPort.View() + marginStyle.Render(helptext)
