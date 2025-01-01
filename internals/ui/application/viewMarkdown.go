@@ -129,9 +129,14 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			app.History.Push(createFormFrame)
 		case "l":
 			// Push fileName to a global search of all issues which exlcudes itself
-			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName)
+			relatedIssues, issuesErr := app.Fs.ListRelatedHierarchy(viewMarkdownFrame.fileName)
+			if issuesErr != nil {
+				log.Println("Error fetching related children issues")
+				return app, tea.Quit
+			}
+			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName, relatedIssues)
 			if frameErr != nil {
-				return app, tea.Quit 
+				return app, nil 
 			}
 
 			app.History.Push(globalSearchFrame)
@@ -139,9 +144,16 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			viewMarkdownFrame.linkChild = true
 		case "d":
 			// Push fileName to a global search of all issues which exlcudes itself
-			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName)
+			relatedIssues, issuesErr := app.Fs.ListRelatedDependency(viewMarkdownFrame.fileName)
+			log.Println(relatedIssues)
+			if issuesErr != nil {
+				log.Println("Error fetching related children issues")
+				return app, tea.Quit
+			}
+
+			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName, relatedIssues)
 			if frameErr != nil {
-				return app, tea.Quit 
+				return app, nil 
 			}
 
 			app.History.Push(globalSearchFrame)
@@ -149,9 +161,15 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			viewMarkdownFrame.linkDownStream = true
 		case "u":
 			// Push fileName to a global search of all issues which exlcudes itself
-			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName)
+			relatedIssues, issuesErr := app.Fs.ListRelatedDependency(viewMarkdownFrame.fileName)
+			if issuesErr != nil {
+				log.Println("Error fetching related children issues")
+				return app, tea.Quit
+			}
+
+			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName, relatedIssues)
 			if frameErr != nil {
-				return app, tea.Quit 
+				return app, nil 
 			}
 
 			app.History.Push(globalSearchFrame)

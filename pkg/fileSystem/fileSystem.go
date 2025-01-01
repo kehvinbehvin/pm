@@ -305,6 +305,7 @@ func (fs *FileSystem) linkFile(parentName string, childName string, relationship
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&addEdgeAlpha)
 	if updateErr != nil {
+		log.Println("Error Linking file");
 		return updateErr
 	}
 
@@ -348,6 +349,7 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&removeEdgeAlpha)
 	if updateErr != nil {
+		log.Println("Error unlinking file")
 		return updateErr
 	}
 
@@ -385,7 +387,7 @@ func (fs *FileSystem) ListRelatedHierarchy(fileName string) ([]string, error) {
 }
 
 func (fs *FileSystem) ListRelatedDependency(fileName string) ([]string, error) {
-	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIPS_HIERARCHY)
+	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIP_DEPENDENCY)
 }
 
 func (fs *FileSystem) ListRelatedIssues(fileName string, fileRelationship string) ([]string, error) {

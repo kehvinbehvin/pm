@@ -14,7 +14,17 @@ type GlobalSelectionFrame struct{
 	selectedItem string
 }
 
-func NewGlobalSelectionFrame(app Application, currentFile string) (*GlobalSelectionFrame, error) {
+func indexOf(haystack []string, needle string) (int) {
+	for index, value := range haystack {
+		if needle == value {
+			return index
+		}
+	}
+
+	return -1
+}
+
+func NewGlobalSelectionFrame(app Application, currentFile string, excludeFiles []string) (*GlobalSelectionFrame, error) {
 	// Fetch all issues
 	filesWithTypes, fsErr := app.Fs.ListAllFilesWithTypes()
 	if fsErr != nil {
@@ -30,12 +40,20 @@ func NewGlobalSelectionFrame(app Application, currentFile string) (*GlobalSelect
 				continue;
 			}
 
+			if indexOf(excludeFiles, fileName) != -1 {
+				continue;
+			}
+
 			title := "[" + fileType + "] " + fileName
 			fileList = append(fileList, title)
 		}
 	}
 
 	sort.Strings(fileList)
+	if len(fileList) == 0 {
+		return &GlobalSelectionFrame{}, errors.New("No items to link to")
+	}
+
 	for _, file := range fileList {
 		fileItemList = append(fileItemList, item(file))
 	}
