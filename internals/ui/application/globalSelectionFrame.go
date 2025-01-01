@@ -99,6 +99,8 @@ func (gsf GlobalSelectionFrame) Update(msg tea.Msg, app Application) (tea.Model,
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
 			return app, tea.Quit
+		case "left":
+			app.History.Pop()
 		case "v":
 			// Allow the user to view the markdown for more description
 			selectedItem := globalFrame.items.SelectedItem().(item)
@@ -129,7 +131,7 @@ func (gsf GlobalSelectionFrame) Update(msg tea.Msg, app Application) (tea.Model,
 }
 
 func (gsf GlobalSelectionFrame) View(app Application) string {
-	helptext := "[v] View ● [enter] select ● [q] Quit"
+	helptext := "[v] View ● [enter] select\n[q] Quit ● [←] Back "
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 	return gsf.items.View() + marginStyle.Render(helptext)
 }
