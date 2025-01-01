@@ -15,7 +15,8 @@ type ViewMarkdownFrame struct{
 	subStack *ApplicationStack
 	selectedItem string
 	linkChild bool
-	linkDep bool
+	linkDownStream bool
+	linkUpsteam bool
 }
 // TODO: Need to handle window sizing.
 func NewViewMarkdownFrame(fileName string, content string, app Application) (*ViewMarkdownFrame, error) {
@@ -77,9 +78,13 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 		app.Fs.LinkHierarchy(viewMarkdownFrame.fileName, viewMarkdownFrame.selectedItem)
 		viewMarkdownFrame.linkChild = false
 		viewMarkdownFrame.selectedItem = ""
-	} else if viewMarkdownFrame.linkDep {
+	} else if viewMarkdownFrame.linkDownStream {
 		app.Fs.LinkDependency(viewMarkdownFrame.fileName, viewMarkdownFrame.selectedItem)
-		viewMarkdownFrame.linkDep = false
+		viewMarkdownFrame.linkDownStream = false
+		viewMarkdownFrame.selectedItem = ""
+	} else if viewMarkdownFrame.linkUpsteam {
+		app.Fs.LinkDependency(viewMarkdownFrame.selectedItem, viewMarkdownFrame.fileName)
+		viewMarkdownFrame.linkUpsteam = false
 		viewMarkdownFrame.selectedItem = ""
 	}
 
@@ -124,7 +129,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			app.History.Push(createFormFrame)
 		case "l":
 			// Push fileName to a global search of all issues which exlcudes itself
-			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app)
+			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName)
 			if frameErr != nil {
 				return app, tea.Quit 
 			}
@@ -134,14 +139,24 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			viewMarkdownFrame.linkChild = true
 		case "d":
 			// Push fileName to a global search of all issues which exlcudes itself
-			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app)
+			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName)
 			if frameErr != nil {
 				return app, tea.Quit 
 			}
 
 			app.History.Push(globalSearchFrame)
 			viewMarkdownFrame.subStack.Push(globalSearchFrame)
-			viewMarkdownFrame.linkDep = true
+			viewMarkdownFrame.linkDownStream = true
+		case "u":
+			// Push fileName to a global search of all issues which exlcudes itself
+			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName)
+			if frameErr != nil {
+				return app, tea.Quit 
+			}
+
+			app.History.Push(globalSearchFrame)
+			viewMarkdownFrame.subStack.Push(globalSearchFrame)
+			viewMarkdownFrame.linkUpsteam = true
 		default:
 			var cmd tea.Cmd
 			*app.ViewPort, cmd = app.ViewPort.Update(msg)
@@ -156,7 +171,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
 	log.Println("Viewing Markdown");
-	helptext := "\n[q] Quit ● [←] Back\n[l] Link children ● [d] Link dependecies\n[c] Create child issue"
+	helptext := "\n[q] Quit ● [←] Back\n[l] Link child issue ● [d] Link Downstream blocker [u] Link Upstream blocker\n[c] Create child issue"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return app.ViewPort.View() + marginStyle.Render(helptext)

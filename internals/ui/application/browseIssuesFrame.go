@@ -109,7 +109,7 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 }
 
 func (bf BrowseFrame) View(app Application) string {	
-	helptext := "[v] View ● [c] Child issues ● [d] Dependenciees\n[q] Quit ● [←] Back "
+	helptext := "[v] View File ● [c] Child issues ● [d] Downstream ● [u] Upstream\n[q] Quit ● [←] Back "
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 	return bf.epics.View() + marginStyle.Render(helptext)
 }

@@ -4,6 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"errors"
+	"sort"
 
 	"github.com/charmbracelet/bubbles/list"
 )
@@ -13,7 +14,7 @@ type GlobalSelectionFrame struct{
 	selectedItem string
 }
 
-func NewGlobalSelectionFrame(app Application) (*GlobalSelectionFrame, error) {
+func NewGlobalSelectionFrame(app Application, currentFile string) (*GlobalSelectionFrame, error) {
 	// Fetch all issues
 	filesWithTypes, fsErr := app.Fs.ListAllFilesWithTypes()
 	if fsErr != nil {
@@ -22,13 +23,23 @@ func NewGlobalSelectionFrame(app Application) (*GlobalSelectionFrame, error) {
 
 	// Create list
 	fileItemList := make([]list.Item, 0)
+	fileList := make([]string, 0)
 	for fileType, files := range filesWithTypes {
 		for _, fileName := range files {
+			if fileName == currentFile {
+				continue;
+			}
+
 			title := "[" + fileType + "] " + fileName
-			fileItemList = append(fileItemList, item(title))
+			fileList = append(fileList, title)
 		}
 	}
-	
+
+	sort.Strings(fileList)
+	for _, file := range fileList {
+		fileItemList = append(fileItemList, item(file))
+	}
+
 	delegate := itemDelegate{}
 
 	const defaultWidth = 50
