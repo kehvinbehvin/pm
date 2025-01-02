@@ -175,6 +175,14 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			app.History.Push(globalSearchFrame)
 			viewMarkdownFrame.subStack.Push(globalSearchFrame)
 			viewMarkdownFrame.linkUpsteam = true
+		case "g":
+			// View dependency graph
+			depGraphFrame, frameErr := NewDependencyGraph();
+			if frameErr != nil {
+				return app, nil
+			}
+
+			app.History.Push(depGraphFrame)
 		default:
 			var cmd tea.Cmd
 			*app.ViewPort, cmd = app.ViewPort.Update(msg)
@@ -189,7 +197,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
 	log.Println("Viewing Markdown");
-	helptext := "\n[q] Quit ● [←] Back\n[l] Link child issue ● [d] Link Downstream blocker [u] Link Upstream blocker\n[c] Create child issue"
+	helptext := "\n[q] Quit ● [←] Back\n[l] Link child issue ● [d] Link Downstream blocker [u] Link Upstream blocker\n[c] Create child issue\n[g] View dependecy graph"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return app.ViewPort.View() + marginStyle.Render(helptext)
