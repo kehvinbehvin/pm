@@ -35,11 +35,14 @@ func NewApplication(fs *fileSystem.FileSystem) (tea.Model, error) {
 		return nil, errors.New("Error creating renderer");
 	}
 
+	graphRenderer := fileSystem.FileGraphRenderer{}
+
 	return Application{
 		History: stack,
 		Fs: fs,
 		Renderer: renderer,
 		ViewPort: &vp,
+		GraphRenderer: &graphRenderer,
 	}, nil
 }
 
@@ -48,6 +51,7 @@ type Application struct {
 	Fs *fileSystem.FileSystem
 	Renderer *glamour.TermRenderer
 	ViewPort *viewport.Model
+	GraphRenderer *fileSystem.FileGraphRenderer
 }
 
 func (a Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

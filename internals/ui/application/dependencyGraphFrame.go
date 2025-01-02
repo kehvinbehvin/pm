@@ -3,12 +3,16 @@ package application
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"errors"
 )
 
-type DependencyGraph struct{}
+type DependencyGraph struct{
+	fileName string
+}
 
-func NewDependencyGraph() (*DependencyGraph, error) {
+func NewDependencyGraph(fileName string) (*DependencyGraph, error) {
 	return &DependencyGraph{
+		fileName: fileName,
 	}, nil
 }
 
@@ -26,10 +30,34 @@ func (dg DependencyGraph) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 	return app, nil
 }
 
+func (dg DependencyGraph) getFrame(app Application) (*DependencyGraph, error) {
+	frame, error := app.History.Peek()
+	if error != nil {
+		return &DependencyGraph{}, errors.New("Cannot get self")
+	}
+
+	depGraphframe := frame.(*DependencyGraph)
+	return depGraphframe, nil
+}
+
+
 func (dg DependencyGraph) View(app Application) string {
-	helptext := "[q] Quit ● [←] Back "
+	helptext := "\n[q] Quit ● [←] Back "
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
-	return marginStyle.Render(helptext)
+
+	depGraphFrame, frameErr := dg.getFrame(app);
+	if frameErr != nil {
+		return ""
+	}
+
+	vertex := app.Fs.GetFileChildMeta(depGraphFrame.fileName)
+
+	graph, renderErr := app.GraphRenderer.Build(vertex)
+	if renderErr != nil {
+		return ""
+	}
+
+	return graph + marginStyle.Render(helptext)
 }
 
 func (dg DependencyGraph) Init(app Application) tea.Cmd {

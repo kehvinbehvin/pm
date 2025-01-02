@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"log"
+	"strings"
 )
 
 const FILE_RELATIONSHIP_DEPENDENCY = "DEPENDENCY"
@@ -415,4 +416,64 @@ func (fs *FileSystem) GetFileType(fileName string) (string, error) {
 	}
 
 	return fileType, nil
+}
+
+func (fs *FileSystem) GetFileChildMeta(fileName string) (*dag.Vertex) {
+	 return fs.getFileTree().RetrieveVertex(fileName)
+}
+
+type FileGraphRenderer struct {}
+
+func (fgr FileGraphRenderer) Build(issue *dag.Vertex) (string, error) {
+	output := fgr.BuildIssue(issue, 0);
+
+	return output, nil
+}
+
+func (fgr FileGraphRenderer) BuildIssue(issue *dag.Vertex, lane int) (string) {
+	head := fgr.AddHeadInLane(lane) + " " + issue.ID
+	body := fgr.AddBodyInLane(lane)
+	children := fgr.BuildHierarchy(issue, lane)
+	// dependencies := fgr.BuildDepedencies(issue, lane)
+
+	return head + body + children 
+}
+
+func (fgr FileGraphRenderer) BuildChildren(relationship string, parent *dag.Vertex, lane int) (string) {
+	if len(parent.Children) == 0 {
+		return ""
+	}
+
+	var children string;
+
+	for _, value := range parent.Children {
+		if value.Label == relationship {
+			children += fgr.BuildIssue(value.To, lane)
+		}
+	}
+
+	return children
+}
+
+func (fgr FileGraphRenderer) BuildDepedencies(parent *dag.Vertex, lane int) (string) {
+	return fgr.BuildChildren(FILE_RELATIONSHIP_DEPENDENCY, parent, lane)
+}
+
+func (fgr FileGraphRenderer) BuildHierarchy(parent *dag.Vertex, lane int) (string) {
+	return fgr.BuildChildren(FILE_RELATIONSHIPS_HIERARCHY, parent, lane)
+}
+
+
+func (fgr FileGraphRenderer) AddBodyInLane(lane int) (string) {
+	laneString := fgr.LanePosition(lane)
+	return "\n" + laneString + "|"
+}
+
+func (fgr FileGraphRenderer) AddHeadInLane(lane int) (string) {
+	laneString := fgr.LanePosition(lane)
+	return "\n" + laneString + "*"
+}
+
+func (fgr FileGraphRenderer) LanePosition(lane int) (string) {
+	return strings.Repeat(" ", lane)
 }

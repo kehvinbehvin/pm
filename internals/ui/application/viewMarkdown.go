@@ -177,7 +177,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			viewMarkdownFrame.linkUpsteam = true
 		case "g":
 			// View dependency graph
-			depGraphFrame, frameErr := NewDependencyGraph();
+			depGraphFrame, frameErr := NewDependencyGraph(viewMarkdownFrame.fileName);
 			if frameErr != nil {
 				return app, nil
 			}
