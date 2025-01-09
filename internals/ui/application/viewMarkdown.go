@@ -128,20 +128,22 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 			app.History.Push(createFormFrame)
 		case "l":
+			// Remove the ability to link children outside of creating a new issue
+			// to prevent multiple parents
 			// Push fileName to a global search of all issues which exlcudes itself
-			relatedIssues, issuesErr := app.Fs.ListRelatedHierarchy(viewMarkdownFrame.fileName)
-			if issuesErr != nil {
-				log.Println("Error fetching related children issues")
-				return app, tea.Quit
-			}
-			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName, relatedIssues)
-			if frameErr != nil {
-				return app, nil 
-			}
-
-			app.History.Push(globalSearchFrame)
-			viewMarkdownFrame.subStack.Push(globalSearchFrame)
-			viewMarkdownFrame.linkChild = true
+			// relatedIssues, issuesErr := app.Fs.ListRelatedHierarchy(viewMarkdownFrame.fileName)
+			// if issuesErr != nil {
+			// 	log.Println("Error fetching related children issues")
+			// 	return app, tea.Quit
+			// }
+			// globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName, relatedIssues)
+			// if frameErr != nil {
+			// 	return app, nil 
+			// }
+			//
+			// app.History.Push(globalSearchFrame)
+			// viewMarkdownFrame.subStack.Push(globalSearchFrame)
+			// viewMarkdownFrame.linkChild = true
 		case "d":
 			// Push fileName to a global search of all issues which exlcudes itself
 			relatedIssues, issuesErr := app.Fs.ListRelatedDependency(viewMarkdownFrame.fileName)
@@ -197,7 +199,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
 	log.Println("Viewing Markdown");
-	helptext := "\n[q] Quit ● [←] Back\n[l] Link child issue ● [d] Link Downstream blocker [u] Link Upstream blocker\n[c] Create child issue\n[g] View dependecy graph"
+	helptext := "\n[q] Quit ● [←] Back\n[d] Link Downstream blocker [u] Link Upstream blocker\n[c] Create child issue\n[g] View dependecy graph"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return app.ViewPort.View() + marginStyle.Render(helptext)

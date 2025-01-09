@@ -50,9 +50,9 @@ func (dg DependencyGraph) View(app Application) string {
 		return ""
 	}
 
-	vertex := app.Fs.GetFileChildMeta(depGraphFrame.fileName)
+	// vertex := app.Fs.GetFileChildMeta(depGraphFrame.fileName)
 
-	graph, renderErr := app.GraphRenderer.Build(vertex)
+	graph, renderErr := app.GraphRenderer.Build(depGraphFrame.fileName)
 	if renderErr != nil {
 		return ""
 	}

@@ -35,7 +35,9 @@ func NewApplication(fs *fileSystem.FileSystem) (tea.Model, error) {
 		return nil, errors.New("Error creating renderer");
 	}
 
-	graphRenderer := fileSystem.FileGraphRenderer{}
+	graphRenderer := fileSystem.FileGraphRenderer{
+		Fs: *fs,
+	}
 
 	return Application{
 		History: stack,

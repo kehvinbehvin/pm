@@ -3,15 +3,15 @@ package fileSystem
 import (
 	"github/pm/pkg/blob"
 	"github/pm/pkg/common"
-	dag "github/pm/pkg/dag"
+	"github/pm/pkg/dag"
 	pmfile "github/pm/pkg/file"
 
-	"os/exec"
-	"sort"
 	"errors"
-	"os"
-	"path/filepath"
 	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -21,6 +21,7 @@ const FILE_RELATIONSHIPS_HIERARCHY = "HIERARCHY"
 type FileSystem struct {
 	fileRelationShips common.Reconcilable
 	fileTypeIndex     common.Reconcilable
+	fileParentRelationships common.Reconcilable
 }
 
 func NewFileSystem() (*FileSystem) {
@@ -40,18 +41,19 @@ func checkDirExists(dirPath string) bool {
 
 func (fs *FileSystem) ShutDown() error {
 	fs.fileRelationShips.SaveReconcilable()
+	fs.fileParentRelationships.SaveReconcilable()
 	fs.fileTypeIndex.SaveReconcilable()
 	return nil
 }
 
-func (fs *FileSystem) BootDag() error {
+func (fs *FileSystem) BootDag(key string) (common.Reconcilable, error) {
 	dagDirectory := filepath.Join(".", ".pm", "dag")
-	dagFile := filepath.Join(".", ".pm", "dag", "dag")
+	dagFile := filepath.Join(".", ".pm", "dag", key)
 
 	if !checkDirExists(dagDirectory) {
 		err := os.MkdirAll(dagDirectory, os.ModePerm)
 		if err != nil {
-			return errors.New("Error creating directory for file relationships")
+			return common.Reconcilable{}, errors.New("Error creating directory for file relationships")
 		}
 	}
 
@@ -64,15 +66,10 @@ func (fs *FileSystem) BootDag() error {
 		defer file.Close()
 
 		// TODO: Refactor to pass in path file
-		fs.fileRelationShips = dag.NewReconcilableDag("dag")
-		defer fs.fileRelationShips.SaveReconcilable()
+		return dag.NewReconcilableDag(key), nil
 	} else {
-		reconcilable := dag.LoadReconcilableDag(dagFile)
-		fs.fileRelationShips = reconcilable
-		defer fs.fileRelationShips.SaveReconcilable()
+		return dag.LoadReconcilableDag(dagFile), nil
 	}
-
-	return nil
 }
 
 func (fs *FileSystem) BootFileTypes() error {
@@ -108,10 +105,21 @@ func (fs *FileSystem) BootFileTypes() error {
 
 func (fs *FileSystem) Boot() error {
 	// Load/Create File fileRelationShips
-	bootDagErr := fs.BootDag()
-	if bootDagErr != nil {
-		return bootDagErr
+	childDag, bootChildrenDagErr := fs.BootDag("children")
+	if bootChildrenDagErr != nil {
+		return bootChildrenDagErr
 	}
+
+	fs.fileRelationShips = childDag
+	defer fs.fileRelationShips.SaveReconcilable()
+
+	parentDag, bootParentDagErr := fs.BootDag("parent")
+	if bootParentDagErr != nil {
+		return bootParentDagErr
+	}
+
+	fs.fileParentRelationships = parentDag
+	defer fs.fileRelationShips.SaveReconcilable()
 
 	// Load/CreateFile Type index
 	bootIndexErr := fs.BootFileTypes()
@@ -158,6 +166,11 @@ func (fs *FileSystem) CreateFile(fileName string, fileType string) error {
 	}
 
 	updateErr = fs.fileRelationShips.DataStructure.Update(&addVertexAlpha)
+	if updateErr != nil {
+		return updateErr
+	}
+
+	updateErr = fs.fileParentRelationships.DataStructure.Update(&addVertexAlpha)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -229,6 +242,11 @@ func (fs *FileSystem) DeleteFile(fileName string) error {
 	}
 
 	updateErr = fs.fileRelationShips.DataStructure.Update(&removeVertexAlpha)
+	if updateErr != nil {
+		return updateErr
+	}
+
+	updateErr = fs.fileParentRelationships.DataStructure.Update(&removeVertexAlpha)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -310,6 +328,20 @@ func (fs *FileSystem) linkFile(parentName string, childName string, relationship
 		return updateErr
 	}
 
+	// Add opposite direction edge
+	addOppEdgeAlpha := dag.AddEdgeAlpha{
+		To: parentVertex,
+		From:   childVertex,
+		Label: relationship,
+	}
+
+	updateErr = fs.fileParentRelationships.DataStructure.Update(&addOppEdgeAlpha)
+	if updateErr != nil {
+		log.Println("Error Parent Linking file");
+		return updateErr
+	}
+
+
 	return nil
 }
 
@@ -354,6 +386,19 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 		return updateErr
 	}
 
+	// Add Edge between parent and child vertex
+	removeOppEdgeAlpha := dag.RemoveEdgeAlpha{
+		To: parentVertex,
+		From:   childVertex,
+		Label: relationship,
+	}
+
+	updateErr = fs.fileRelationShips.DataStructure.Update(&removeOppEdgeAlpha)
+	if updateErr != nil {
+		log.Println("Error unlinking parent file")
+		return updateErr
+	}
+
 	return nil
 }
 
@@ -391,21 +436,38 @@ func (fs *FileSystem) ListRelatedDependency(fileName string) ([]string, error) {
 	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIP_DEPENDENCY)
 }
 
-func (fs *FileSystem) ListRelatedIssues(fileName string, fileRelationship string) ([]string, error) {
-	dag := fs.fileRelationShips.DataStructure.(*dag.Dag)
-	vertex := dag.RetrieveVertex(fileName)
+func (fs *FileSystem) ListRelatedParents(fileName string, fileRelationship string) ([]string, error) {
+	childDag := fs.fileParentRelationships.DataStructure.(*dag.Dag)
+	vertex := childDag.RetrieveVertex(fileName)
 	children := vertex.Children
-	
-	var childIssues []string
+
+	var issues []string
 	for _, child := range children {
 		if (fileRelationship != child.Label) {
 			continue
 		}
 
-		childIssues = append(childIssues, child.To.ID)
+		issues = append(issues, child.To.ID)
 	}
 
-	return childIssues, nil
+	return issues, nil
+}
+
+func (fs *FileSystem) ListRelatedIssues(fileName string, fileRelationship string) ([]string, error) {
+	childDag := fs.fileRelationShips.DataStructure.(*dag.Dag)
+	vertex := childDag.RetrieveVertex(fileName)
+	children := vertex.Children
+
+	var issues []string
+	for _, child := range children {
+		if (fileRelationship != child.Label) {
+			continue
+		}
+
+		issues = append(issues, child.To.ID)
+	}
+
+	return issues, nil
 }
 
 func (fs *FileSystem) GetFileType(fileName string) (string, error) {
@@ -422,47 +484,59 @@ func (fs *FileSystem) GetFileChildMeta(fileName string) (*dag.Vertex) {
 	 return fs.getFileTree().RetrieveVertex(fileName)
 }
 
-type FileGraphRenderer struct {}
+type FileGraphRenderer struct {
+	Fs FileSystem
+}
 
-func (fgr FileGraphRenderer) Build(issue *dag.Vertex) (string, error) {
-	output := fgr.BuildIssue(issue, 0);
+func (fgr FileGraphRenderer) Build(fileName string) (string, error) {
+	output := fgr.BuildIssue(fileName, 0);
 
 	return output, nil
 }
 
-func (fgr FileGraphRenderer) BuildIssue(issue *dag.Vertex, lane int) (string) {
-	head := fgr.AddHeadInLane(lane) + " " + issue.ID
-	body := fgr.AddBodyInLane(lane)
-	children := fgr.BuildHierarchy(issue, lane)
-	// dependencies := fgr.BuildDepedencies(issue, lane)
+func (fgr FileGraphRenderer) BuildIssue(vertexID string, lane int) (string) {
+	childrenDag := fgr.Fs.getFileTree()
+	issueWithChildren := childrenDag.RetrieveVertex(vertexID)
 
-	return head + body + children 
+	head := fgr.AddHeadInLane(lane) + " " + issueWithChildren.ID
+	body := fgr.AddBodyInLane(lane)
+	dependencies := fgr.BuildDepedencies(issueWithChildren, lane)
+
+	return head + body + dependencies
 }
 
-func (fgr FileGraphRenderer) BuildChildren(relationship string, parent *dag.Vertex, lane int) (string) {
-	if len(parent.Children) == 0 {
+// func (fgr FileGraphRenderer) BuildHierarchy(issueWithChildren *dag.Vertex, lane int) (string) {
+// 	if len(issueWithChildren.Children) == 0 {
+// 		return ""
+// 	}
+//
+// 	var children string;
+//
+// 	for _, value := range issueWithChildren.Children {
+// 		if value.Label == FILE_RELATIONSHIPS_HIERARCHY {
+// 			children += fgr.BuildIssue(value.To.ID, lane)
+// 		}
+// 	}
+//
+// 	return children
+// }
+
+func (fgr FileGraphRenderer) BuildDepedencies(issueWithChildren *dag.Vertex, lane int) (string) {
+	if len(issueWithChildren.Children) == 0 {
 		return ""
 	}
 
 	var children string;
 
-	for _, value := range parent.Children {
-		if value.Label == relationship {
-			children += fgr.BuildIssue(value.To, lane)
+	for index, value := range issueWithChildren.Children {
+		if value.Label == FILE_RELATIONSHIP_DEPENDENCY {
+			position := fgr.LanePosition(lane + index)
+			children += position + "\\" + fgr.BuildIssue(value.To.ID, lane + index + 1)
 		}
 	}
 
-	return children
+	return "\n" + children
 }
-
-func (fgr FileGraphRenderer) BuildDepedencies(parent *dag.Vertex, lane int) (string) {
-	return fgr.BuildChildren(FILE_RELATIONSHIP_DEPENDENCY, parent, lane)
-}
-
-func (fgr FileGraphRenderer) BuildHierarchy(parent *dag.Vertex, lane int) (string) {
-	return fgr.BuildChildren(FILE_RELATIONSHIPS_HIERARCHY, parent, lane)
-}
-
 
 func (fgr FileGraphRenderer) AddBodyInLane(lane int) (string) {
 	laneString := fgr.LanePosition(lane)
