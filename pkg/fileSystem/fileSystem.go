@@ -212,11 +212,11 @@ func openEditor(editor string, filePath string) error {
 	return nil
 }
 
-func (fs *FileSystem) DeleteFile(fileName string) error {
+func (fs *FileSystem) DeleteFile(fileName string, fileType string) error {
 	// Remove name from fileTypeInde
 	removeFileIndexAlpha := pmfile.RemoveFileTypeIndexAlpha{
 		FileName: fileName,
-		FileType: "",
+		FileType: fileType,
 	}
 
 	updateErr := fs.fileTypeIndex.DataStructure.Update(&removeFileIndexAlpha)

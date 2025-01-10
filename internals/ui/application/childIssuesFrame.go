@@ -12,17 +12,14 @@ import (
 type ChildIssueFrame struct {
 	children list.Model
 	fileType string
+	relationship string
+	fileName string
 }
 
 func NewChildIssueFrame(app Application, fileName string, childRelationship string) (ApplicationFrame, error) {
-	var issueItems []list.Item
-	issues, err := app.Fs.ListRelatedIssues(fileName, childRelationship)
-	if err != nil {
-		app.History.Pop();
-	}
-
-	for _, issue := range issues {
-		issueItems = append(issueItems, item(issue))
+	issueItems, asyncErr := asycData(app, fileName, childRelationship)
+	if asyncErr != nil {
+		return ChildIssueFrame{}, asyncErr
 	}
 
 	var pageTitle string;
@@ -53,10 +50,42 @@ func NewChildIssueFrame(app Application, fileName string, childRelationship stri
 	bf := ChildIssueFrame{
 		children: l,
 		fileType: fileType,
+		relationship: childRelationship,
+		fileName: fileName,
 	}
 
 	return &bf, nil
 
+}
+
+func asycData(app Application, fileName string, childRelationship string) ([]list.Item, error) {
+	var issueItems []list.Item
+	issues, err := app.Fs.ListRelatedIssues(fileName, childRelationship)
+	if err != nil {
+		return issueItems, err
+	}
+
+	for _, issue := range issues {
+		issueItems = append(issueItems, item(issue))
+	}
+	
+	return issueItems, nil
+}
+
+func (cif ChildIssueFrame) Refresh(app Application) (error) {
+	frame, error := app.History.Peek()
+	if error != nil {
+		return errors.New("Cannot get self")
+	}
+	childIssueFrame := frame.(*ChildIssueFrame)
+	updatedChildren, asyncErr := asycData(app, childIssueFrame.fileName, childIssueFrame.relationship);
+	if asyncErr != nil {
+		return asyncErr
+	}
+
+	childIssueFrame.children.SetItems(updatedChildren)
+
+	return nil
 }
 
 func (cif ChildIssueFrame) getFrame(app Application) (*ChildIssueFrame, error) {
@@ -128,6 +157,24 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 		case "t":
 			frame := NewBrowseFrame(app, "task")
 			app.History.Push(frame)
+		case "r":
+			selectedItem := browseFrame.children.SelectedItem().(item) 
+			issueId := string(selectedItem)
+
+			switch(browseFrame.relationship) {
+			case fileSystem.FILE_RELATIONSHIPS_HIERARCHY:
+				app.Fs.UnLinkHierarchy(browseFrame.fileName, issueId)
+			case fileSystem.FILE_RELATIONSHIP_DEPENDENCY:
+				app.Fs.UnLinkDependency(browseFrame.fileName, issueId)
+			}
+
+			app.History.Pop();
+			childFrame, issueErr := NewChildIssueFrame(app, browseFrame.fileName, browseFrame.relationship)
+			if issueErr != nil {
+				return app, tea.Quit
+			}
+
+			app.History.Push(childFrame)
 		}
 	}
 	var cmd tea.Cmd
@@ -136,7 +183,7 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 }
 
 func (cif ChildIssueFrame) View(app Application) string {
-	helptext := "[v] View File ● [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies\n[q] Quit ● [←] Back \n[e] All epics [s] All stories [t] All tasks"
+	helptext := "[v] View File ● [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies [r] Unlink issue\n[q] Quit ● [←] Back \n[e] All epics [s] All stories [t] All tasks"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return cif.children.View() + marginStyle.Render(helptext)

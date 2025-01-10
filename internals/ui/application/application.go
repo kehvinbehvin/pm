@@ -72,6 +72,8 @@ func (a Application) View() string {
 		return ""
 	}
 
+	currentFrame.Refresh(a)
+
 	return currentFrame.View(a)
 }
 func (a Application) Init() tea.Cmd {

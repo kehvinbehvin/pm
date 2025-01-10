@@ -6,6 +6,10 @@ import (
 
 type EditFileFrame struct{}
 
+func (ed EditFileFrame) Refresh(app Application) (error) {
+	return nil
+}
+
 func (ed EditFileFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

@@ -17,12 +17,18 @@ type ViewMarkdownFrame struct{
 	linkChild bool
 	linkDownStream bool
 	linkUpsteam bool
+	fileType string
 }
 // TODO: Need to handle window sizing.
 func NewViewMarkdownFrame(fileName string, content string, app Application) (*ViewMarkdownFrame, error) {
 	str, err := app.Renderer.Render(content)
 	if err != nil {
 		return nil, err
+	}
+
+	fileType, typeErr := app.Fs.GetFileType(fileName);
+	if typeErr != nil {
+		return &ViewMarkdownFrame{},typeErr
 	}
 
 	log.Println("Rendered content");
@@ -35,6 +41,7 @@ func NewViewMarkdownFrame(fileName string, content string, app Application) (*Vi
 		fileName: fileName,
 		content: content,
 		subStack: stack,
+		fileType: fileType,
 	}, nil
 }
 
@@ -187,6 +194,10 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 		case "t":
 			frame := NewBrowseFrame(app, "task")
 			app.History.Push(frame)
+
+		case "r":
+			app.Fs.DeleteFile(viewMarkdownFrame.fileName, viewMarkdownFrame.fileType)
+			app.History.Pop();
 		}
 	default:
 		return app, nil
@@ -196,12 +207,16 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 }
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
-	helptext := "[o] Open [d] Link Downstream blocker [u] Link Upstream blocker\n[i] Create child issue\n[q] Quit ● [←] Back\n[e] All epics [s] All stories [t] All tasks"
+	helptext := "[o] Open [d] Link Downstream blocker [u] Link Upstream blocker\n[i] Create child issue [r] Delete file\n[q] Quit ● [←] Back\n[e] All epics [s] All stories [t] All tasks"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return app.ViewPort.View() + marginStyle.Render(helptext)
 }
 
 func (vmdf *ViewMarkdownFrame) Init(app Application) tea.Cmd {
+	return nil
+}
+
+func (vmdf *ViewMarkdownFrame) Refresh(app Application) (error) {
 	return nil
 }

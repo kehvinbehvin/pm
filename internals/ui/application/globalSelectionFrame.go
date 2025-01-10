@@ -139,3 +139,8 @@ func (gsf GlobalSelectionFrame) View(app Application) string {
 func (gsf GlobalSelectionFrame) Init(app Application) tea.Cmd {
 	return nil
 }
+
+func (gsf GlobalSelectionFrame) Refresh(app Application) (error) {
+	return nil
+}
+

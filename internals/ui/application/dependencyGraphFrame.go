@@ -63,3 +63,7 @@ func (dg DependencyGraph) View(app Application) string {
 func (dg DependencyGraph) Init(app Application) tea.Cmd {
 	return nil
 }
+
+func (dg DependencyGraph) Refresh(app Application) (error) {
+	return nil
+}

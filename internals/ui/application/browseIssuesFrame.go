@@ -51,6 +51,26 @@ func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
 	return &bf
 }
 
+func (bf BrowseFrame) Refresh(app Application) (error) {
+	browseFrame, frameErr := bf.getFrame(app)
+	if frameErr != nil {
+		return frameErr
+	}
+
+	var epicItems []list.Item
+	epics, err := app.Fs.ListFileNamesByType(bf.fileType)
+	if err != nil {
+		return err
+	}
+
+	for _, epic := range epics {
+		epicItems = append(epicItems, item(epic))
+	}
+
+	browseFrame.epics.SetItems(epicItems)
+	return nil
+}
+
 func (bg BrowseFrame) getFrame(app Application) (*BrowseFrame, error) {
 	frame, error := app.History.Peek()
 	if error != nil {

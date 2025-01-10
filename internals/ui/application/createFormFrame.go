@@ -309,3 +309,7 @@ func (cf CreateFormFrame) View(app Application) string {
 func (cf CreateFormFrame) Init(app Application) tea.Cmd {
 	return nil
 }
+
+func (cf CreateFormFrame) Refresh(app Application) (error) {
+	return nil
+}
