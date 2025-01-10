@@ -98,7 +98,7 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 		case "d":
 			selectedItem := browseFrame.epics.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, true)
 			if issueErr != nil {
 				return app, tea.Quit
 			}
@@ -107,7 +107,16 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 		case "c":
 			selectedItem := browseFrame.epics.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY, true)
+			if issueErr != nil {
+				return app, tea.Quit
+			}
+
+			app.History.Push(childFrame)
+		case "u":
+			selectedItem := browseFrame.epics.SelectedItem().(item) 
+			issueId := string(selectedItem)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, false)
 			if issueErr != nil {
 				return app, tea.Quit
 			}
@@ -146,6 +155,13 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 				frame := NewBrowseFrame(app, "task")
 				app.History.Push(frame)
 			}
+		case "i":
+			frame, frameErr := NewCreateFormFrame(app, "")
+			if frameErr != nil {
+				return app, tea.Quit
+			}
+
+			app.History.Push(frame)
 		}
 	}
 
@@ -160,7 +176,7 @@ func (bf BrowseFrame) View(app Application) string {
 		return ""
 	}
 
-	helptext := "[v] View File ● [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies\n[q] Quit ● [←] Back \n"
+	helptext := "[v] View File ● [i] Create Issue [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies\n[q] Quit ● [←] Back \n"
 	epicText := "[e] All epics "
 	storyText := "[s] All stories "
 	taskText := "[t] All tasks "

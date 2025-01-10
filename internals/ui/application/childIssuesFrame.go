@@ -14,10 +14,11 @@ type ChildIssueFrame struct {
 	fileType string
 	relationship string
 	fileName string
+	direction bool
 }
 
-func NewChildIssueFrame(app Application, fileName string, childRelationship string) (ApplicationFrame, error) {
-	issueItems, asyncErr := asycData(app, fileName, childRelationship)
+func NewChildIssueFrame(app Application, fileName string, childRelationship string, direction bool) (ApplicationFrame, error) {
+	issueItems, asyncErr := asycData(app, fileName, childRelationship, direction)
 	if asyncErr != nil {
 		return ChildIssueFrame{}, asyncErr
 	}
@@ -52,15 +53,24 @@ func NewChildIssueFrame(app Application, fileName string, childRelationship stri
 		fileType: fileType,
 		relationship: childRelationship,
 		fileName: fileName,
+		direction: direction,
 	}
 
 	return &bf, nil
 
 }
 
-func asycData(app Application, fileName string, childRelationship string) ([]list.Item, error) {
+func asycData(app Application, fileName string, childRelationship string, direction bool) ([]list.Item, error) {
 	var issueItems []list.Item
-	issues, err := app.Fs.ListRelatedIssues(fileName, childRelationship)
+	var issues []string
+	var err error
+
+	if direction {
+		issues, err = app.Fs.ListRelatedIssues(fileName, childRelationship)
+	} else {
+		issues, err = app.Fs.ListRelatedParentDependency(fileName)
+	}
+	
 	if err != nil {
 		return issueItems, err
 	}
@@ -78,7 +88,7 @@ func (cif ChildIssueFrame) Refresh(app Application) (error) {
 		return errors.New("Cannot get self")
 	}
 	childIssueFrame := frame.(*ChildIssueFrame)
-	updatedChildren, asyncErr := asycData(app, childIssueFrame.fileName, childIssueFrame.relationship);
+	updatedChildren, asyncErr := asycData(app, childIssueFrame.fileName, childIssueFrame.relationship, childIssueFrame.direction);
 	if asyncErr != nil {
 		return asyncErr
 	}
@@ -114,7 +124,7 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 		case "c":
 			selectedItem := browseFrame.children.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY, true)
 			if issueErr != nil {
 				return app, tea.Quit
 			}
@@ -123,12 +133,22 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 		case "d":
 			selectedItem := browseFrame.children.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, true)
 			if issueErr != nil {
 				return app, tea.Quit
 			}
 
 			app.History.Push(childFrame)
+		case "u":
+			selectedItem := browseFrame.children.SelectedItem().(item) 
+			issueId := string(selectedItem)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, false)
+			if issueErr != nil {
+				return app, tea.Quit
+			}
+
+			app.History.Push(childFrame)
+
 		case "o":
 			selectedItem := browseFrame.children.SelectedItem().(item)
 			issueId := string(selectedItem)
@@ -163,13 +183,33 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 
 			switch(browseFrame.relationship) {
 			case fileSystem.FILE_RELATIONSHIPS_HIERARCHY:
-				app.Fs.UnLinkHierarchy(browseFrame.fileName, issueId)
+				var parent string
+				var child string
+				if browseFrame.direction {
+					parent = browseFrame.fileName
+					child = issueId
+				} else {
+					parent = issueId
+					child = browseFrame.fileName
+				}
+
+				app.Fs.UnLinkHierarchy(parent, child)
 			case fileSystem.FILE_RELATIONSHIP_DEPENDENCY:
-				app.Fs.UnLinkDependency(browseFrame.fileName, issueId)
+				var parent string
+				var child string
+				if browseFrame.direction {
+					parent = browseFrame.fileName
+					child = issueId
+				} else {
+					parent = issueId
+					child = browseFrame.fileName
+				}
+
+				app.Fs.UnLinkDependency(parent, child)
 			}
 
 			app.History.Pop();
-			childFrame, issueErr := NewChildIssueFrame(app, browseFrame.fileName, browseFrame.relationship)
+			childFrame, issueErr := NewChildIssueFrame(app, browseFrame.fileName, browseFrame.relationship, browseFrame.direction)
 			if issueErr != nil {
 				return app, tea.Quit
 			}

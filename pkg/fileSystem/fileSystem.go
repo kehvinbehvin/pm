@@ -138,6 +138,10 @@ func (fs *FileSystem) getFileTree() *dag.Dag {
 	return fs.fileRelationShips.DataStructure.(*dag.Dag)
 }
 
+func (fs *FileSystem) getParentFileTree() *dag.Dag {
+	return fs.fileParentRelationships.DataStructure.(*dag.Dag)
+}
+
 func (fs *FileSystem) CreateFile(fileName string, fileType string) error {
   log.Println("Filename: " + fileName + " created");
 	// Create Blob using fileName
@@ -170,7 +174,12 @@ func (fs *FileSystem) CreateFile(fileName string, fileType string) error {
 		return updateErr
 	}
 
-	updateErr = fs.fileParentRelationships.DataStructure.Update(&addVertexAlpha)
+	parentVertex := dag.NewVertex(fileName)
+	addParentVertexAlpha := dag.AddVertexAlpha{
+		Target: parentVertex,
+	}
+
+	updateErr = fs.fileParentRelationships.DataStructure.Update(&addParentVertexAlpha)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -246,7 +255,19 @@ func (fs *FileSystem) DeleteFile(fileName string, fileType string) error {
 		return updateErr
 	}
 
-	updateErr = fs.fileParentRelationships.DataStructure.Update(&removeVertexAlpha)
+	parentFileTree := fs.getParentFileTree()
+	parentVertex := parentFileTree.RetrieveVertex(fileName)
+	if parentVertex != nil {
+		return errors.New("File not found in file system")
+	}
+
+	// Remove Vertex from Dag
+	removeParentVertexAlpha := dag.RemoveVertexAlpha{
+		Target: parentVertex,
+	}
+
+
+	updateErr = fs.fileParentRelationships.DataStructure.Update(&removeParentVertexAlpha)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -328,6 +349,10 @@ func (fs *FileSystem) linkFile(parentName string, childName string, relationship
 		return updateErr
 	}
 
+	parentFileTree := fs.getParentFileTree()
+	parentVertex = parentFileTree.RetrieveVertex(parentName)
+	childVertex = parentFileTree.RetrieveVertex(childName)
+
 	// Add opposite direction edge
 	addOppEdgeAlpha := dag.AddEdgeAlpha{
 		To: parentVertex,
@@ -337,10 +362,9 @@ func (fs *FileSystem) linkFile(parentName string, childName string, relationship
 
 	updateErr = fs.fileParentRelationships.DataStructure.Update(&addOppEdgeAlpha)
 	if updateErr != nil {
-		log.Println("Error Parent Linking file");
+		log.Println("Error Parent Linking file" + updateErr.Error());
 		return updateErr
 	}
-
 
 	return nil
 }
@@ -370,8 +394,8 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 	}
 
 	fileTree := fs.getFileTree()
-	parentVertex := fileTree.RetrieveVertex(parentName)
-	childVertex := fileTree.RetrieveVertex(childName)
+	parentVertex := fileTree.RetrieveVertex(childName)
+	childVertex := fileTree.RetrieveVertex(parentName)
 
 	// Add Edge between parent and child vertex
 	removeEdgeAlpha := dag.RemoveEdgeAlpha{
@@ -385,6 +409,10 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 		log.Println("Error unlinking file")
 		return updateErr
 	}
+
+	parentFileTree := fs.getParentFileTree()
+	parentVertex = parentFileTree.RetrieveVertex(childName)
+	childVertex = parentFileTree.RetrieveVertex(parentName)
 
 	// Add Edge between parent and child vertex
 	removeOppEdgeAlpha := dag.RemoveEdgeAlpha{
@@ -434,6 +462,10 @@ func (fs *FileSystem) ListRelatedHierarchy(fileName string) ([]string, error) {
 
 func (fs *FileSystem) ListRelatedDependency(fileName string) ([]string, error) {
 	return fs.ListRelatedIssues(fileName, FILE_RELATIONSHIP_DEPENDENCY)
+}
+
+func (fs *FileSystem) ListRelatedParentDependency(fileName string) ([]string, error) {
+	return fs.ListRelatedParents(fileName, FILE_RELATIONSHIP_DEPENDENCY)
 }
 
 func (fs *FileSystem) ListRelatedParents(fileName string, fileRelationship string) ([]string, error) {
