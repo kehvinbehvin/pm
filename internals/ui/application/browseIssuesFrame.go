@@ -15,6 +15,7 @@ import (
 
 type BrowseFrame struct{
 	epics list.Model
+	fileType string
 }
 
 func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
@@ -44,6 +45,7 @@ func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
 	l.SetHeight(min(len(epicItems) + 4, maxHeight))
 	bf := BrowseFrame{
 		epics: l,
+		fileType: fileType,
 	}
 
 	return &bf
@@ -76,13 +78,20 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 		case "d":
 			selectedItem := browseFrame.epics.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY)
+			if issueErr != nil {
+				return app, tea.Quit
+			}
 			app.History.Push(childFrame)
 
 		case "c":
 			selectedItem := browseFrame.epics.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY)
+			if issueErr != nil {
+				return app, tea.Quit
+			}
+
 			app.History.Push(childFrame)
 		case "v":
 			selectedItem := browseFrame.epics.SelectedItem().(item)
@@ -100,6 +109,23 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 			}
 
 			app.History.Push(mdFrame)
+		case "e":
+			if browseFrame.fileType != "epic" {
+				frame := NewBrowseFrame(app, "epic")
+				app.History.Push(frame)
+			}
+
+		case "s":
+			if browseFrame.fileType != "story" {
+				frame := NewBrowseFrame(app, "story")
+				app.History.Push(frame)
+			}
+
+		case "t":
+			if browseFrame.fileType != "task" {
+				frame := NewBrowseFrame(app, "task")
+				app.History.Push(frame)
+			}
 		}
 	}
 
@@ -109,8 +135,29 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 }
 
 func (bf BrowseFrame) View(app Application) string {	
-	helptext := "[v] View File ● [c] Child issues ● [d] Downstream ● [u] Upstream\n[q] Quit ● [←] Back "
+	browseFrame, frameErr := bf.getFrame(app)
+	if frameErr != nil {
+		return ""
+	}
+
+	helptext := "[v] View File ● [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies\n[q] Quit ● [←] Back \n"
+	epicText := "[e] All epics "
+	storyText := "[s] All stories "
+	taskText := "[t] All tasks "
+
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
+	if (browseFrame.fileType != "epic") {
+		helptext = helptext + epicText
+	}  
+
+	if (browseFrame.fileType != "story") {
+		helptext = helptext + storyText
+	}  
+
+	if (browseFrame.fileType != "task") {
+		helptext = helptext + taskText
+	}
+
 	return bf.epics.View() + marginStyle.Render(helptext)
 }
 

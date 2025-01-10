@@ -11,9 +11,10 @@ import (
 
 type ChildIssueFrame struct {
 	children list.Model
+	fileType string
 }
 
-func NewChildIssueFrame(app Application, fileName string, childRelationship string) ApplicationFrame {
+func NewChildIssueFrame(app Application, fileName string, childRelationship string) (ApplicationFrame, error) {
 	var issueItems []list.Item
 	issues, err := app.Fs.ListRelatedIssues(fileName, childRelationship)
 	if err != nil {
@@ -32,6 +33,11 @@ func NewChildIssueFrame(app Application, fileName string, childRelationship stri
 		pageTitle = "Child"
 	}
 
+	fileType, typeErr := app.Fs.GetFileType(fileName);
+	if typeErr != nil {
+		return ChildIssueFrame{}, typeErr
+	}
+
 	const defaultWidth = 50
 	l := list.New(issueItems, itemDelegate{}, defaultWidth, 14)
 	l.Title = "[" + fileName + "] " + pageTitle + " issues"
@@ -46,9 +52,10 @@ func NewChildIssueFrame(app Application, fileName string, childRelationship stri
 
 	bf := ChildIssueFrame{
 		children: l,
+		fileType: fileType,
 	}
 
-	return &bf
+	return &bf, nil
 
 }
 
@@ -78,14 +85,22 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 		case "c":
 			selectedItem := browseFrame.children.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY)
+			if issueErr != nil {
+				return app, tea.Quit
+			}
+
 			app.History.Push(childFrame)
 		case "d":
 			selectedItem := browseFrame.children.SelectedItem().(item) 
 			issueId := string(selectedItem)
-			childFrame := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY)
+			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY)
+			if issueErr != nil {
+				return app, tea.Quit
+			}
+
 			app.History.Push(childFrame)
-		case "e":
+		case "o":
 			selectedItem := browseFrame.children.SelectedItem().(item)
 			issueId := string(selectedItem)
 			app.Fs.EditFile(issueId)
@@ -103,6 +118,16 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 			}
 
 			app.History.Push(mdFrame)
+		case "e":
+			frame := NewBrowseFrame(app, "epic")
+			app.History.Push(frame)
+		case "s":
+			frame := NewBrowseFrame(app, "story")
+			app.History.Push(frame)
+
+		case "t":
+			frame := NewBrowseFrame(app, "task")
+			app.History.Push(frame)
 		}
 	}
 	var cmd tea.Cmd
@@ -111,7 +136,7 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 }
 
 func (cif ChildIssueFrame) View(app Application) string {
-	helptext := "[v] View ● [c] Child issues ● [d] Depdencies ● [e] Edit\n[q] Quit ● [←] Back "
+	helptext := "[v] View File ● [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies\n[q] Quit ● [←] Back \n[e] All epics [s] All stories [t] All tasks"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return cif.children.View() + marginStyle.Render(helptext)

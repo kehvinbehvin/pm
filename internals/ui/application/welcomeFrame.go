@@ -13,7 +13,7 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
 			return app, tea.Quit
-		case "c":
+		case "i":
 			frame, frameErr := NewCreateFormFrame(app, "")
 			if frameErr != nil {
 				return app, tea.Quit
@@ -37,7 +37,7 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 
 func (wf WelcomeFrame) View(app Application) string {
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
-	return marginStyle.Render("Browser\n\n[c] Create issue\n[e] List epics\n[s] List stories\n[t] List tasks\n[q] Quit")
+	return marginStyle.Render("Browser\n\n[i] Create issue\n[e] List epics\n[s] List stories\n[t] List tasks\n[q] Quit")
 }
 
 func (wf WelcomeFrame) Init(app Application) tea.Cmd {

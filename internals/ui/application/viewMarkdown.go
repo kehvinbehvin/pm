@@ -113,14 +113,14 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			return app, tea.Quit
 		case "left":
 			app.History.Pop()
-		case "e":
+		case "o":
 			app.Fs.EditFile(viewMarkdownFrame.fileName)
 
 			// Push back to previous page
 			// Issue with terminal resizing after editor process hands back control
 			app.History.Pop()
 			vmdf.subStack.ClearStack()
-		case "c":
+		case "i":
 			createFormFrame, frameErr := NewCreateFormFrame(app, viewMarkdownFrame.fileName)
 			if frameErr != nil {
 				return app, tea.Quit
@@ -177,18 +177,16 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			app.History.Push(globalSearchFrame)
 			viewMarkdownFrame.subStack.Push(globalSearchFrame)
 			viewMarkdownFrame.linkUpsteam = true
-		case "g":
-			// View dependency graph
-			depGraphFrame, frameErr := NewDependencyGraph(viewMarkdownFrame.fileName);
-			if frameErr != nil {
-				return app, nil
-			}
+		case "e":
+			frame := NewBrowseFrame(app, "epic")
+			app.History.Push(frame)
+		case "s":
+			frame := NewBrowseFrame(app, "story")
+			app.History.Push(frame)
 
-			app.History.Push(depGraphFrame)
-		default:
-			var cmd tea.Cmd
-			*app.ViewPort, cmd = app.ViewPort.Update(msg)
-			return app, tea.Batch(tea.ClearScreen, cmd)
+		case "t":
+			frame := NewBrowseFrame(app, "task")
+			app.History.Push(frame)
 		}
 	default:
 		return app, nil
@@ -198,8 +196,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 }
 
 func (vmdf *ViewMarkdownFrame) View(app Application) string {
-	log.Println("Viewing Markdown");
-	helptext := "\n[q] Quit ● [←] Back\n[d] Link Downstream blocker [u] Link Upstream blocker\n[c] Create child issue\n[g] View dependecy graph"
+	helptext := "[o] Open [d] Link Downstream blocker [u] Link Upstream blocker\n[i] Create child issue\n[q] Quit ● [←] Back\n[e] All epics [s] All stories [t] All tasks"
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
 	return app.ViewPort.View() + marginStyle.Render(helptext)

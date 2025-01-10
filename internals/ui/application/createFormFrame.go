@@ -105,9 +105,12 @@ func NewCreateFormFrame(app Application, parent string) (ApplicationFrame, error
 		item("Menu"),
 	}
 
+	actionItemsHeight := len(actionItems) + 5
+	itemsHeight := len(items) + 5             
+
 	const defaultWidth = 100
 	delegate := itemDelegate{}
-	al := list.New(actionItems, delegate, defaultWidth, 14)
+	al := list.New(actionItems, delegate, defaultWidth, actionItemsHeight)
 	al.Title = "What do you want to do next"
 	al.SetShowStatusBar(false)
 	al.SetFilteringEnabled(false)
@@ -115,7 +118,7 @@ func NewCreateFormFrame(app Application, parent string) (ApplicationFrame, error
 	al.Styles.PaginationStyle = paginationStyle
 	al.SetShowHelp(false)
 
-	l := list.New(items, itemDelegate{}, defaultWidth, 14)
+	l := list.New(items, itemDelegate{}, defaultWidth, itemsHeight)
 	l.Title = "What type of file do you want to create"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
