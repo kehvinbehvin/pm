@@ -393,8 +393,8 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 	}
 
 	fileTree := fs.getFileTree()
-	parentVertex := fileTree.RetrieveVertex(childName)
-	childVertex := fileTree.RetrieveVertex(parentName)
+	parentVertex := fileTree.RetrieveVertex(parentName)
+	childVertex := fileTree.RetrieveVertex(childName)
 
 	// Add Edge between parent and child vertex
 	removeEdgeAlpha := dag.RemoveEdgeAlpha{
@@ -405,13 +405,13 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&removeEdgeAlpha)
 	if updateErr != nil {
-		log.Println("Error unlinking file")
+		log.Println("Error unlinking file" + updateErr.Error())
 		return updateErr
 	}
 
 	parentFileTree := fs.getParentFileTree()
-	parentVertex = parentFileTree.RetrieveVertex(childName)
-	childVertex = parentFileTree.RetrieveVertex(parentName)
+	parentVertex = parentFileTree.RetrieveVertex(parentName)
+	childVertex = parentFileTree.RetrieveVertex(childName)
 
 	// Add Edge between parent and child vertex
 	removeOppEdgeAlpha := dag.RemoveEdgeAlpha{
@@ -420,7 +420,7 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 		Label: relationship,
 	}
 
-	updateErr = fs.fileRelationShips.DataStructure.Update(&removeOppEdgeAlpha)
+	updateErr = fs.fileParentRelationships.DataStructure.Update(&removeOppEdgeAlpha)
 	if updateErr != nil {
 		log.Println("Error unlinking parent file")
 		return updateErr
