@@ -26,9 +26,13 @@ func NewChildIssueFrame(app Application, fileName string, childRelationship stri
 	var pageTitle string
 	switch childRelationship {
 	case fileSystem.FILE_RELATIONSHIP_DEPENDENCY:
-		pageTitle = "Blocking"
+		if direction {
+			pageTitle = "Downsteam dependencies"
+		} else {
+			pageTitle = "Upstream dependencies"
+		}
 	case fileSystem.FILE_RELATIONSHIPS_HIERARCHY:
-		pageTitle = "Child"
+		pageTitle = "Children issues"
 	}
 
 	fileType, typeErr := app.Fs.GetFileType(fileName)
@@ -36,9 +40,9 @@ func NewChildIssueFrame(app Application, fileName string, childRelationship stri
 		return ChildIssueFrame{}, typeErr
 	}
 
-	const defaultWidth = 50
+	const defaultWidth = 200
 	l := list.New(issueItems, itemDelegate{}, defaultWidth, 14)
-	l.Title = "[" + fileName + "] " + pageTitle + " issues"
+	l.Title = "[" + fileName + "]\n" + pageTitle 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
