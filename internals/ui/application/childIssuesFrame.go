@@ -114,7 +114,18 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 		return app, tea.Quit
 	}
 
-	switch msg := msg.(type) {
+	if len(browseFrame.children.Items()) == 0 {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q", "ctrl+c", "esc":
+			return app, tea.Quit
+			case "left":
+			app.History.Pop()
+			}
+		}
+	} else {
+switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
@@ -217,15 +228,26 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 			app.History.Push(childFrame)
 		}
 	}
+
+	}
+
 	var cmd tea.Cmd
 	browseFrame.children, cmd = browseFrame.children.Update(msg)
 	return app, cmd
 }
 
 func (cif ChildIssueFrame) View(app Application) string {
-	helptext := "[v] View File ● [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies [r] Unlink issue\n[q] Quit ● [←] Back \n[e] All epics [s] All stories [t] All tasks"
-	marginStyle := lipgloss.NewStyle().Margin(1, 2)
+	browseFrame, frameErr := cif.getFrame(app)
+	if frameErr != nil {
+		return ""
+	}
 
+	marginStyle := lipgloss.NewStyle().Margin(1, 2)
+	if len(browseFrame.children.Items()) == 0 {
+		return cif.children.View() +  marginStyle.Render("[q] Quit ● [←] Back")
+	}
+
+	helptext := "[v] View File ● [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies [r] Unlink issue\n[q] Quit ● [←] Back \n[e] All epics [s] All stories [t] All tasks"
 	return cif.children.View() + marginStyle.Render(helptext)
 }
 

@@ -89,7 +89,18 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 		return app, tea.Quit
 	}
 
-	switch msg := msg.(type) {
+	if len(browseFrame.epics.Items()) == 0 {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q", "ctrl+c", "esc":
+			return app, tea.Quit
+			case "left":
+			app.History.Pop()
+			}
+		}
+	} else {
+		switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
@@ -166,6 +177,8 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 		}
 	}
 
+	}
+	
 	var cmd tea.Cmd
 	browseFrame.epics, cmd = browseFrame.epics.Update(msg)
 	return app, cmd
@@ -177,12 +190,16 @@ func (bf BrowseFrame) View(app Application) string {
 		return ""
 	}
 
+	marginStyle := lipgloss.NewStyle().Margin(1, 2)
+	if len(browseFrame.epics.Items()) == 0 {
+		return bf.epics.View() +  marginStyle.Render("[q] Quit ● [←] Back")
+	}
+
 	helptext := "[v] View File ● [i] Create Issue [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies\n[q] Quit ● [←] Back \n"
 	epicText := "[e] All epics "
 	storyText := "[s] All stories "
 	taskText := "[t] All tasks "
 
-	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 	if (browseFrame.fileType != "epic") {
 		helptext = helptext + epicText
 	}  
