@@ -223,53 +223,94 @@ func openEditor(editor string, filePath string) error {
 
 func (fs *FileSystem) DeleteFile(fileName string, fileType string) error {
 	// Remove name from fileTypeInde
+	log.Println("DeleteFile called 1")
 	removeFileIndexAlpha := pmfile.RemoveFileTypeIndexAlpha{
 		FileName: fileName,
 		FileType: fileType,
 	}
 
+	log.Println("DeleteFile called 2")
 	updateErr := fs.fileTypeIndex.DataStructure.Update(&removeFileIndexAlpha)
 	if updateErr != nil {
 		return updateErr
 	}
 
+	log.Println("DeleteFile called 3")
 	// Already handles non-existent blobs
 	deleteErr := blob.DeleteBlob(fileName)
 	if deleteErr != nil {
 		return deleteErr
 	}
 
+	log.Println("DeleteFile called 4", fileName)
 	fileTree := fs.getFileTree()
 	vertex := fileTree.RetrieveVertex(fileName)
-	if vertex != nil {
+	if vertex == nil {
 		return errors.New("File not found in file system")
 	}
-
-	// Remove Vertex from Dag
-	removeVertexAlpha := dag.RemoveVertexAlpha{
-		Target: vertex,
-	}
-
-	updateErr = fs.fileRelationShips.DataStructure.Update(&removeVertexAlpha)
-	if updateErr != nil {
-		return updateErr
-	}
-
+	
+	log.Println("DeleteFile called 7")
 	parentFileTree := fs.getParentFileTree()
 	parentVertex := parentFileTree.RetrieveVertex(fileName)
-	if parentVertex != nil {
+	if parentVertex == nil {
 		return errors.New("File not found in file system")
 	}
 
+	// We need to remove any edges pointing to this vertex as well
+	parentChildEdges := parentVertex.Children
+	for _, directedEdge := range parentChildEdges {
+		parentId := directedEdge.To.ID
+		parentVertexOnChildTree := fileTree.RetrieveVertex(parentId)
+		removeParentChildEdgeAlpha := dag.RemoveEdgeAlpha{
+			From:  parentVertexOnChildTree,
+			To:    vertex,
+			Label: directedEdge.Label,
+		}
+
+		updateErr = fs.fileRelationShips.DataStructure.Update(&removeParentChildEdgeAlpha)
+		if updateErr != nil {
+			log.Println("Error removing vertexes pointing to this vertex " + updateErr.Error())
+			return updateErr
+		}
+
+		removeParentChildEdgeAlphaOnParentTree := dag.RemoveEdgeAlpha {
+			From: parentVertex,
+			To: directedEdge.To,
+			Label: directedEdge.Label,
+		}
+
+		updateErr = fs.fileParentRelationships.DataStructure.Update(&removeParentChildEdgeAlphaOnParentTree)
+		if updateErr != nil {
+			log.Println("Error removing vertexes pointing to this vertex on the parent tree" + updateErr.Error())
+			return updateErr
+		}
+
+	}
+
+	log.Println("DeleteFile called 8")
 	// Remove Vertex from Dag
 	removeParentVertexAlpha := dag.RemoveVertexAlpha{
 		Target: parentVertex,
 	}
 
+	log.Println("DeleteFile called 9")
 	updateErr = fs.fileParentRelationships.DataStructure.Update(&removeParentVertexAlpha)
 	if updateErr != nil {
 		return updateErr
 	}
+
+	log.Println("DeleteFile called 5")
+	// Remove Vertex from Dag
+	removeVertexAlpha := dag.RemoveVertexAlpha{
+		Target: vertex,
+	}
+
+	log.Println("DeleteFile called 6")
+	updateErr = fs.fileRelationShips.DataStructure.Update(&removeVertexAlpha)
+	if updateErr != nil {
+		return updateErr
+	}
+
 
 	return nil
 }

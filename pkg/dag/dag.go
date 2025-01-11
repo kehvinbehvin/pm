@@ -64,10 +64,13 @@ func (d *Dag) Update(alpha common.Alpha) error {
 			log.Println("addVertexAlpha: " + addVertexAlpha.Target.String())
 		}
 	case common.RemoveVertexAlpha:
+		log.Println("removing vertex")
 		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
 		error = d.RemoveVertex(removeVertexAlpha.Target)
 		if error == nil {
 			log.Println("removeVertexAlpha: " + removeVertexAlpha.Target.String())
+		} else {
+			log.Println(error)
 		}
 
 	case common.AddEdgeAlpha:
@@ -381,11 +384,13 @@ func (d *Dag) RemoveVertex(out *Vertex) error {
 	}
 
 	for _, value := range out.Children {
+		log.Println("Removing edges")
 		valueLabel := value.Label
 		value := value.To
 
 		removeErr := d.RemoveEdge(out, value, valueLabel)
 		if removeErr != nil {
+			log.Println("Error removing related edges " + removeErr.Error())
 			return removeErr
 		}
 	}
