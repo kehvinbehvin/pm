@@ -69,6 +69,11 @@ func (bf BrowseFrame) Refresh(app Application) error {
 	}
 
 	browseFrame.epics.SetItems(epicItems)
+	selected := browseFrame.epics.SelectedItem()
+	if  selected == nil {
+		browseFrame.epics.Select(0);
+	}
+
 	return nil
 }
 

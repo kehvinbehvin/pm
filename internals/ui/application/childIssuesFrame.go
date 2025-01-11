@@ -95,6 +95,12 @@ func (cif ChildIssueFrame) Refresh(app Application) error {
 
 	childIssueFrame.children.SetItems(updatedChildren)
 
+	selected := childIssueFrame.children.SelectedItem()
+	if  selected == nil {
+		childIssueFrame.children.Select(0);
+	}
+
+
 	return nil
 }
 
