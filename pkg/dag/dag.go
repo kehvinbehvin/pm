@@ -49,8 +49,8 @@ type Vertex struct {
 
 // Cannot store parent address because encoding/gob does not allow recursive data structures
 type DirectedEdge struct {
-	Label       string // Allows us to add meaning to the edge
-	To        *Vertex
+	Label string // Allows us to add meaning to the edge
+	To    *Vertex
 }
 
 func (d *Dag) Update(alpha common.Alpha) error {
@@ -61,27 +61,26 @@ func (d *Dag) Update(alpha common.Alpha) error {
 		addVertexAlpha := alpha.(*AddVertexAlpha)
 		error = d.AddVertex(addVertexAlpha.Target)
 		if error == nil {
-			log.Println("addVertexAlpha: " + addVertexAlpha.Target.String());
+			log.Println("addVertexAlpha: " + addVertexAlpha.Target.String())
 		}
 	case common.RemoveVertexAlpha:
 		removeVertexAlpha := alpha.(*RemoveVertexAlpha)
 		error = d.RemoveVertex(removeVertexAlpha.Target)
 		if error == nil {
-			log.Println("removeVertexAlpha: " + removeVertexAlpha.Target.String());
+			log.Println("removeVertexAlpha: " + removeVertexAlpha.Target.String())
 		}
 
 	case common.AddEdgeAlpha:
 		addEdgeAlpha := alpha.(*AddEdgeAlpha)
-		log.Println("addEdgeAlpha: " + addEdgeAlpha.From.String());
-		log.Println("addEdgeAlpha: " + addEdgeAlpha.To.String());
+		log.Println("addEdgeAlpha: " + addEdgeAlpha.From.String())
+		log.Println("addEdgeAlpha: " + addEdgeAlpha.To.String())
 		error = d.AddEdge(addEdgeAlpha.From, addEdgeAlpha.To, addEdgeAlpha.Label)
 	case common.RemoveEdgeAlpha:
 		removeEdgeAlpha := alpha.(*RemoveEdgeAlpha)
-		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.From.String());
-		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.To.String());
+		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.From.String())
+		log.Println("removeEdgeAlpha: " + removeEdgeAlpha.To.String())
 		error = d.RemoveEdge(removeEdgeAlpha.From, removeEdgeAlpha.To, removeEdgeAlpha.Label)
 	}
-
 
 	return error
 }
@@ -146,7 +145,7 @@ func NewVertex(id string) *Vertex {
 
 func NewDirectedEdge(to *Vertex, label string) *DirectedEdge {
 	return &DirectedEdge{
-		To: to,
+		To:    to,
 		Label: label,
 	}
 }
@@ -187,16 +186,16 @@ func dfs(from *Vertex, to *Vertex, label string) bool {
 }
 
 type AddEdgeAlpha struct {
-	From *Vertex
-	To   *Vertex
-	Hash string
+	From  *Vertex
+	To    *Vertex
+	Hash  string
 	Label string
 }
 
 type RemoveEdgeAlpha struct {
-	From *Vertex
-	To   *Vertex
-	Hash string
+	From  *Vertex
+	To    *Vertex
+	Hash  string
 	Label string
 }
 
@@ -249,7 +248,7 @@ func (d *Dag) canAddEdge(from *Vertex, to *Vertex) bool {
 	return hasParent && hasChild
 }
 
-func (d *Dag) isExistingEdge(from *Vertex, to *Vertex, label string) (bool) {
+func (d *Dag) isExistingEdge(from *Vertex, to *Vertex, label string) bool {
 	parent := d.Vertices[from.ID]
 	for _, edgePointer := range parent.Children {
 		if edgePointer.Label != label {
@@ -285,17 +284,17 @@ func (d *Dag) AddEdge(from *Vertex, to *Vertex, label string) error {
 	return nil
 }
 
-func (d *Dag) deleteEdge(from *Vertex, to *Vertex, label string) (error) {
+func (d *Dag) deleteEdge(from *Vertex, to *Vertex, label string) error {
 	for index, child := range from.Children {
-		if (child.Label != label) {
+		if child.Label != label {
 			continue
 		}
 
-		if (child.To.ID != to.ID) {
+		if child.To.ID != to.ID {
 			continue
 		}
 
-		from.Children = append(from.Children[:index], from.Children[index + 1:]...)
+		from.Children = append(from.Children[:index], from.Children[index+1:]...)
 		return nil
 	}
 

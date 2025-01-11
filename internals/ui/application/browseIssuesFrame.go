@@ -13,12 +13,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type BrowseFrame struct{
-	epics list.Model
+type BrowseFrame struct {
+	epics    list.Model
 	fileType string
 }
 
-func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
+func NewBrowseFrame(app Application, fileType string) ApplicationFrame {
 	var epicItems []list.Item
 	epics, err := app.Fs.ListFileNamesByType(fileType)
 	if err != nil {
@@ -28,7 +28,7 @@ func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
 	for _, epic := range epics {
 		epicItems = append(epicItems, item(epic))
 	}
-	
+
 	delegate := itemDelegate{}
 
 	const defaultWidth = 50
@@ -43,16 +43,16 @@ func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
 	l.Styles.NoItems = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("240"))
 
 	maxHeight := 9 // Maximum height of the list
-	l.SetHeight(min(len(epicItems) + 4, maxHeight))
+	l.SetHeight(min(len(epicItems)+4, maxHeight))
 	bf := BrowseFrame{
-		epics: l,
+		epics:    l,
 		fileType: fileType,
 	}
 
 	return &bf
 }
 
-func (bf BrowseFrame) Refresh(app Application) (error) {
+func (bf BrowseFrame) Refresh(app Application) error {
 	browseFrame, frameErr := bf.getFrame(app)
 	if frameErr != nil {
 		return frameErr
@@ -82,7 +82,6 @@ func (bg BrowseFrame) getFrame(app Application) (*BrowseFrame, error) {
 	return browseFrame, nil
 }
 
-
 func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) {
 	browseFrame, frameErr := bf.getFrame(app)
 	if frameErr != nil {
@@ -94,97 +93,97 @@ func (bf BrowseFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) 
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "q", "ctrl+c", "esc":
-			return app, tea.Quit
+				return app, tea.Quit
 			case "left":
-			app.History.Pop()
+				app.History.Pop()
 			}
 		}
 	} else {
 		switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c", "esc":
-			return app, tea.Quit
-		case "left":
-			app.History.Pop()
-		case "d":
-			selectedItem := browseFrame.epics.SelectedItem().(item) 
-			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, true)
-			if issueErr != nil {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q", "ctrl+c", "esc":
 				return app, tea.Quit
-			}
-			app.History.Push(childFrame)
+			case "left":
+				app.History.Pop()
+			case "d":
+				selectedItem := browseFrame.epics.SelectedItem().(item)
+				issueId := string(selectedItem)
+				childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, true)
+				if issueErr != nil {
+					return app, tea.Quit
+				}
+				app.History.Push(childFrame)
 
-		case "c":
-			selectedItem := browseFrame.epics.SelectedItem().(item) 
-			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY, true)
-			if issueErr != nil {
-				return app, tea.Quit
-			}
+			case "c":
+				selectedItem := browseFrame.epics.SelectedItem().(item)
+				issueId := string(selectedItem)
+				childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY, true)
+				if issueErr != nil {
+					return app, tea.Quit
+				}
 
-			app.History.Push(childFrame)
-		case "u":
-			selectedItem := browseFrame.epics.SelectedItem().(item) 
-			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, false)
-			if issueErr != nil {
-				return app, tea.Quit
-			}
+				app.History.Push(childFrame)
+			case "u":
+				selectedItem := browseFrame.epics.SelectedItem().(item)
+				issueId := string(selectedItem)
+				childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, false)
+				if issueErr != nil {
+					return app, tea.Quit
+				}
 
-			app.History.Push(childFrame)
-		case "v":
-			selectedItem := browseFrame.epics.SelectedItem().(item)
-			issueId := string(selectedItem)
-			content, contentErr := app.Fs.RetrieveFileContents(issueId)
-			log.Println("Loaded content");
-			if contentErr != nil {
-				return nil, tea.Quit
-			}
+				app.History.Push(childFrame)
+			case "v":
+				selectedItem := browseFrame.epics.SelectedItem().(item)
+				issueId := string(selectedItem)
+				content, contentErr := app.Fs.RetrieveFileContents(issueId)
+				log.Println("Loaded content")
+				if contentErr != nil {
+					return nil, tea.Quit
+				}
 
-			mdFrame, frameErr := NewViewMarkdownFrame(issueId,content, app)
-			log.Println("Created MD Frame");
-			if frameErr != nil {
-				return nil, tea.Quit
-			}
+				mdFrame, frameErr := NewViewMarkdownFrame(issueId, content, app)
+				log.Println("Created MD Frame")
+				if frameErr != nil {
+					return nil, tea.Quit
+				}
 
-			app.History.Push(mdFrame)
-		case "e":
-			if browseFrame.fileType != "epic" {
-				frame := NewBrowseFrame(app, "epic")
+				app.History.Push(mdFrame)
+			case "e":
+				if browseFrame.fileType != "epic" {
+					frame := NewBrowseFrame(app, "epic")
+					app.History.Push(frame)
+				}
+
+			case "s":
+				if browseFrame.fileType != "story" {
+					frame := NewBrowseFrame(app, "story")
+					app.History.Push(frame)
+				}
+
+			case "t":
+				if browseFrame.fileType != "task" {
+					frame := NewBrowseFrame(app, "task")
+					app.History.Push(frame)
+				}
+			case "i":
+				frame, frameErr := NewCreateFormFrame(app, "")
+				if frameErr != nil {
+					return app, tea.Quit
+				}
+
 				app.History.Push(frame)
 			}
-
-		case "s":
-			if browseFrame.fileType != "story" {
-				frame := NewBrowseFrame(app, "story")
-				app.History.Push(frame)
-			}
-
-		case "t":
-			if browseFrame.fileType != "task" {
-				frame := NewBrowseFrame(app, "task")
-				app.History.Push(frame)
-			}
-		case "i":
-			frame, frameErr := NewCreateFormFrame(app, "")
-			if frameErr != nil {
-				return app, tea.Quit
-			}
-
-			app.History.Push(frame)
 		}
-	}
 
 	}
-	
+
 	var cmd tea.Cmd
 	browseFrame.epics, cmd = browseFrame.epics.Update(msg)
 	return app, cmd
 }
 
-func (bf BrowseFrame) View(app Application) string {	
+func (bf BrowseFrame) View(app Application) string {
 	browseFrame, frameErr := bf.getFrame(app)
 	if frameErr != nil {
 		return ""
@@ -192,7 +191,7 @@ func (bf BrowseFrame) View(app Application) string {
 
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 	if len(browseFrame.epics.Items()) == 0 {
-		return bf.epics.View() +  marginStyle.Render("[q] Quit ● [←] Back")
+		return bf.epics.View() + marginStyle.Render("[q] Quit ● [←] Back")
 	}
 
 	helptext := "[v] View File ● [i] Create Issue [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies\n[q] Quit ● [←] Back \n"
@@ -200,15 +199,15 @@ func (bf BrowseFrame) View(app Application) string {
 	storyText := "[s] All stories "
 	taskText := "[t] All tasks "
 
-	if (browseFrame.fileType != "epic") {
+	if browseFrame.fileType != "epic" {
 		helptext = helptext + epicText
-	}  
+	}
 
-	if (browseFrame.fileType != "story") {
+	if browseFrame.fileType != "story" {
 		helptext = helptext + storyText
-	}  
+	}
 
-	if (browseFrame.fileType != "task") {
+	if browseFrame.fileType != "task" {
 		helptext = helptext + taskText
 	}
 

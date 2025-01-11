@@ -113,7 +113,7 @@ func (ft *FileTypeIndex) RetrieveAllFilesWithTypes() (map[string][]string, error
 
 	for k, _ := range ft.TypeToFile {
 		output[k] = make([]string, 0)
-		for names , _ := range ft.TypeToFile[k] {
+		for names, _ := range ft.TypeToFile[k] {
 			output[k] = append(output[k], names)
 		}
 	}

@@ -1,14 +1,13 @@
 package application
 
 import (
-	"github/pm/pkg/fileSystem"
 	"errors"
+	"github/pm/pkg/fileSystem"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
-
+	"github.com/charmbracelet/lipgloss"
 )
 
 func NewApplication(fs *fileSystem.FileSystem) (tea.Model, error) {
@@ -32,7 +31,7 @@ func NewApplication(fs *fileSystem.FileSystem) (tea.Model, error) {
 	)
 
 	if renderErr != nil {
-		return nil, errors.New("Error creating renderer");
+		return nil, errors.New("Error creating renderer")
 	}
 
 	graphRenderer := fileSystem.FileGraphRenderer{
@@ -40,19 +39,19 @@ func NewApplication(fs *fileSystem.FileSystem) (tea.Model, error) {
 	}
 
 	return Application{
-		History: stack,
-		Fs: fs,
-		Renderer: renderer,
-		ViewPort: &vp,
+		History:       stack,
+		Fs:            fs,
+		Renderer:      renderer,
+		ViewPort:      &vp,
 		GraphRenderer: &graphRenderer,
 	}, nil
 }
 
 type Application struct {
-	History *ApplicationStack
-	Fs *fileSystem.FileSystem
-	Renderer *glamour.TermRenderer
-	ViewPort *viewport.Model
+	History       *ApplicationStack
+	Fs            *fileSystem.FileSystem
+	Renderer      *glamour.TermRenderer
+	ViewPort      *viewport.Model
 	GraphRenderer *fileSystem.FileGraphRenderer
 }
 

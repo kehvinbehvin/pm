@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
-	"log"
 )
 
 const compressionThreshold = 10 * 1024 // 10 KB threshold for compression

@@ -16,7 +16,7 @@ func NewApplicationStack() *ApplicationStack {
 }
 
 func (af *ApplicationStack) Push(frame ApplicationFrame) error {
-	log.Println("New frame pushed");
+	log.Println("New frame pushed")
 	af.stack = append(af.stack, frame)
 	return nil
 }
@@ -36,7 +36,7 @@ func (af *ApplicationStack) Pop() (ApplicationFrame, error) {
 	return frame, nil
 }
 
-func (af *ApplicationStack) ClearStack() (error) {
+func (af *ApplicationStack) ClearStack() error {
 	af.stack = nil
 	return nil
 }
@@ -50,6 +50,6 @@ func (af *ApplicationStack) Peek() (ApplicationFrame, error) {
 	return af.stack[length-1], nil
 }
 
-func (af *ApplicationStack) Size() (int) {
+func (af *ApplicationStack) Size() int {
 	return len(af.stack)
 }

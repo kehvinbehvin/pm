@@ -10,11 +10,11 @@ import (
 )
 
 type ChildIssueFrame struct {
-	children list.Model
-	fileType string
+	children     list.Model
+	fileType     string
 	relationship string
-	fileName string
-	direction bool
+	fileName     string
+	direction    bool
 }
 
 func NewChildIssueFrame(app Application, fileName string, childRelationship string, direction bool) (ApplicationFrame, error) {
@@ -23,15 +23,15 @@ func NewChildIssueFrame(app Application, fileName string, childRelationship stri
 		return ChildIssueFrame{}, asyncErr
 	}
 
-	var pageTitle string;
-	switch(childRelationship) {
+	var pageTitle string
+	switch childRelationship {
 	case fileSystem.FILE_RELATIONSHIP_DEPENDENCY:
 		pageTitle = "Blocking"
 	case fileSystem.FILE_RELATIONSHIPS_HIERARCHY:
 		pageTitle = "Child"
 	}
 
-	fileType, typeErr := app.Fs.GetFileType(fileName);
+	fileType, typeErr := app.Fs.GetFileType(fileName)
 	if typeErr != nil {
 		return ChildIssueFrame{}, typeErr
 	}
@@ -46,14 +46,14 @@ func NewChildIssueFrame(app Application, fileName string, childRelationship stri
 	l.SetShowHelp(false)
 	l.Styles.NoItems = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("240"))
 	maxHeight := 9 // Maximum height of the list
-	l.SetHeight(min(len(issueItems) + 4, maxHeight))
+	l.SetHeight(min(len(issueItems)+4, maxHeight))
 
 	bf := ChildIssueFrame{
-		children: l,
-		fileType: fileType,
+		children:     l,
+		fileType:     fileType,
 		relationship: childRelationship,
-		fileName: fileName,
-		direction: direction,
+		fileName:     fileName,
+		direction:    direction,
 	}
 
 	return &bf, nil
@@ -70,7 +70,7 @@ func asycData(app Application, fileName string, childRelationship string, direct
 	} else {
 		issues, err = app.Fs.ListRelatedParentDependency(fileName)
 	}
-	
+
 	if err != nil {
 		return issueItems, err
 	}
@@ -78,17 +78,17 @@ func asycData(app Application, fileName string, childRelationship string, direct
 	for _, issue := range issues {
 		issueItems = append(issueItems, item(issue))
 	}
-	
+
 	return issueItems, nil
 }
 
-func (cif ChildIssueFrame) Refresh(app Application) (error) {
+func (cif ChildIssueFrame) Refresh(app Application) error {
 	frame, error := app.History.Peek()
 	if error != nil {
 		return errors.New("Cannot get self")
 	}
 	childIssueFrame := frame.(*ChildIssueFrame)
-	updatedChildren, asyncErr := asycData(app, childIssueFrame.fileName, childIssueFrame.relationship, childIssueFrame.direction);
+	updatedChildren, asyncErr := asycData(app, childIssueFrame.fileName, childIssueFrame.relationship, childIssueFrame.direction)
 	if asyncErr != nil {
 		return asyncErr
 	}
@@ -119,115 +119,115 @@ func (cif ChildIssueFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "q", "ctrl+c", "esc":
-			return app, tea.Quit
+				return app, tea.Quit
 			case "left":
-			app.History.Pop()
+				app.History.Pop()
 			}
 		}
 	} else {
-switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c", "esc":
-			return app, tea.Quit
-		case "left":
-			app.History.Pop()
-		case "c":
-			selectedItem := browseFrame.children.SelectedItem().(item) 
-			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY, true)
-			if issueErr != nil {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q", "ctrl+c", "esc":
 				return app, tea.Quit
-			}
-
-			app.History.Push(childFrame)
-		case "d":
-			selectedItem := browseFrame.children.SelectedItem().(item) 
-			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, true)
-			if issueErr != nil {
-				return app, tea.Quit
-			}
-
-			app.History.Push(childFrame)
-		case "u":
-			selectedItem := browseFrame.children.SelectedItem().(item) 
-			issueId := string(selectedItem)
-			childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, false)
-			if issueErr != nil {
-				return app, tea.Quit
-			}
-
-			app.History.Push(childFrame)
-
-		case "o":
-			selectedItem := browseFrame.children.SelectedItem().(item)
-			issueId := string(selectedItem)
-			app.Fs.EditFile(issueId)
-		case "v":
-			selectedItem := browseFrame.children.SelectedItem().(item)
-			issueId := string(selectedItem)
-			content, contentErr := app.Fs.RetrieveFileContents(issueId)
-			if contentErr != nil {
-				return nil, tea.Quit
-			}
-
-			mdFrame, frameErr := NewViewMarkdownFrame(issueId, content, app)
-			if frameErr != nil {
-				return nil, tea.Quit
-			}
-
-			app.History.Push(mdFrame)
-		case "e":
-			frame := NewBrowseFrame(app, "epic")
-			app.History.Push(frame)
-		case "s":
-			frame := NewBrowseFrame(app, "story")
-			app.History.Push(frame)
-
-		case "t":
-			frame := NewBrowseFrame(app, "task")
-			app.History.Push(frame)
-		case "r":
-			selectedItem := browseFrame.children.SelectedItem().(item) 
-			issueId := string(selectedItem)
-
-			switch(browseFrame.relationship) {
-			case fileSystem.FILE_RELATIONSHIPS_HIERARCHY:
-				var parent string
-				var child string
-				if browseFrame.direction {
-					parent = browseFrame.fileName
-					child = issueId
-				} else {
-					parent = issueId
-					child = browseFrame.fileName
+			case "left":
+				app.History.Pop()
+			case "c":
+				selectedItem := browseFrame.children.SelectedItem().(item)
+				issueId := string(selectedItem)
+				childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIPS_HIERARCHY, true)
+				if issueErr != nil {
+					return app, tea.Quit
 				}
 
-				app.Fs.UnLinkHierarchy(parent, child)
-			case fileSystem.FILE_RELATIONSHIP_DEPENDENCY:
-				var parent string
-				var child string
-				if browseFrame.direction {
-					parent = browseFrame.fileName
-					child = issueId
-				} else {
-					parent = issueId
-					child = browseFrame.fileName
+				app.History.Push(childFrame)
+			case "d":
+				selectedItem := browseFrame.children.SelectedItem().(item)
+				issueId := string(selectedItem)
+				childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, true)
+				if issueErr != nil {
+					return app, tea.Quit
 				}
 
-				app.Fs.UnLinkDependency(parent, child)
-			}
+				app.History.Push(childFrame)
+			case "u":
+				selectedItem := browseFrame.children.SelectedItem().(item)
+				issueId := string(selectedItem)
+				childFrame, issueErr := NewChildIssueFrame(app, issueId, fileSystem.FILE_RELATIONSHIP_DEPENDENCY, false)
+				if issueErr != nil {
+					return app, tea.Quit
+				}
 
-			app.History.Pop();
-			childFrame, issueErr := NewChildIssueFrame(app, browseFrame.fileName, browseFrame.relationship, browseFrame.direction)
-			if issueErr != nil {
-				return app, tea.Quit
-			}
+				app.History.Push(childFrame)
 
-			app.History.Push(childFrame)
+			case "o":
+				selectedItem := browseFrame.children.SelectedItem().(item)
+				issueId := string(selectedItem)
+				app.Fs.EditFile(issueId)
+			case "v":
+				selectedItem := browseFrame.children.SelectedItem().(item)
+				issueId := string(selectedItem)
+				content, contentErr := app.Fs.RetrieveFileContents(issueId)
+				if contentErr != nil {
+					return nil, tea.Quit
+				}
+
+				mdFrame, frameErr := NewViewMarkdownFrame(issueId, content, app)
+				if frameErr != nil {
+					return nil, tea.Quit
+				}
+
+				app.History.Push(mdFrame)
+			case "e":
+				frame := NewBrowseFrame(app, "epic")
+				app.History.Push(frame)
+			case "s":
+				frame := NewBrowseFrame(app, "story")
+				app.History.Push(frame)
+
+			case "t":
+				frame := NewBrowseFrame(app, "task")
+				app.History.Push(frame)
+			case "r":
+				selectedItem := browseFrame.children.SelectedItem().(item)
+				issueId := string(selectedItem)
+
+				switch browseFrame.relationship {
+				case fileSystem.FILE_RELATIONSHIPS_HIERARCHY:
+					var parent string
+					var child string
+					if browseFrame.direction {
+						parent = browseFrame.fileName
+						child = issueId
+					} else {
+						parent = issueId
+						child = browseFrame.fileName
+					}
+
+					app.Fs.UnLinkHierarchy(parent, child)
+				case fileSystem.FILE_RELATIONSHIP_DEPENDENCY:
+					var parent string
+					var child string
+					if browseFrame.direction {
+						parent = browseFrame.fileName
+						child = issueId
+					} else {
+						parent = issueId
+						child = browseFrame.fileName
+					}
+
+					app.Fs.UnLinkDependency(parent, child)
+				}
+
+				app.History.Pop()
+				childFrame, issueErr := NewChildIssueFrame(app, browseFrame.fileName, browseFrame.relationship, browseFrame.direction)
+				if issueErr != nil {
+					return app, tea.Quit
+				}
+
+				app.History.Push(childFrame)
+			}
 		}
-	}
 
 	}
 
@@ -244,7 +244,7 @@ func (cif ChildIssueFrame) View(app Application) string {
 
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
 	if len(browseFrame.children.Items()) == 0 {
-		return cif.children.View() +  marginStyle.Render("[q] Quit ● [←] Back")
+		return cif.children.View() + marginStyle.Render("[q] Quit ● [←] Back")
 	}
 
 	helptext := "[v] View File ● [c] list Children ● [d] List Downstream dependencies ● [u] List Upstream depedencies [r] Unlink issue\n[q] Quit ● [←] Back \n[e] All epics [s] All stories [t] All tasks"

@@ -6,7 +6,7 @@ import (
 
 type EditFileFrame struct{}
 
-func (ed EditFileFrame) Refresh(app Application) (error) {
+func (ed EditFileFrame) Refresh(app Application) error {
 	return nil
 }
 

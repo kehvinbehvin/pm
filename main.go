@@ -50,7 +50,7 @@ func main() {
 	// }
 	setupLogger()
 	fs := fileSystem.NewFileSystem()
-	fs.Boot();
+	fs.Boot()
 
 	app, appErr := application.NewApplication(fs)
 	if appErr != nil {

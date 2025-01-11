@@ -35,7 +35,7 @@ func (wf WelcomeFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd)
 	return app, nil
 }
 
-func (wf WelcomeFrame) Refresh(app Application) (error) {
+func (wf WelcomeFrame) Refresh(app Application) error {
 	return nil
 }
 

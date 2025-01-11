@@ -23,15 +23,15 @@ var (
 )
 
 type CreateFormFrame struct {
-	step     int
-	title    textinput.Model
-	list     list.Model
-	fileType string
+	step           int
+	title          textinput.Model
+	list           list.Model
+	fileType       string
 	postActionList list.Model
-	postAction string
-	parent string
-	error bool
-	errorMessage string
+	postAction     string
+	parent         string
+	error          bool
+	errorMessage   string
 }
 
 type item string
@@ -86,7 +86,7 @@ func NewCreateFormFrame(app Application, parent string) (ApplicationFrame, error
 		}
 
 		fileTypeHierarchy := []string{"epic", "story", "task"}
-		pick := false;
+		pick := false
 		for _, fileType := range fileTypeHierarchy {
 			if pick {
 				items = append(items, item(fileType))
@@ -94,7 +94,7 @@ func NewCreateFormFrame(app Application, parent string) (ApplicationFrame, error
 
 			if fileType == parentFileType {
 				pick = true
-			}	
+			}
 		}
 	}
 
@@ -106,7 +106,7 @@ func NewCreateFormFrame(app Application, parent string) (ApplicationFrame, error
 	}
 
 	actionItemsHeight := len(actionItems) + 5
-	itemsHeight := len(items) + 5             
+	itemsHeight := len(items) + 5
 
 	const defaultWidth = 100
 	delegate := itemDelegate{}
@@ -126,12 +126,12 @@ func NewCreateFormFrame(app Application, parent string) (ApplicationFrame, error
 	l.Styles.PaginationStyle = paginationStyle
 	l.SetShowHelp(false)
 	m := CreateFormFrame{
-		step:     0,
-		title:    ti,
-		list:     l,
-		fileType: "",
+		step:           0,
+		title:          ti,
+		list:           l,
+		fileType:       "",
 		postActionList: al,
-		parent: parent,
+		parent:         parent,
 	}
 
 	return &m, nil
@@ -194,7 +194,7 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 				return app, tea.Quit
 
 			case "enter":
-				i, ok := createFormFrame.list.SelectedItem().(item)	
+				i, ok := createFormFrame.list.SelectedItem().(item)
 				if ok {
 					createFormFrame.fileType = string(i)
 				}
@@ -221,13 +221,13 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 				return app, tea.Quit
 
 			case "enter":
-				i, ok := createFormFrame.postActionList.SelectedItem().(item)	
+				i, ok := createFormFrame.postActionList.SelectedItem().(item)
 				if ok {
 					createFormFrame.postAction = string(i)
-					switch (createFormFrame.postAction) {
+					switch createFormFrame.postAction {
 					case "Edit file":
 						app.History.Pop()
-						frame := EditFileFrame{}	
+						frame := EditFileFrame{}
 						app.History.Push(frame)
 					case "Create file":
 						app.History.Pop()
@@ -252,7 +252,7 @@ func (cf CreateFormFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.C
 					case "Menu":
 						app.History.Pop()
 						frame := WelcomeFrame{}
-						app.History.Push(frame);
+						app.History.Push(frame)
 					}
 				}
 			}
@@ -277,14 +277,14 @@ func (cf CreateFormFrame) View(app Application) string {
 		title := "Issue Title"
 		helptext := "\n[←] Back"
 		marginStyle := lipgloss.NewStyle().Margin(1, 2)
-		
+
 		if createFormFrame.error && createFormFrame.errorMessage != "" {
 			errorText := "\n " + createFormFrame.errorMessage
 			return marginStyle.Render(title) + "\n" + createFormFrame.title.View() + marginStyle.Render(errorText) + marginStyle.Render(helptext)
 		}
 
 		return marginStyle.Render(title) + "\n" + createFormFrame.title.View() + marginStyle.Render(helptext)
-	} else if (createFormFrame.step == 1) {
+	} else if createFormFrame.step == 1 {
 		helptext := "\n[q] Quit ● [enter] Enter"
 		marginStyle := lipgloss.NewStyle().Margin(1, 2)
 
@@ -310,6 +310,6 @@ func (cf CreateFormFrame) Init(app Application) tea.Cmd {
 	return nil
 }
 
-func (cf CreateFormFrame) Refresh(app Application) (error) {
+func (cf CreateFormFrame) Refresh(app Application) error {
 	return nil
 }

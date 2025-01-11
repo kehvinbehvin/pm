@@ -19,12 +19,12 @@ const FILE_RELATIONSHIP_DEPENDENCY = "DEPENDENCY"
 const FILE_RELATIONSHIPS_HIERARCHY = "HIERARCHY"
 
 type FileSystem struct {
-	fileRelationShips common.Reconcilable
-	fileTypeIndex     common.Reconcilable
+	fileRelationShips       common.Reconcilable
+	fileTypeIndex           common.Reconcilable
 	fileParentRelationships common.Reconcilable
 }
 
-func NewFileSystem() (*FileSystem) {
+func NewFileSystem() *FileSystem {
 	return &FileSystem{}
 }
 
@@ -143,7 +143,7 @@ func (fs *FileSystem) getParentFileTree() *dag.Dag {
 }
 
 func (fs *FileSystem) CreateFile(fileName string, fileType string) error {
-  log.Println("Filename: " + fileName + " created");
+	log.Println("Filename: " + fileName + " created")
 	// Create Blob using fileName
 	// TODO: refactor to use reconcilable data structure
 	blobErr := blob.CreateBlob(fileName, "")
@@ -188,13 +188,13 @@ func (fs *FileSystem) CreateFile(fileName string, fileType string) error {
 }
 
 func (FileSystem) EditFile(fileName string) {
-	filePath := filepath.Join(".", ".pm", "./blobs", fileName + ".md")
+	filePath := filepath.Join(".", ".pm", "./blobs", fileName+".md")
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 		// Fallback to a default editor if $EDITOR is not set
 		editor = "vim"
 	}
-	
+
 	// Open the file in the editor
 	err := openEditor(editor, filePath)
 	if err != nil {
@@ -266,7 +266,6 @@ func (fs *FileSystem) DeleteFile(fileName string, fileType string) error {
 		Target: parentVertex,
 	}
 
-
 	updateErr = fs.fileParentRelationships.DataStructure.Update(&removeParentVertexAlpha)
 	if updateErr != nil {
 		return updateErr
@@ -319,16 +318,16 @@ func (fs *FileSystem) linkFile(parentName string, childName string, relationship
 		return nil
 	}
 
-	log.Println("Parent: " + parentName + "; Child: " + childName + "; Relationship: " + relationship);
+	log.Println("Parent: " + parentName + "; Child: " + childName + "; Relationship: " + relationship)
 	parentErr := fs.validateFileExists(parentName)
 	if parentErr != nil {
-		log.Println("Parent cannot be found");
+		log.Println("Parent cannot be found")
 		return parentErr
 	}
 
 	childErr := fs.validateFileExists(childName)
 	if childErr != nil {
-		log.Println("Child cannot be found");
+		log.Println("Child cannot be found")
 		return childErr
 	}
 
@@ -338,14 +337,14 @@ func (fs *FileSystem) linkFile(parentName string, childName string, relationship
 
 	// Add Edge between parent and child vertex
 	addEdgeAlpha := dag.AddEdgeAlpha{
-		From: parentVertex,
-		To:   childVertex,
+		From:  parentVertex,
+		To:    childVertex,
 		Label: relationship,
 	}
 
 	updateErr := fs.fileRelationShips.DataStructure.Update(&addEdgeAlpha)
 	if updateErr != nil {
-		log.Println("Error Linking file");
+		log.Println("Error Linking file")
 		return updateErr
 	}
 
@@ -355,14 +354,14 @@ func (fs *FileSystem) linkFile(parentName string, childName string, relationship
 
 	// Add opposite direction edge
 	addOppEdgeAlpha := dag.AddEdgeAlpha{
-		To: parentVertex,
-		From:   childVertex,
+		To:    parentVertex,
+		From:  childVertex,
 		Label: relationship,
 	}
 
 	updateErr = fs.fileParentRelationships.DataStructure.Update(&addOppEdgeAlpha)
 	if updateErr != nil {
-		log.Println("Error Parent Linking file" + updateErr.Error());
+		log.Println("Error Parent Linking file" + updateErr.Error())
 		return updateErr
 	}
 
@@ -382,7 +381,7 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 		return nil
 	}
 
-	log.Println("Parent: " + parentName + "; Child: " + childName + "; Relationship: " + relationship);
+	log.Println("Parent: " + parentName + "; Child: " + childName + "; Relationship: " + relationship)
 	parentErr := fs.validateFileExists(parentName)
 	if parentErr != nil {
 		return parentErr
@@ -399,8 +398,8 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 
 	// Add Edge between parent and child vertex
 	removeEdgeAlpha := dag.RemoveEdgeAlpha{
-		From: parentVertex,
-		To:   childVertex,
+		From:  parentVertex,
+		To:    childVertex,
 		Label: relationship,
 	}
 
@@ -416,8 +415,8 @@ func (fs *FileSystem) unLinkFile(parentName string, childName string, relationsh
 
 	// Add Edge between parent and child vertex
 	removeOppEdgeAlpha := dag.RemoveEdgeAlpha{
-		To: parentVertex,
-		From:   childVertex,
+		To:    parentVertex,
+		From:  childVertex,
 		Label: relationship,
 	}
 
@@ -475,7 +474,7 @@ func (fs *FileSystem) ListRelatedParents(fileName string, fileRelationship strin
 
 	var issues []string
 	for _, child := range children {
-		if (fileRelationship != child.Label) {
+		if fileRelationship != child.Label {
 			continue
 		}
 
@@ -492,7 +491,7 @@ func (fs *FileSystem) ListRelatedIssues(fileName string, fileRelationship string
 
 	var issues []string
 	for _, child := range children {
-		if (fileRelationship != child.Label) {
+		if fileRelationship != child.Label {
 			continue
 		}
 
@@ -512,8 +511,8 @@ func (fs *FileSystem) GetFileType(fileName string) (string, error) {
 	return fileType, nil
 }
 
-func (fs *FileSystem) GetFileChildMeta(fileName string) (*dag.Vertex) {
-	 return fs.getFileTree().RetrieveVertex(fileName)
+func (fs *FileSystem) GetFileChildMeta(fileName string) *dag.Vertex {
+	return fs.getFileTree().RetrieveVertex(fileName)
 }
 
 type FileGraphRenderer struct {
@@ -521,12 +520,12 @@ type FileGraphRenderer struct {
 }
 
 func (fgr FileGraphRenderer) Build(fileName string) (string, error) {
-	output := fgr.BuildIssue(fileName, 0);
+	output := fgr.BuildIssue(fileName, 0)
 
 	return output, nil
 }
 
-func (fgr FileGraphRenderer) BuildIssue(vertexID string, lane int) (string) {
+func (fgr FileGraphRenderer) BuildIssue(vertexID string, lane int) string {
 	childrenDag := fgr.Fs.getFileTree()
 	issueWithChildren := childrenDag.RetrieveVertex(vertexID)
 
@@ -553,33 +552,33 @@ func (fgr FileGraphRenderer) BuildIssue(vertexID string, lane int) (string) {
 // 	return children
 // }
 
-func (fgr FileGraphRenderer) BuildDepedencies(issueWithChildren *dag.Vertex, lane int) (string) {
+func (fgr FileGraphRenderer) BuildDepedencies(issueWithChildren *dag.Vertex, lane int) string {
 	if len(issueWithChildren.Children) == 0 {
 		return ""
 	}
 
-	var children string;
+	var children string
 
 	for index, value := range issueWithChildren.Children {
 		if value.Label == FILE_RELATIONSHIP_DEPENDENCY {
 			position := fgr.LanePosition(lane + index)
-			children += position + "\\" + fgr.BuildIssue(value.To.ID, lane + index + 1)
+			children += position + "\\" + fgr.BuildIssue(value.To.ID, lane+index+1)
 		}
 	}
 
 	return "\n" + children
 }
 
-func (fgr FileGraphRenderer) AddBodyInLane(lane int) (string) {
+func (fgr FileGraphRenderer) AddBodyInLane(lane int) string {
 	laneString := fgr.LanePosition(lane)
 	return "\n" + laneString + "|"
 }
 
-func (fgr FileGraphRenderer) AddHeadInLane(lane int) (string) {
+func (fgr FileGraphRenderer) AddHeadInLane(lane int) string {
 	laneString := fgr.LanePosition(lane)
 	return "\n" + laneString + "*"
 }
 
-func (fgr FileGraphRenderer) LanePosition(lane int) (string) {
+func (fgr FileGraphRenderer) LanePosition(lane int) string {
 	return strings.Repeat(" ", lane)
 }

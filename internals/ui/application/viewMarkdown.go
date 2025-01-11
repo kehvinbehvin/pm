@@ -2,23 +2,24 @@ package application
 
 import (
 	"errors"
-	"strings"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/lipgloss"
 	"log"
+	"strings"
 )
 
-type ViewMarkdownFrame struct{
-	content string
-	fileName string
-	subStack *ApplicationStack
-	selectedItem string
-	linkChild bool
+type ViewMarkdownFrame struct {
+	content        string
+	fileName       string
+	subStack       *ApplicationStack
+	selectedItem   string
+	linkChild      bool
 	linkDownStream bool
-	linkUpsteam bool
-	fileType string
+	linkUpsteam    bool
+	fileType       string
 }
+
 // TODO: Need to handle window sizing.
 func NewViewMarkdownFrame(fileName string, content string, app Application) (*ViewMarkdownFrame, error) {
 	str, err := app.Renderer.Render(content)
@@ -26,20 +27,20 @@ func NewViewMarkdownFrame(fileName string, content string, app Application) (*Vi
 		return nil, err
 	}
 
-	fileType, typeErr := app.Fs.GetFileType(fileName);
+	fileType, typeErr := app.Fs.GetFileType(fileName)
 	if typeErr != nil {
-		return &ViewMarkdownFrame{},typeErr
+		return &ViewMarkdownFrame{}, typeErr
 	}
 
-	log.Println("Rendered content");
+	log.Println("Rendered content")
 	app.ViewPort.SetContent(str)
 
-	log.Println("Created viewport");
+	log.Println("Created viewport")
 
 	stack := NewApplicationStack()
 	return &ViewMarkdownFrame{
 		fileName: fileName,
-		content: content,
+		content:  content,
 		subStack: stack,
 		fileType: fileType,
 	}, nil
@@ -55,7 +56,6 @@ func (vmdf *ViewMarkdownFrame) getFrame(app Application) (*ViewMarkdownFrame, er
 	return viewMarkDownFrame, nil
 }
 
-
 func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, tea.Cmd) {
 	viewMarkdownFrame, frameErr := vmdf.getFrame(app)
 	if frameErr != nil {
@@ -64,20 +64,20 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 	// Register search results
 	if viewMarkdownFrame.subStack.Size() != 0 {
-		frame, frameErr := viewMarkdownFrame.subStack.Peek();
+		frame, frameErr := viewMarkdownFrame.subStack.Peek()
 		if frameErr != nil {
 			return app, tea.Quit
 		}
 
 		globalSelectFrame := frame.(*GlobalSelectionFrame)
 		selectedItem := globalSelectFrame.selectedItem
-		
+
 		if selectedItem != "" {
 			index := strings.Index(selectedItem, "]")
-			fileName := strings.TrimSpace(selectedItem[index + 1:])
+			fileName := strings.TrimSpace(selectedItem[index+1:])
 			viewMarkdownFrame.selectedItem = fileName
 		}
-		
+
 		viewMarkdownFrame.subStack.Pop()
 	}
 
@@ -101,7 +101,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 		// Update the viewport size when the terminal is resized
 		app.ViewPort.Width = msg.Width
 		app.ViewPort.Height = msg.Height
-		
+
 		renderer, err := glamour.NewTermRenderer(
 			glamour.WithAutoStyle(),
 			glamour.WithWordWrap(78),
@@ -145,7 +145,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 			// }
 			// globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName, relatedIssues)
 			// if frameErr != nil {
-			// 	return app, nil 
+			// 	return app, nil
 			// }
 			//
 			// app.History.Push(globalSearchFrame)
@@ -162,7 +162,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName, relatedIssues)
 			if frameErr != nil {
-				return app, nil 
+				return app, nil
 			}
 
 			app.History.Push(globalSearchFrame)
@@ -178,7 +178,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 			globalSearchFrame, frameErr := NewGlobalSelectionFrame(app, viewMarkdownFrame.fileName, relatedIssues)
 			if frameErr != nil {
-				return app, nil 
+				return app, nil
 			}
 
 			app.History.Push(globalSearchFrame)
@@ -197,7 +197,7 @@ func (vmdf *ViewMarkdownFrame) Update(msg tea.Msg, app Application) (tea.Model, 
 
 		case "r":
 			app.Fs.DeleteFile(viewMarkdownFrame.fileName, viewMarkdownFrame.fileType)
-			app.History.Pop();
+			app.History.Pop()
 		}
 	default:
 		return app, nil
@@ -217,6 +217,6 @@ func (vmdf *ViewMarkdownFrame) Init(app Application) tea.Cmd {
 	return nil
 }
 
-func (vmdf *ViewMarkdownFrame) Refresh(app Application) (error) {
+func (vmdf *ViewMarkdownFrame) Refresh(app Application) error {
 	return nil
 }
