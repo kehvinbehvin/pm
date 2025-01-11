@@ -40,6 +40,7 @@ func NewBrowseFrame(app Application, fileType string) (ApplicationFrame) {
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
 	l.SetShowHelp(false)
+	l.Styles.NoItems = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("240"))
 
 	maxHeight := 9 // Maximum height of the list
 	l.SetHeight(min(len(epicItems) + 4, maxHeight))
