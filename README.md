@@ -8,6 +8,8 @@ like in a git-style.
 
 ## Features
 
+![](https://github.com/kehvinbehvin/pm/blob/main/example.gif)
+
 ### File Structure
 - .pm
     - config (txt)
