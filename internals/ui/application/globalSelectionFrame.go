@@ -50,10 +50,6 @@ func NewGlobalSelectionFrame(app Application, currentFile string, excludeFiles [
 	}
 
 	sort.Strings(fileList)
-	if len(fileList) == 0 {
-		return &GlobalSelectionFrame{}, errors.New("No items to link to")
-	}
-
 	for _, file := range fileList {
 		fileItemList = append(fileItemList, item(file))
 	}
@@ -68,6 +64,7 @@ func NewGlobalSelectionFrame(app Application, currentFile string, excludeFiles [
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
 	l.SetShowHelp(false)
+	l.Styles.NoItems = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("240"))
 
 	maxHeight := 9 // Maximum height of the list
 	l.SetHeight(min(len(fileItemList) + 4, maxHeight))
@@ -94,7 +91,19 @@ func (gsf GlobalSelectionFrame) Update(msg tea.Msg, app Application) (tea.Model,
 		return app, tea.Quit
 	}
 
-	switch msg := msg.(type) {
+	if len(globalFrame.items.Items()) == 0 {
+		switch msg := msg.(type) {
+
+		case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "ctrl+c", "esc":
+			return app, tea.Quit
+		case "left":
+			app.History.Pop()
+		}
+		}
+	} else {
+switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
@@ -125,14 +134,25 @@ func (gsf GlobalSelectionFrame) Update(msg tea.Msg, app Application) (tea.Model,
 		}
 	}
 
+	}
+
 	var cmd tea.Cmd
 	globalFrame.items, cmd = globalFrame.items.Update(msg)
 	return app, cmd
 }
 
 func (gsf GlobalSelectionFrame) View(app Application) string {
-	helptext := "[v] View ● [enter] select\n[q] Quit ● [←] Back "
+	globalFrame, frameErr := gsf.getFrame(app)
+	if frameErr != nil {
+		return ""
+	}
+
 	marginStyle := lipgloss.NewStyle().Margin(1, 2)
+	if len(globalFrame.items.Items()) == 0 {
+		return gsf.items.View() +  marginStyle.Render("[q] Quit ● [←] Back")
+	}
+
+	helptext := "[v] View ● [enter] select\n[q] Quit ● [←] Back "
 	return gsf.items.View() + marginStyle.Render(helptext)
 }
 
